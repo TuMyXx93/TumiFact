@@ -1,0 +1,34 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+pnpm-debug.log*
+
+# Entorno y Secretos
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Salidas de compilación
+dist/
+build/
+*.zip
+
+# Editores e IDEs
+.vscode/
+.idea/
+.kilo/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos temporales o locales
+Comandos.txt

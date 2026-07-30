@@ -1,0 +1,62 @@
+# Docker Compose para ECL FRUVER - PostgreSQL 18.4
+# Uso: docker compose up -d
+# Logs: docker compose logs -f postgres
+# Stop: docker compose down
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: ecl_fruver_db
+    
+    # Variables de entorno para inicialización
+    environment:
+      POSTGRES_USER: fruver_user
+      POSTGRES_PASSWORD: fruver_password
+      POSTGRES_DB: ecl_fruver
+      # Logs más detallados (opcional)
+      POSTGRES_INITDB_ARGS: "-c log_statement=all"
+    
+    # Puertos
+    ports:
+      - "5432:5432"
+    
+    # Volúmenes para persistencia y schema
+    volumes:
+      # PostgreSQL 18+ necesita montar en /var/lib/postgresql (no /data)
+      # Los datos van a /var/lib/postgresql/18/main automáticamente
+      - postgres_data:/var/lib/postgresql
+      
+      # Script de inicialización (se ejecuta al crear el contenedor)
+      - ./database_pg.sql:/docker-entrypoint-initdb.d/init.sql
+    
+    # Health check para verificar que está listo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fruver_user -d ecl_fruver"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    # Red personalizada
+    networks:
+      - fruver_network
+    
+    # Reinicio automático
+    restart: unless-stopped
+    
+    # Logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Red personalizada para facilitar comunicación entre servicios
+networks:
+  fruver_network:
+    driver: bridge
+
+# Volúmenes
+volumes:
+  postgres_data:
+    driver: local

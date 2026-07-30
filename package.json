@@ -1,0 +1,44 @@
+{
+  "name": "tumifact",
+  "version": "1.0.0",
+  "description": "Sistema de Facturación TumiFact",
+  "main": "server.js",
+  "bin": "server.js",
+  "pkg": {
+    "assets": [
+      "views/**/*",
+      "public/**/*",
+      "node_modules/ejs/**/*"
+    ],
+    "targets": [
+      "node16-win-x86",
+      "node16-linux-x86",
+      "node16-macos-x86"
+    ],
+    "outputPath": "dist"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "pkg . --no-bytecode --public",
+    "clean": "rm -rf node_modules .pnpm-store pnpm-lock.yaml",
+    "rebuild": "pnpm clean && pnpm install",
+    "audit": "pnpm audit",
+    "test": "jest --runInBand",
+    "test:setup": "node tests/db-test-setup.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.6",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.10",
+    "express": "^4.22.2",
+    "express-validator": "^7.2.0",
+    "multer": "^2.0.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^7.0.0"
+  }
+}
