@@ -118,8 +118,7 @@ router.get('/:id/imprimir', async (req, res) => {
             return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
         }
 
-        // Renderizar la vista de la factura
-        res.render('factura', {
+        res.json({
             factura: facturasResult.rows[0],
             detalles: detallesResult.rows,
             config: config

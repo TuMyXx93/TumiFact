@@ -7,26 +7,11 @@ dotenv.config();
 
 const app = express();
 
-const createRequiredDirectories = (): void => {
-    const directories = [
-        path.join(process.cwd(), 'public'),
-        path.join(process.cwd(), 'public', 'uploads'),
-        path.join(process.cwd(), 'public', 'css'),
-        path.join(process.cwd(), 'public', 'js')
-    ];
-
-    directories.forEach(dir => {
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-            console.log(`Directorio creado: ${dir}`);
-        }
-    });
-};
-
-createRequiredDirectories();
-
-app.set('view engine', 'ejs');
-app.set('views', path.join(process.cwd(), 'views'));
+// Crear directorio de uploads si no existe (almacenamiento temporal previa Fase 4)
+const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -44,7 +29,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
 });
 
-// Importar rutas legadas (se refactorizarán en la Fase 2 y Fase 5)
+// Importar rutas de la API REST
 const productosRoutes = require('../routes/productos');
 const clientesRoutes = require('../routes/clientes');
 const facturasRoutes = require('../routes/facturas');
@@ -52,7 +37,12 @@ const configuracionRoutes = require('../routes/configuracion');
 const ventasRoutes = require('../routes/ventas');
 
 app.get('/', (req: Request, res: Response) => {
-    res.render('index');
+    res.json({
+        name: 'TumiFact Enterprise Headless API REST',
+        version: '1.0.0',
+        status: 'online',
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.use('/productos', productosRoutes);
@@ -65,31 +55,19 @@ app.use('/configuracion', configuracionRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 app.use('/ventas', ventasRoutes);
 
+// Handling 404 Routes as pure JSON
 app.use((req: Request, res: Response) => {
     console.log('404 - Ruta no encontrada:', req.url);
-    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
-        res.status(404).json({ error: 'Ruta no encontrada' });
-    } else {
-        res.status(404).render('404');
-    }
+    res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
+// Handling Global Internal Errors as pure JSON
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     console.error('Error en la aplicación:', err);
-    
-    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
-        res.status(500).json({ 
-            error: 'Error interno del servidor',
-            message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno'
-        });
-    } else {
-        res.status(500).render('error', {
-            error: {
-                message: 'Error interno del servidor',
-                stack: process.env.NODE_ENV === 'development' ? err.stack : ''
-            }
-        });
-    }
+    res.status(500).json({ 
+        error: 'Error interno del servidor',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno'
+    });
 });
 
 export default app;

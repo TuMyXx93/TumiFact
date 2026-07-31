@@ -3,19 +3,17 @@ const router = express.Router();
 const db = require('../db');
 const { validateClientes } = require('../middleware/validate');
 
-// GET /clientes - Mostrar página de clientes
+// GET /clientes - Obtener lista de clientes
 router.get('/', async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM clientes ORDER BY nombre');
         const clientes = result.rows || [];
-        res.render('clientes', { clientes });
+        res.json(clientes);
     } catch (error) {
         console.error('Error al obtener clientes:', error);
-        res.status(500).render('error', { 
-            error: {
-                message: 'Error al obtener clientes',
-                stack: error.stack
-            }
+        res.status(500).json({
+            error: 'Error al obtener clientes',
+            message: process.env.NODE_ENV === 'development' ? error.message : ''
         });
     }
 });
@@ -27,19 +25,19 @@ router.get('/buscar', async (req, res) => {
         const searchTerm = `%${query}%`;
         const sql = `
             SELECT * FROM clientes 
-            WHERE nombre ILIKE $1 OR telefono ILIKE $2
+            WHERE nombre ILIKE $1 OR telefono ILIKE $2 OR direccion ILIKE $3
             ORDER BY nombre
             LIMIT 10
         `;
-        const result = await db.query(sql, [searchTerm, searchTerm]);
-        res.json(result.rows);
+        const result = await db.query(sql, [searchTerm, searchTerm, searchTerm]);
+        res.json(result.rows || []);
     } catch (error) {
         console.error('Error al buscar clientes:', error);
         res.status(500).json({ error: 'Error al buscar clientes' });
     }
 });
 
-// GET /clientes/:id - Obtener un cliente específico
+// GET /clientes/:id - Obtener cliente por ID
 router.get('/:id', async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM clientes WHERE id = $1', [req.params.id]);
@@ -57,24 +55,19 @@ router.get('/:id', async (req, res) => {
 // POST /clientes - Crear nuevo cliente
 router.post('/', validateClientes, async (req, res) => {
     try {
-        console.log('Datos recibidos:', req.body);
         const { nombre, direccion, telefono } = req.body;
-        
-        if (!nombre) {
-            return res.status(400).json({ error: 'El nombre es requerido' });
-        }
 
-        const result = await db.query(
-            'INSERT INTO clientes (nombre, direccion, telefono) VALUES ($1, $2, $3) RETURNING id',
-            [nombre, direccion || null, telefono || null]
-        );
+        const result = await db.query(`
+            INSERT INTO clientes (nombre, direccion, telefono)
+            VALUES ($1, $2, $3)
+            RETURNING *
+        `, [
+            nombre.trim(),
+            direccion ? direccion.trim() : null,
+            telefono ? telefono.trim() : null
+        ]);
 
-        console.log('Cliente creado:', result.rows[0]);
-
-        res.status(201).json({ 
-            id: result.rows[0].id,
-            message: 'Cliente creado exitosamente' 
-        });
+        res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Error al crear cliente:', error);
         res.status(500).json({ error: 'Error al crear cliente' });
@@ -85,21 +78,25 @@ router.post('/', validateClientes, async (req, res) => {
 router.put('/:id', validateClientes, async (req, res) => {
     try {
         const { nombre, direccion, telefono } = req.body;
-        
-        if (!nombre) {
-            return res.status(400).json({ error: 'El nombre es requerido' });
-        }
+        const id = req.params.id;
 
-        const result = await db.query(
-            'UPDATE clientes SET nombre = $1, direccion = $2, telefono = $3 WHERE id = $4',
-            [nombre, direccion || null, telefono || null, req.params.id]
-        );
+        const result = await db.query(`
+            UPDATE clientes
+            SET nombre = $1, direccion = $2, telefono = $3
+            WHERE id = $4
+            RETURNING *
+        `, [
+            nombre.trim(),
+            direccion ? direccion.trim() : null,
+            telefono ? telefono.trim() : null,
+            id
+        ]);
 
-        if (result.rowCount === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
         }
 
-        res.json({ message: 'Cliente actualizado exitosamente' });
+        res.json(result.rows[0]);
     } catch (error) {
         console.error('Error al actualizar cliente:', error);
         res.status(500).json({ error: 'Error al actualizar cliente' });
@@ -109,16 +106,16 @@ router.put('/:id', validateClientes, async (req, res) => {
 // DELETE /clientes/:id - Eliminar cliente
 router.delete('/:id', async (req, res) => {
     try {
-        const result = await db.query('DELETE FROM clientes WHERE id = $1', [req.params.id]);
-        
-        if (result.rowCount === 0) {
+        const id = req.params.id;
+        const result = await db.query('DELETE FROM clientes WHERE id = $1 RETURNING id', [id]);
+
+        if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
         }
 
-        res.json({ message: 'Cliente eliminado exitosamente' });
+        res.json({ message: 'Cliente eliminado exitosamente', id: parseInt(id, 10) });
     } catch (error) {
         console.error('Error al eliminar cliente:', error);
-        // PostgreSQL error code para foreign key constraint
         if (error.code === '23503') {
             return res.status(400).json({ error: 'No se puede eliminar el cliente porque tiene facturas asociadas' });
         }

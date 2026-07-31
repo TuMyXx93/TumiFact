@@ -24,10 +24,10 @@ router.get('/', async (req, res) => {
         query += ` ORDER BY f.fecha DESC`;
 
         const result = await db.query(query, params);
-        res.render('ventas', { ventas: result.rows || [] });
+        res.json(result.rows || []);
     } catch (error) {
         console.error('Error al obtener ventas:', error);
-        res.status(500).send('Error al cargar el historial de ventas');
+        res.status(500).json({ error: 'Error al cargar el historial de ventas' });
     }
 });
 
