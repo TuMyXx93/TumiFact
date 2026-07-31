@@ -3,6 +3,10 @@ node_modules/
 .pnpm-store/
 pnpm-debug.log*
 
+# Cobertura y Pruebas
+coverage/
+.nyc_output/
+
 # Entorno y Secretos
 .env
 .env.local

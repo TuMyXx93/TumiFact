@@ -25,6 +25,7 @@
     "rebuild": "pnpm clean && pnpm install",
     "audit": "pnpm audit",
     "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
     "test:setup": "node tests/db-test-setup.js"
   },
   "dependencies": {

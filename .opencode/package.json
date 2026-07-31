@@ -1,0 +1,6 @@
+{
+  "name": "@tumifact/opencode",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenCode agent orchestration configuration for TumiFact"
+}
