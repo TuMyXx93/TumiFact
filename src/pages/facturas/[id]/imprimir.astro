@@ -1,0 +1,256 @@
+---
+import db from '../../../lib/db.js';
+
+const { id } = Astro.params;
+
+let factura = null;
+let detalles = [];
+let config = {
+  nombre_negocio: 'TumiFact Enterprise',
+  direccion: '',
+  telefono: '',
+  nit: '',
+  pie_pagina: '¡Gracias por su compra!',
+  ancho_papel: 80,
+  font_size: 1,
+  logo_src: null,
+  qr_src: null
+};
+let errorMsg = null;
+
+try {
+  // 1. Cargar Configuración de Impresión
+  const configRes = await db.query('SELECT * FROM configuracion_impresion LIMIT 1');
+  if (configRes.rows && configRes.rows.length > 0) {
+    const rawConfig = configRes.rows[0];
+    config = { ...config, ...rawConfig };
+
+    // Decodificación de datos binarios BYTEA a Data URLs (base64)
+    if (rawConfig.logo_data) {
+      const logoBuffer = Buffer.isBuffer(rawConfig.logo_data)
+        ? rawConfig.logo_data
+        : Buffer.from(rawConfig.logo_data);
+      config.logo_src = `data:image/${rawConfig.logo_tipo || 'png'};base64,${logoBuffer.toString('base64')}`;
+    }
+
+    if (rawConfig.qr_data) {
+      const qrBuffer = Buffer.isBuffer(rawConfig.qr_data)
+        ? rawConfig.qr_data
+        : Buffer.from(rawConfig.qr_data);
+      config.qr_src = `data:image/${rawConfig.qr_tipo || 'png'};base64,${qrBuffer.toString('base64')}`;
+    }
+  }
+
+  // 2. Cargar Factura y Cliente
+  const facturaRes = await db.query(
+    `SELECT f.*, c.nombre as cliente_nombre, c.direccion, c.telefono
+     FROM facturas f
+     JOIN clientes c ON f.cliente_id = c.id
+     WHERE f.id = $1`,
+    [id]
+  );
+
+  if (facturaRes.rows.length === 0) {
+    errorMsg = `Factura #${id} no fue encontrada en el sistema.`;
+  } else {
+    factura = facturaRes.rows[0];
+
+    // 3. Cargar Detalle de Productos
+    const detallesRes = await db.query(
+      `SELECT d.*, p.nombre as producto_nombre
+       FROM detalle_factura d
+       JOIN productos p ON d.producto_id = p.id
+       WHERE d.factura_id = $1`,
+      [id]
+    );
+    detalles = detallesRes.rows || [];
+  }
+} catch (err) {
+  console.error('Error cargando impresión de factura:', err);
+  errorMsg = 'Error interno del servidor al obtener la factura.';
+}
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiquete Térmico — Factura #{id}</title>
+  <style define:vars={{ anchoPapel: `${config.ancho_papel || 80}mm` }}>
+    @media print {
+      body {
+        width: var(--anchoPapel);
+        margin: 0;
+        padding: 4px;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    body {
+      font-family: 'Courier New', Courier, monospace, sans-serif;
+      max-width: var(--anchoPapel);
+      margin: 0 auto;
+      padding: 10px;
+      background: #0f172a;
+      color: #000;
+    }
+
+    .factura-ticket {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .divider { border-top: 1px dashed #000; margin: 10px 0; }
+    .divider-dotted { border-top: 1px dotted #ccc; margin: 6px 0; }
+    .small { font-size: 0.8em; }
+
+    .logo {
+      max-width: 110px;
+      max-height: 80px;
+      margin: 0 auto 10px auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    .qr-img {
+      max-width: 140px;
+      margin: 10px auto;
+      display: block;
+    }
+
+    .item-row {
+      margin-bottom: 6px;
+    }
+
+    .item-title {
+      font-size: 0.85em;
+      font-weight: bold;
+      word-break: break-word;
+    }
+
+    .item-details {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8em;
+      padding-left: 8px;
+    }
+
+    .total-container {
+      border-top: 2px dashed #000;
+      padding-top: 8px;
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 1.1em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #334155; color: white; }
+    .btn-secondary:hover { background: #475569; }
+  </style>
+</head>
+<body>
+  <!-- Botones de Acción (Visibles solo en Pantalla) -->
+  <div class="no-print" style="display: flex; justify-content: space-between; items-center; margin-bottom: 20px;">
+    <button onclick="window.history.back()" class="btn btn-secondary">
+      ← Volver al POS
+    </button>
+    <button onclick="window.print()" class="btn btn-primary">
+      🖨️ Imprimir Tiquete ({config.ancho_papel}mm)
+    </button>
+  </div>
+
+  {errorMsg ? (
+    <div class="factura-ticket text-center" style="color: #dc2626; font-weight: bold; padding: 24px;">
+      ⚠️ {errorMsg}
+    </div>
+  ) : (
+    <div class="factura-ticket">
+      <!-- Logo si existe -->
+      {config.logo_src && (
+        <img src={config.logo_src} alt="Logo de la Empresa" class="logo" />
+      )}
+
+      <!-- Cabecera Empresa -->
+      <div class="text-center">
+        <h2 style="margin: 0; font-size: 1.2em; font-weight: bold;">{config.nombre_negocio}</h2>
+        {config.direccion && <div class="small">{config.direccion}</div>}
+        {config.telefono && <div class="small">Tel: {config.telefono}</div>}
+        {config.nit && <div class="small">NIT: {config.nit}</div>}
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Datos Factura y Cliente -->
+      <div class="small" style="line-height: 1.4;">
+        <div><strong>FACTURA #:</strong> {factura.id}</div>
+        <div><strong>FECHA:</strong> {new Date(factura.created_at || factura.fecha).toLocaleString('es-CO')}</div>
+        <div><strong>CLIENTE:</strong> {factura.cliente_nombre}</div>
+        {factura.direccion && <div><strong>DIRECCIÓN:</strong> {factura.direccion}</div>}
+        {factura.telefono && <div><strong>TELÉFONO:</strong> {factura.telefono}</div>}
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Lista de Productos -->
+      <div>
+        {detalles.map((item) => (
+          <div class="item-row">
+            <div class="item-title">{item.producto_nombre}</div>
+            <div class="item-details">
+              <span>{Number(item.cantidad)} {item.unidad_medida} × ${Number(item.precio_unitario).toLocaleString('es-CO')}</span>
+              <span style="font-weight: bold;">${Number(item.subtotal).toLocaleString('es-CO')}</span>
+            </div>
+            <div class="divider-dotted"></div>
+          </div>
+        ))}
+      </div>
+
+      <!-- Total Final -->
+      <div class="total-container">
+        <span>TOTAL FACTURA:</span>
+        <span>${Number(factura.total).toLocaleString('es-CO')}</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Pie de Página y QR -->
+      <div class="text-center small" style="line-height: 1.4;">
+        <div><strong>FORMA DE PAGO:</strong> {(factura.forma_pago || 'efectivo').toUpperCase()}</div>
+
+        {config.qr_src && (
+          <img src={config.qr_src} alt="Código QR de Pago" class="qr-img" />
+        )}
+
+        <div style="margin-top: 8px; font-style: italic;">
+          {config.pie_pagina || '¡Gracias por su compra!'}
+        </div>
+      </div>
+    </div>
+  )}
+</body>
+</html>

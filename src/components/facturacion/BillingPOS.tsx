@@ -23,6 +23,7 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
   
   // Estado de emisión
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastFacturaId, setLastFacturaId] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Buscar productos dinámicamente
@@ -147,6 +148,7 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
 
       if (res.ok && data.id) {
         setStatusMessage({ type: 'success', text: `¡Factura #${data.id} emitida con éxito!` });
+        setLastFacturaId(data.id);
         setCart([]);
         setEfectivoRecibido('');
       } else {
@@ -257,19 +259,35 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
 
           {/* Mensaje de Estado */}
           {statusMessage && (
-            <div
-              className={`p-3 rounded-xl text-xs font-medium flex items-center gap-2 border ${
-                statusMessage.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                  : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-              }`}
-            >
-              {statusMessage.type === 'success' ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" />
+            <div className="space-y-2">
+              <div
+                className={`p-3 rounded-xl text-xs font-medium flex items-center justify-between gap-2 border ${
+                  statusMessage.type === 'success'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {statusMessage.type === 'success' ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                  )}
+                  <span>{statusMessage.text}</span>
+                </div>
+              </div>
+
+              {lastFacturaId && statusMessage.type === 'success' && (
+                <a
+                  href={`/facturas/${lastFacturaId}/imprimir`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2 px-3 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-2"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  🖨️ Abrir Tiquete Térmico #{lastFacturaId} para Impresión
+                </a>
               )}
-              {statusMessage.text}
             </div>
           )}
 
