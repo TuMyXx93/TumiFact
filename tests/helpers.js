@@ -2,11 +2,11 @@ const { Client } = require('pg');
 
 async function truncateAll() {
     const client = new Client({
-        user: process.env.DB_USER || 'fruver_user',
-        password: process.env.DB_PASSWORD || 'fruver_password',
+        user: process.env.DB_USER || 'tumifact_user',
+        password: process.env.DB_PASSWORD || 'tumifact_password',
         host: process.env.DB_HOST || 'localhost',
         port: parseInt(process.env.DB_PORT) || 5432,
-        database: process.env.DB_DATABASE || 'ecl_fruver_test'
+        database: process.env.DB_DATABASE || 'tumifact_test'
     });
 
     await client.connect();

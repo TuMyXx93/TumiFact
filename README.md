@@ -21,16 +21,16 @@
 docker-compose up -d
 
 # Verificar que está corriendo
-docker ps | grep ecl_fruver_db
+docker ps | grep tumifact_db
 
 # Conectarse a la BD (opcional)
-docker exec -it ecl_fruver_db psql -U fruver_user -d ecl_fruver
+docker exec -it tumifact_db psql -U tumifact_user -d tumifact_db
 ```
 
 **Credenciales por defecto:**
-- Usuario: `fruver_user`
-- Contraseña: `fruver_password`
-- Base de datos: `ecl_fruver`
+- Usuario: `tumifact_user`
+- Contraseña: `tumifact_password`
+- Base de datos: `tumifact_db`
 - Puerto: `5432`
 
 ### 2. Aplicación
@@ -45,9 +45,9 @@ pnpm install
 ```
 DB_HOST=localhost
 DB_PORT=5432
-DB_USER=fruver_user
-DB_PASSWORD=fruver_password
-DB_DATABASE=ecl_fruver
+DB_USER=tumifact_user
+DB_PASSWORD=tumifact_password
+DB_DATABASE=tumifact_db
 PORT=3000
 NODE_ENV=development
 ```
@@ -89,7 +89,7 @@ docker-compose down
 docker-compose down -v
 
 # Conectarse a psql
-docker exec -it ecl_fruver_db psql -U fruver_user -d ecl_fruver
+docker exec -it tumifact_db psql -U tumifact_user -d tumifact_db
 ```
 
 ## 📊 Notas sobre Migración MySQL → PostgreSQL

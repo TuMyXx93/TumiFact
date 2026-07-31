@@ -13,9 +13,9 @@ jobs:
       postgres:
         image: postgres:18
         env:
-          POSTGRES_USER: fruver_user
-          POSTGRES_PASSWORD: fruver_password
-          POSTGRES_DB: ecl_fruver
+          POSTGRES_USER: tumifact_user
+          POSTGRES_PASSWORD: tumifact_password
+          POSTGRES_DB: tumifact_db
         ports:
           - 5432:5432
         options: >-
@@ -44,15 +44,15 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_USER: fruver_user
-          DB_PASSWORD: fruver_password
-          DB_DATABASE: ecl_fruver_test
+          DB_USER: tumifact_user
+          DB_PASSWORD: tumifact_password
+          DB_DATABASE: tumifact_test
 
       - name: Run tests
         run: pnpm test
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_USER: fruver_user
-          DB_PASSWORD: fruver_password
-          DB_DATABASE: ecl_fruver_test
+          DB_USER: tumifact_user
+          DB_PASSWORD: tumifact_password
+          DB_DATABASE: tumifact_test

@@ -1,9 +1,8 @@
--- ECL FRUVER - Base de Datos PostgreSQL 18.4
--- Migración desde MySQL 5.7
--- Creado: 12 de Julio de 2026
+-- TumiFact - Base de Datos PostgreSQL 18.4
+-- Migración y estandarización para TumiFact
 -- 
--- NOTA: Este script se ejecuta en la BD ya creada (ecl_fruver)
--- Definida en docker-compose.yml como POSTGRES_DB=ecl_fruver
+-- NOTA: Este script se ejecuta en la BD ya creada (tumifact_db)
+-- Definida en docker-compose.yml como POSTGRES_DB=tumifact_db
 
 -- =====================================================
 -- TABLA: productos
