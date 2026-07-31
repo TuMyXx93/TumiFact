@@ -1,0 +1,6 @@
+{
+  "title": "DECOUPLE EJS View Engine and Transition to Pure REST JSON API",
+  "type": "architecture",
+  "topic_key": "tumifact/headless-api-decoupling",
+  "content": "**What**: Removed legacy EJS view engine (`app.set('view engine')`), deleted `views/` directory and static assets (`public/css/`, `public/js/`), and refactored all routes to return standardized JSON payloads.\n**Why**: Desacoples presentation layer from backend to support modern headless architecture with Astro v7+ frontend.\n**Where**: `src/app.ts`, `routes/`, `package.json`, `views/`.\n**Learned**: Converting HTML-rendering routes to pure JSON handlers simplifies API testing and aligns 100% with React Islands consumption."
+}
