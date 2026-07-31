@@ -1,13 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import ClientManager from '../components/clientes/ClientManager';
 import db from '../lib/db.js';
 
 let clientes = [];
 try {
-  const result = await db.query('SELECT * FROM clientes ORDER BY id DESC LIMIT 50');
+  const result = await db.query('SELECT * FROM clientes ORDER BY id DESC');
   clientes = result.rows || [];
 } catch (e) {
-  console.error('Error al consultar clientes:', e);
+  console.error('Error al consultar clientes SSR:', e);
 }
 ---
 
@@ -19,48 +20,18 @@ try {
           👥 Directorio de Clientes
         </h1>
         <p class="text-slate-400 text-sm mt-1">
-          Clientes registrados para emisión de facturas.
+          Directorio de clientes registrados y gestión de datos de contacto.
         </p>
       </div>
       <div class="flex items-center gap-3">
-        <span class="px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-semibold rounded-full">
-          {clientes.length} Clientes Registrados
+        <span class="px-3 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-semibold rounded-full flex items-center gap-1.5">
+          <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          React Island (<code class="text-xs">client:visible</code>)
         </span>
       </div>
     </div>
 
-    <!-- Tabla de Clientes -->
-    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-slate-800/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
-            <tr>
-              <th class="px-6 py-4">ID</th>
-              <th class="px-6 py-4">Nombre / Razón Social</th>
-              <th class="px-6 py-4">Dirección</th>
-              <th class="px-6 py-4">Teléfono</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800/60">
-            {clientes.length === 0 ? (
-              <tr>
-                <td colspan="4" class="px-6 py-12 text-center text-slate-500">
-                  No hay clientes registrados en el sistema.
-                </td>
-              </tr>
-            ) : (
-              clientes.map((item) => (
-                <tr class="hover:bg-slate-800/40 transition-colors">
-                  <td class="px-6 py-4 font-semibold text-slate-400">#{item.id}</td>
-                  <td class="px-6 py-4 font-medium text-white">{item.nombre}</td>
-                  <td class="px-6 py-4 text-slate-400">{item.direccion || 'N/A'}</td>
-                  <td class="px-6 py-4 text-slate-400">{item.telefono || 'N/A'}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- React Island de Gestión de Clientes -->
+    <ClientManager client:visible initialClientes={clientes} />
   </div>
 </Layout>
