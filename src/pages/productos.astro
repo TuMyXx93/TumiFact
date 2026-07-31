@@ -1,0 +1,70 @@
+---
+import Layout from '../layouts/Layout.astro';
+import db from '../lib/db.js';
+
+let productos = [];
+try {
+  const result = await db.query('SELECT * FROM productos ORDER BY id DESC LIMIT 50');
+  productos = result.rows || [];
+} catch (e) {
+  console.error('Error al consultar productos:', e);
+}
+---
+
+<Layout title="Gestión de Productos — TumiFact">
+  <div class="space-y-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <h1 class="text-2xl font-bold font-['Outfit'] text-white">
+          📦 Catálogo de Productos
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">
+          Inventario y lista de precios por kilogramo, libra o unidad.
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold rounded-full">
+          {productos.length} Productos Registrados
+        </span>
+      </div>
+    </div>
+
+    <!-- Tabla de Productos -->
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-300">
+          <thead class="bg-slate-800/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="px-6 py-4">ID</th>
+              <th class="px-6 py-4">Código</th>
+              <th class="px-6 py-4">Nombre del Producto</th>
+              <th class="px-6 py-4">Precio KG</th>
+              <th class="px-6 py-4">Precio Unidad</th>
+              <th class="px-6 py-4">Precio Libra</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60">
+            {productos.length === 0 ? (
+              <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                  No hay productos registrados en el sistema.
+                </td>
+              </tr>
+            ) : (
+              productos.map((item) => (
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                  <td class="px-6 py-4 font-semibold text-slate-400">#{item.id}</td>
+                  <td class="px-6 py-4 font-mono text-blue-400 font-medium">{item.codigo}</td>
+                  <td class="px-6 py-4 font-medium text-white">{item.nombre}</td>
+                  <td class="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_kg || 0).toLocaleString()}</td>
+                  <td class="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_unidad || 0).toLocaleString()}</td>
+                  <td class="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_libra || 0).toLocaleString()}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</Layout>

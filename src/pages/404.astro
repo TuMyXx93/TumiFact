@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Página No Encontrada — TumiFact">
+  <div class="min-h-[60vh] flex flex-col items-center justify-center text-center py-12 space-y-6">
+    <div class="h-24 w-24 rounded-3xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-5xl font-['Outfit'] font-bold shadow-2xl">
+      404
+    </div>
+    <div class="max-w-md space-y-2">
+      <h1 class="text-2xl font-bold font-['Outfit'] text-white">
+        Página no encontrada
+      </h1>
+      <p class="text-slate-400 text-sm">
+        La ruta solicitada no existe o se encuentra actualmente en proceso de desarrollo en las siguientes fases de migración.
+      </p>
+    </div>
+    <a href="/" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-500/20">
+      Volver al Dashboard
+    </a>
+  </div>
+</Layout>
