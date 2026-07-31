@@ -7,24 +7,23 @@
 
 Sistema de Facturación Enterprise **TumiFact**:
 
-- **Backend actual:** Node.js (v14+ / 20+), Express.js, PostgreSQL 18.4 (Docker)
-- **Frontend actual:** EJS Templates + Vanilla JavaScript + CSS
-- **Roadmap Frontend:** Migración hacia **Astro Framework** (v5+) + TailwindCSS / React Components
+- **Backend:** Node.js (v20+ / v22+ LTS), Express.js API, PostgreSQL 18.4 (Docker)
+- **Frontend:** Astro Framework (v7.1+) + React 19 Islands + Tailwind CSS v4
 - **Base de Datos:** PostgreSQL 18.4 (`tumifact_db`), Pool de conexiones `pg`, datos binarios `BYTEA` (Logo/QR)
 
-Runtime: Node.js 20+ LTS, ESM/CommonJS, pnpm 10+.
+Runtime: Node.js 22+ LTS, ESM/CommonJS, pnpm 10+/11+.
 
 ## Global Commands
 
 | Command            | Purpose                                                    |
 | ------------------ | ---------------------------------------------------------- |
 | `pnpm install`     | Instala dependencias con lockfile estricto                |
-| `pnpm dev`         | Inicia servidor en modo desarrollo con nodemon             |
-| `pnpm start`       | Inicia servidor en modo producción                         |
+| `pnpm dev`         | Inicia servidor frontend Astro (`http://localhost:4321`)   |
+| `pnpm dev:api`     | Inicia servidor backend API Express con nodemon (`:3000`)  |
+| `pnpm build`       | Genera compilado de producción de Astro (`/dist`)          |
+| `pnpm start`       | Inicia servidor backend en modo producción                |
 | `pnpm test`        | Ejecuta la suite de pruebas unitarias/integración con Jest |
-| `pnpm test:coverage` | Genera reporte de cobertura (HTML/lcov/text)              |
-| `pnpm test:setup`  | Inicializa y sincroniza esquema en base de datos de test   |
-| `pnpm build`       | Genera compilado de producción con pkg                     |
+| `pnpm test:coverage` | Genera reporte de cobertura (mínimo 40% requerido)        |
 
 ## Branching & Release Policy
 
@@ -39,7 +38,7 @@ Runtime: Node.js 20+ LTS, ESM/CommonJS, pnpm 10+.
 
 - **Testing:** Jest + Supertest (`/tests`)
 - **Coverage Minimum:** 40% inicial (meta gradual 70%+ en refactorización a Astro)
-- **Hooks & CI:** Validation Gate, Audit, Tests automatizados en GitHub Actions
+- **Hooks & CI:** Validation Gate, Audit, Tests automatizados y Astro Build en GitHub Actions
 - **Seguridad:** Encriptación de secrets en `.env`, sanitización con `express-validator`
 
 ## Agent Orchestration
@@ -49,8 +48,8 @@ Runtime: Node.js 20+ LTS, ESM/CommonJS, pnpm 10+.
 | Agent       | Purpose                                                            |
 | ----------- | ------------------------------------------------------------------ |
 | `architect` | Mantiene agentes, skills, comandos, estándares y arquitectura Astro|
-| `frontend`  | Vistas EJS / Vanilla JS y futura migración a Astro + React/Tailwind|
-| `backend`   | Express, PostgreSQL Pool, Transacciones, Middleware, Validaciones  |
+| `frontend`  | Componentes Astro (`.astro`), React 19 Islands y Tailwind CSS v4   |
+| `backend`   | Express API, PostgreSQL Pool, Transacciones, Middleware           |
 | `reviewer`  | Read-only: calidad de código, arquitectura, seguridad y performance|
 | `tester`    | Jest / Supertest: pruebas unitarias, integración y cobertura       |
 | `devops`    | CI/CD GitHub Actions, Docker Compose, versión, scripts de despliegue|
@@ -63,7 +62,7 @@ Runtime: Node.js 20+ LTS, ESM/CommonJS, pnpm 10+.
 | `/review`        | Code review del scope indicado                              |
 | `/gen-test`      | Genera pruebas unitarias/integración para el módulo          |
 | `/gen-api`       | Genera nuevo endpoint Express + PostgreSQL                  |
-| `/gen-component` | Genera componente de UI (EJS / Astro)                       |
+| `/gen-component` | Genera componente de UI (Astro / React Island)              |
 | `/check-arch`    | Valida reglas de arquitectura y patrones del backend/frontend|
 | `/db-migrate`    | Valida o genera scripts SQL para migración de BD            |
 
@@ -72,7 +71,7 @@ Runtime: Node.js 20+ LTS, ESM/CommonJS, pnpm 10+.
 0. **Antes de modificar código:** `/version-gate`
 1. Frontend & Vistas → `frontend` o `/gen-component`
 2. Backend & BD → `backend` o `/gen-api`
-3. Revision de calidad → `reviewer` o `/review`
+3. Revisión de calidad → `reviewer` o `/review`
 4. Pruebas y cobertura → `tester` o `/gen-test`
 5. CI/CD & Infra → `devops`
 6. Orquestación y Astro Roadmap → `architect`
@@ -80,7 +79,7 @@ Runtime: Node.js 20+ LTS, ESM/CommonJS, pnpm 10+.
 ## Engram Memory Protocol
 
 ### Guardado Proactivo
-Guardar descubrimientos técnicos, patrones de facturación o decisiones de arquitectura utilizando la estructura estandarizada de memoria.
+Guardar descubrimientos técnicos, patrones de facturación o decisiones de arquitectura utilizando la estructura estandarizada de memoria en `.opencode/memory/`.
 
 ### Formato de Guardado
 ```json
@@ -92,9 +91,10 @@ Guardar descubrimientos técnicos, patrones de facturación o decisiones de arqu
 }
 ```
 
-## Astro Frontend Migration Roadmap
+## Astro Frontend Migration Roadmap — ✅ 100% COMPLETADA
 
-- **Fase 1 (Actual):** Estandarización de Backend Express + PostgreSQL + Cobertura + CI/CD en `dev`.
-- **Fase 2 (Próxima):** Inicialización de proyecto Astro en subdirectorio / paquete híbrido.
-- **Fase 3:** Migración progresiva de plantillas EJS (`views/`) a componentes Astro (`.astro`).
-- **Fase 4:** Integración de API REST Express con clientes Astro (SSR / Island Architecture).
+- [x] **Fase 1:** Inicialización de Astro v7.1+ & Configuración del Entorno Node.js (COMPLETADA).
+- [x] **Fase 2:** Layouts Enterprise & Páginas Base `.astro` (COMPLETADA).
+- [x] **Fase 3:** Construcción de React 19 Islands (`BillingPOS`, `ProductGrid`, `ClientManager`) (COMPLETADA).
+- [x] **Fase 4:** SSR Data Loading & Vista de Impresión Térmica con Decodificación de Binarios `BYTEA` (COMPLETADA).
+- [x] **Fase 5:** Pruebas, Cobertura, CI/CD Pipeline & Deploy Producción (COMPLETADA).
