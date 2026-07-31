@@ -20,7 +20,8 @@
   "scripts": {
     "start": "node dist/server/entry.mjs",
     "dev": "astro dev",
-    "dev:api": "nodemon server.js",
+    "dev:api": "tsx watch src/server.ts",
+    "build:api": "tsup src/server.ts --format esm,cjs",
     "build": "astro build",
     "preview": "astro preview",
     "clean": "rm -rf node_modules .pnpm-store pnpm-lock.yaml dist",
@@ -49,12 +50,17 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "jest": "^29.7.0",
     "nodemon": "^2.0.22",
     "supertest": "^7.0.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   }
 }
