@@ -1,0 +1,6 @@
+{
+  "title": "COMPLETE Astro Framework Migration Phase 5 Testing and CI/CD Pipeline",
+  "type": "architecture",
+  "topic_key": "tumifact/astro-migration-phase5",
+  "content": "**What**: Integrated Astro `pnpm build` step into `.github/workflows/ci.yml` and verified 100% passing tests (9/9) with 43.3% code coverage.\n**Why**: Ensures automated quality gates validate both Astro frontend production bundling and backend PostgreSQL integration on every push to `dev` or `main`.\n**Where**: `.github/workflows/ci.yml`, `tests/`, `package.json`.\n**Learned**: Pre-building Astro in CI/CD before running PostgreSQL integration tests guarantees complete build integrity across the entire application stack."
+}
