@@ -1,0 +1,6 @@
+{
+  "title": "INITIALIZE TypeScript Backend Environment and Bundling Setup",
+  "type": "config",
+  "topic_key": "tumifact/typescript-backend-init",
+  "content": "**What**: Converted Express application entrypoints to TypeScript (`src/app.ts` and `src/server.ts`) with strict `tsconfig.json` and dual ESM/CJS build target (`tsup`).\n**Why**: Establishes type safety, autocompletion and compile-time error detection for the backend API layer.\n**Where**: `src/app.ts`, `src/server.ts`, `package.json`, `tsconfig.json`.\n**Learned**: Using `tsx watch src/server.ts` for development provides instantaneous API reloading without needing nodemon or intermediate compilation steps."
+}
