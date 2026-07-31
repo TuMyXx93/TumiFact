@@ -1,0 +1,6 @@
+{
+  "title": "IMPLEMENT Thermal Ticket Print Page and Binary BYTEA Decoding",
+  "type": "pattern",
+  "topic_key": "tumifact/printing-engine",
+  "content": "**What**: Created dynamic Astro SSR page `src/pages/facturas/[id]/imprimir.astro` with base64 Data URL decoding (`data:image/...;base64,...`) for PostgreSQL `BYTEA` logo and QR binary columns.\n**Why**: Replaces legacy EJS print view with a high-performance thermal print layout supporting 80mm and 58mm POS receipt printers.\n**Where**: `src/pages/facturas/[id]/imprimir.astro`, `BillingPOS.tsx`.\n**Learned**: Using Astro CSS CSS-in-JS `define:vars={{ anchoPapel: ... }}` allows dynamic thermal paper width styling directly driven by database configuration."
+}
