@@ -1,0 +1,6 @@
+{
+  "title": "RESTORE PostgreSQL 18.4 Docker Volume and Schema",
+  "type": "database",
+  "topic_key": "tumifact/database-schema",
+  "content": "**What**: Renamed database container and volume to `tumifact_db` and `tumifact_postgres_data`. Restored full historical data (products, clients, invoices, binary BYTEA logo & QR) from previous `ecl-fruver_postgres_data` volume.\n**Why**: Ensures 100% data preservation and continuity across Docker container name re-brandings.\n**Where**: `docker-compose.yml`, `database_pg.sql`, `configuracion_impresion` table.\n**Learned**: `TRUNCATE ... RESTART IDENTITY CASCADE` is required before restoring dumped data to avoid primary key duplicate constraint conflicts."
+}

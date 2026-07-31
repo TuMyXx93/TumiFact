@@ -1,0 +1,6 @@
+{
+  "title": "IMPLEMENT Astro v7 + Express API Hybrid Architecture",
+  "type": "architecture",
+  "topic_key": "tumifact/astro-migration",
+  "content": "**What**: Migrated frontend presentation layer to Astro Framework (v7.1+) with React 19 Islands and Tailwind CSS v4 while retaining Node.js Express + PostgreSQL 18.4 as the backend REST API.\n**Why**: Provides maximum page loading speed (SSR HTML output) alongside dynamic client-side interactivity for high-frequency POS cashier billing.\n**Where**: `astro.config.mjs`, `src/pages/`, `src/components/`, `src/lib/db.js`.\n**Learned**: Vite SSR bundler requires pure ESM database connectors (`src/lib/db.js` using `import pg from 'pg'`) to avoid `require is not defined` errors during server-side execution."
+}
