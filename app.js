@@ -1,14 +1,14 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
+
+const productosRoutes = require('./routes/productos');
+const clientesRoutes = require('./routes/clientes');
+const facturasRoutes = require('./routes/facturas');
+const configuracionRoutes = require('./routes/configuracion');
+const ventasRoutes = require('./routes/ventas');
 
 const app = express();
-
-const uploadDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -25,12 +25,6 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     next();
 });
-
-const productosRoutes = require('./routes/productos');
-const clientesRoutes = require('./routes/clientes');
-const facturasRoutes = require('./routes/facturas');
-const configuracionRoutes = require('./routes/configuracion');
-const ventasRoutes = require('./routes/ventas');
 
 app.get('/', (req, res) => {
     res.json({
@@ -56,10 +50,8 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-    console.error('Error en la aplicación:', err);
-    res.status(500).json({ 
-        error: 'Error interno del servidor',
-        message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno'
+    res.status(err.statusCode || 500).json({ 
+        error: err.message || 'Error interno del servidor'
     });
 });
 
