@@ -1,0 +1,6 @@
+{
+  "title": "IMPLEMENT Modular Monolith Architecture DDD and Zod DTO Validation Middleware",
+  "type": "architecture",
+  "topic_key": "tumifact/modular-monolith-ddd",
+  "content": "**What**: Structured backend under domain modules (`src/modules/` for `productos`, `clientes`, `facturas`, `configuracion`), created strict separation (Controller -> Service -> Repository), and integrated Zod DTO validation middleware.\n**Why**: Establishes enterprise-grade 2026 clean architecture, decoupling business logic from routing while ensuring payload type safety and validation coercion.\n**Where**: `src/modules/`, `src/shared/middleware/validate.ts`, `src/app.ts`.\n**Learned**: Using `z.coerce.number()` in Zod DTOs seamlessly bridges string form inputs from React/Astro islands with strict TypeScript numbers without manual type conversion."
+}
