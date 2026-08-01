@@ -1,0 +1,6 @@
+{
+  "title": "IMPLEMENT Storage Service Abstraction for Local and Cloud S3/R2 Storage",
+  "type": "architecture",
+  "topic_key": "tumifact/storage-service-abstraction",
+  "content": "**What**: Created `IStorageService` interface, `LocalStorageService` for local dev, and `MockS3StorageService` for S3/R2 cloud storage.\n**Why**: Decouples binary file persistence from PostgreSQL `BYTEA` columns and hardcoded local folders for scalable Enterprise deployment.\n**Where**: `src/services/storage/` (`storage.interface.ts`, `storage.service.ts`, `index.ts`).\n**Learned**: Logo and QR images are stored as `BYTEA` in PostgreSQL `configuracion_impresion` for receipt printing, while `IStorageService` provides cloud transition readiness."
+}
