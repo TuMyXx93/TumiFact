@@ -1,0 +1,6 @@
+{
+  "title": "INTEGRATE Drizzle ORM Type-Safe Schemas and PostgreSQL Database Client",
+  "type": "architecture",
+  "topic_key": "tumifact/drizzle-orm-integration",
+  "content": "**What**: Created Drizzle ORM schemas (`src/db/schema/`), initialized `src/db/index.ts` client with `pg` pool, and configured `drizzle.config.ts`.\n**Why**: Provides type-safe database queries, zero overhead, and native TypeScript interface for PostgreSQL 18.4 tables.\n**Where**: `src/db/schema/`, `src/db/index.ts`, `drizzle.config.ts`, `package.json`.\n**Learned**: Drizzle ORM custom types allow seamless handling of PostgreSQL `BYTEA` binary logo and QR data alongside numeric/timestamp types."
+}
