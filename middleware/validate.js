@@ -17,16 +17,7 @@ const formatErrors = (req) => {
 const handleValidation = (req, res, next) => {
     const errors = formatErrors(req);
     if (errors) {
-        const isApi = req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1);
-        if (isApi) {
-            return res.status(400).json({ error: 'Validación fallida', details: errors });
-        }
-        return res.status(400).render('error', {
-            error: {
-                message: 'Validación fallida',
-                details: errors
-            }
-        });
+        return res.status(400).json({ error: 'Validación fallida', details: errors });
     }
     next();
 };

@@ -1,33 +1,16 @@
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
 
-const createRequiredDirectories = () => {
-    const directories = [
-        path.join(__dirname, 'public'),
-        path.join(__dirname, 'public', 'uploads'),
-        path.join(__dirname, 'public', 'css'),
-        path.join(__dirname, 'public', 'js')
-    ];
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-    directories.forEach(dir => {
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-            console.log(`Directorio creado: ${dir}`);
-        }
-    });
-};
-
-createRequiredDirectories();
-
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-app.use(express.json({limit: '50mb'}));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 app.use('/static', express.static(path.join(__dirname, 'public')));
@@ -50,7 +33,12 @@ const configuracionRoutes = require('./routes/configuracion');
 const ventasRoutes = require('./routes/ventas');
 
 app.get('/', (req, res) => {
-    res.render('index');
+    res.json({
+        name: 'TumiFact Enterprise Headless API REST',
+        version: '1.0.0',
+        status: 'online',
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.use('/productos', productosRoutes);
@@ -63,48 +51,16 @@ app.use('/configuracion', configuracionRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 app.use('/ventas', ventasRoutes);
 
-app.get('/productos', async (req, res) => {
-    try {
-        const db = require('./db');
-        const result = await db.query('SELECT * FROM productos ORDER BY nombre');
-        const productos = result.rows || [];
-        res.render('productos', { productos });
-    } catch (error) {
-        console.error('Error al obtener productos:', error);
-        res.status(500).render('error', { 
-            error: {
-                message: 'Error al obtener productos',
-                stack: process.env.NODE_ENV === 'development' ? error.stack : ''
-            }
-        });
-    }
-});
-
-app.use((req, res, next) => {
-    console.log('404 - Ruta no encontrada:', req.url);
-    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
-        res.status(404).json({ error: 'Ruta no encontrada' });
-    } else {
-        res.status(404).render('404');
-    }
+app.use((req, res) => {
+    res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
 app.use((err, req, res, next) => {
     console.error('Error en la aplicación:', err);
-    
-    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
-        res.status(500).json({ 
-            error: 'Error interno del servidor',
-            message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno'
-        });
-    } else {
-        res.status(500).render('error', {
-            error: {
-                message: 'Error interno del servidor',
-                stack: process.env.NODE_ENV === 'development' ? err.stack : ''
-            }
-        });
-    }
+    res.status(500).json({ 
+        error: 'Error interno del servidor',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno'
+    });
 });
 
 module.exports = app;
