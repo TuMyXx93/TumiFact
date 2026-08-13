@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import type { Producto, Cliente, DetalleFacturaInput } from '../../types';
-import { ShoppingCart, User, Plus, Trash2, Printer, Search, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShoppingCart, User, Plus, Trash2, Printer, Search, CheckCircle2, AlertCircle, FolderOpen, BookmarkPlus, X } from 'lucide-react';
+import { apiFetch } from '../../lib/apiClient';
 
 interface BillingPOSProps {
   initialProductos: Producto[];
   initialClientes: Cliente[];
 }
 
+export interface PedidoGuardado {
+  id: number;
+  cliente_id: number;
+  cliente_nombre: string;
+  productos: DetalleFacturaInput[];
+  total: number;
+  forma_pago: 'efectivo' | 'transferencia' | 'tarjeta';
+  fecha: string;
+}
+
 export default function BillingPOS({ initialProductos = [], initialClientes = [] }: BillingPOSProps) {
   const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
   const [selectedClienteId, setSelectedClienteId] = useState<number | ''>(initialClientes[0]?.id || '');
   const [formaPago, setFormaPago] = useState<'efectivo' | 'transferencia' | 'tarjeta'>('efectivo');
+
+  // Filtro local de clientes
+  const [clientSearch, setClientSearch] = useState('');
 
   // Búsqueda de productos
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,6 +40,27 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
   const [lastFacturaId, setLastFacturaId] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Pedidos Guardados en localStorage
+  const [pedidosGuardados, setPedidosGuardados] = useState<PedidoGuardado[]>([]);
+  const [showPedidosModal, setShowPedidosModal] = useState(false);
+  const [pedidoActualId, setPedidoActualId] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tumifact_pedidos');
+      if (saved) {
+        setPedidosGuardados(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Error cargando pedidos guardados:', e);
+    }
+  }, []);
+
+  const syncPedidosStorage = (pedidos: PedidoGuardado[]) => {
+    setPedidosGuardados(pedidos);
+    localStorage.setItem('tumifact_pedidos', JSON.stringify(pedidos));
+  };
+
   // Buscar productos dinámicamente
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -36,7 +71,7 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`http://localhost:3000/api/productos/buscar?q=${encodeURIComponent(searchQuery)}`);
+        const res = await apiFetch(`/api/productos/buscar?q=${encodeURIComponent(searchQuery)}`);
         if (res.ok) {
           const data = await res.json();
           setSearchResults(data);
@@ -93,16 +128,74 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
     setCart(updated);
   };
 
-  // Actualizar unidad de ítem (KG, LB, UND)
+  // Actualizar unidad de ítem (KG, LB, UND) y ajustar precio según tarifario
   const updateUnidad = (index: number, unidad: 'KG' | 'LB' | 'UND') => {
     const updated = [...cart];
-    updated[index].unidad = unidad;
+    const item = updated[index];
+    item.unidad = unidad;
+
+    const prod = searchResults.find((p) => p.id === item.producto_id) || initialProductos.find((p) => p.id === item.producto_id);
+    if (prod) {
+      let nuevoPrecio = item.precio;
+      if (unidad === 'KG' && prod.precio_kg) nuevoPrecio = Number(prod.precio_kg);
+      else if (unidad === 'UND' && prod.precio_unidad) nuevoPrecio = Number(prod.precio_unidad);
+      else if (unidad === 'LB' && prod.precio_libra) nuevoPrecio = Number(prod.precio_libra);
+      
+      item.precio = nuevoPrecio;
+      item.subtotal = item.cantidad * nuevoPrecio;
+    }
+
     setCart(updated);
   };
 
   // Eliminar ítem del carrito
   const removeFromCart = (index: number) => {
     setCart(cart.filter((_, i) => i !== index));
+  };
+
+  // Guardar pedido pendiente en localStorage
+  const handleGuardarPedido = () => {
+    if (!selectedClienteId) {
+      setStatusMessage({ type: 'error', text: 'Selecciona un cliente para guardar el pedido' });
+      return;
+    }
+    if (cart.length === 0) {
+      setStatusMessage({ type: 'error', text: 'Agrega al menos un producto antes de guardar' });
+      return;
+    }
+
+    const clienteObj = clientes.find((c) => c.id === Number(selectedClienteId));
+    const nuevoPedido: PedidoGuardado = {
+      id: Date.now(),
+      cliente_id: Number(selectedClienteId),
+      cliente_nombre: clienteObj ? clienteObj.nombre : `Cliente #${selectedClienteId}`,
+      productos: [...cart],
+      total: totalFactura,
+      forma_pago: formaPago,
+      fecha: new Date().toLocaleString()
+    };
+
+    const nuevosPedidos = [nuevoPedido, ...pedidosGuardados];
+    syncPedidosStorage(nuevosPedidos);
+
+    setCart([]);
+    setStatusMessage({ type: 'success', text: `Pedido de ${nuevoPedido.cliente_nombre} guardado en cola.` });
+  };
+
+  // Cargar pedido guardado
+  const handleCargarPedido = (pedido: PedidoGuardado) => {
+    setSelectedClienteId(pedido.cliente_id);
+    setCart(pedido.productos);
+    setFormaPago(pedido.forma_pago);
+    setPedidoActualId(pedido.id);
+    setShowPedidosModal(false);
+    setStatusMessage({ type: 'success', text: `Pedido de ${pedido.cliente_nombre} cargado a la caja.` });
+  };
+
+  // Eliminar pedido guardado
+  const handleEliminarPedidoGuardado = (id: number) => {
+    const filtrados = pedidosGuardados.filter((p) => p.id !== id);
+    syncPedidosStorage(filtrados);
   };
 
   // Cálculos totales
@@ -138,7 +231,7 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
         }))
       };
 
-      const res = await fetch('http://localhost:3000/api/facturas', {
+      const res = await apiFetch('/api/facturas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -151,6 +244,11 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
         setLastFacturaId(data.id);
         setCart([]);
         setEfectivoRecibido('');
+        
+        if (pedidoActualId) {
+          handleEliminarPedidoGuardado(pedidoActualId);
+          setPedidoActualId(null);
+        }
       } else {
         setStatusMessage({ type: 'error', text: data.error || 'Error al emitir la factura' });
       }
@@ -247,14 +345,37 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
               <ShoppingCart className="h-5 w-5 text-blue-400" />
               Detalle de Venta ({cart.length})
             </h3>
-            {cart.length > 0 && (
+
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setCart([])}
-                className="text-xs text-rose-400 hover:text-rose-300 transition-colors"
+                onClick={() => setShowPedidosModal(true)}
+                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 rounded-lg flex items-center gap-1 transition-colors"
+                title="Ver pedidos guardados"
               >
-                Vaciar Carrito
+                <FolderOpen className="h-3.5 w-3.5 text-amber-400" />
+                <span className="font-semibold">{pedidosGuardados.length}</span>
               </button>
-            )}
+
+              {cart.length > 0 && (
+                <button
+                  onClick={handleGuardarPedido}
+                  className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs text-amber-300 rounded-lg flex items-center gap-1 transition-colors"
+                  title="Guardar pedido temporalmente"
+                >
+                  <BookmarkPlus className="h-3.5 w-3.5" />
+                  Guardar
+                </button>
+              )}
+
+              {cart.length > 0 && (
+                <button
+                  onClick={() => setCart([])}
+                  className="text-xs text-rose-400 hover:text-rose-300 transition-colors ml-1"
+                >
+                  Vaciar
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Mensaje de Estado */}
@@ -410,6 +531,64 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
           </button>
         </div>
       </div>
+
+      {/* Modal de Pedidos Guardados */}
+      {showPedidosModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2 font-['Outfit']">
+                <FolderOpen className="h-5 w-5 text-amber-400" />
+                Pedidos Guardados en Lista ({pedidosGuardados.length})
+              </h3>
+              <button
+                onClick={() => setShowPedidosModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {pedidosGuardados.length === 0 ? (
+              <p className="text-center py-8 text-slate-500 text-sm">No hay pedidos temporales guardados.</p>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {pedidosGuardados.map((ped) => (
+                  <div key={ped.id} className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-sm">{ped.cliente_nombre}</span>
+                        <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-mono">
+                          {ped.fecha}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400">
+                        {ped.productos.length} producto(s) · Total: <span className="text-emerald-400 font-bold">${ped.total.toLocaleString()}</span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCargarPedido(ped)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-lg transition-colors"
+                      >
+                        Cargar a Caja
+                      </button>
+                      <button
+                        onClick={() => handleEliminarPedidoGuardado(ped.id)}
+                        className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors"
+                        title="Eliminar pedido"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

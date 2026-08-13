@@ -1,0 +1,6 @@
+{
+  "title": "IMPLEMENT Sales History, Dynamic API Discovery & FK Handling",
+  "type": "feature",
+  "topic_key": "tumifact/sales-history-and-api-discovery",
+  "content": "**What**: Added sales history island with local timezone date range filtering, dynamic API base discovery (auto-probe with port scanning), inline edit/delete client and product management, offline POS order drafts, and robust PostgreSQL FK constraint error handling.\n**Why**: Ensures smooth client-side operation when Express API ports vary, provides accurate date filtering for sales reports without UTC offset bugs, and surfaces human-readable error messages when deleting entity records with active dependencies.\n**Where**: `src/lib/apiClient.ts`, `src/components/facturacion/SalesHistoryIsland.tsx`, `src/modules/facturas/facturas.repository.ts`, `src/modules/clientes/clientes.controller.ts`.\n**Learned**: Drizzle ORM wraps PostgreSQL errors inside nested cause objects (`error.cause.code`), requiring deep property inspection to correctly catch code 23503 and return friendly HTTP 400 responses."
+}

@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import db from './lib/db';
 
 import { productosRouter } from './modules/productos/productos.controller';
 import { clientesRouter } from './modules/clientes/clientes.controller';
@@ -37,6 +38,31 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+app.get('/api/health/db', async (req: Request, res: Response) => {
+  const startedAt = Date.now();
+  try {
+    await Promise.race([
+      db.query('SELECT 1 AS ok'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB health timeout')), 1500))
+    ]);
+
+    res.status(200).json({
+      status: 'connected',
+      connected: true,
+      latencyMs: Date.now() - startedAt,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    res.status(503).json({
+      status: 'disconnected',
+      connected: false,
+      latencyMs: Date.now() - startedAt,
+      timestamp: new Date().toISOString(),
+      error: error?.message || 'DB unavailable'
+    });
+  }
+});
+
 // Registrar routers de dominios modulares
 app.use('/productos', productosRouter);
 app.use('/api/productos', productosRouter);
@@ -47,6 +73,7 @@ app.use('/api/facturas', facturasRouter);
 app.use('/configuracion', configuracionRouter);
 app.use('/api/configuracion', configuracionRouter);
 app.use('/ventas', ventasRouter);
+app.use('/api/ventas', ventasRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Ruta no encontrada' });

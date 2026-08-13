@@ -7,9 +7,8 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "strict": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*", ".astro/types.d.ts"],

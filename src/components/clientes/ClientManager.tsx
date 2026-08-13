@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Cliente } from '../../types';
-import { Users, UserPlus, Search, CheckCircle2, AlertCircle, Phone, MapPin } from 'lucide-react';
+import { Users, UserPlus, Search, CheckCircle2, AlertCircle, Phone, MapPin, Edit2, Trash2 } from 'lucide-react';
+import { apiFetch } from '../../lib/apiClient';
 
 interface ClientManagerProps {
   initialClientes: Cliente[];
@@ -10,9 +11,10 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
   const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Formulario nuevo cliente
+  // Formulario nuevo/editar cliente
   const [formData, setFormData] = useState({
     nombre: '',
     direccion: '',
@@ -27,29 +29,74 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
       (c.direccion && c.direccion.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const handleCreateCliente = async (e: React.FormEvent) => {
+  const handleEditClick = (c: Cliente) => {
+    setEditingCliente(c);
+    setFormData({
+      nombre: c.nombre,
+      direccion: c.direccion || '',
+      telefono: c.telefono || '',
+      nit: c.nit || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteCliente = async (id: number) => {
+    if (!confirm('¿Estás seguro de eliminar este cliente?')) return;
+
+    try {
+      const res = await apiFetch(`/api/clientes/${id}`, { method: 'DELETE' });
+
+      // Parseo seguro del body: el DELETE puede devolver JSON de error o éxito
+      let data: any = {};
+      try { data = await res.json(); } catch (_) {}
+
+      if (res.ok) {
+        setClientes(clientes.filter((c) => c.id !== id));
+        setStatusMessage({ type: 'success', text: data.message || 'Cliente eliminado exitosamente' });
+      } else {
+        setStatusMessage({ type: 'error', text: data.error || `Error ${res.status} al eliminar el cliente` });
+      }
+    } catch (err) {
+      setStatusMessage({ type: 'error', text: 'No se pudo conectar con el servidor para eliminar el cliente' });
+    }
+  };
+
+  const handleCreateOrUpdateCliente = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre.trim()) {
       setStatusMessage({ type: 'error', text: 'El nombre del cliente es requerido' });
       return;
     }
 
+    const payload = {
+      nombre: formData.nombre.trim(),
+      direccion: formData.direccion.trim() || null,
+      telefono: formData.telefono.trim() || null
+    };
+
     try {
-      const res = await fetch('http://localhost:3000/api/clientes', {
-        method: 'POST',
+      const url = editingCliente
+        ? `/api/clientes/${editingCliente.id}`
+        : '/api/clientes';
+      const method = editingCliente ? 'PUT' : 'POST';
+
+      const res = await apiFetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: formData.nombre.trim(),
-          direccion: formData.direccion.trim() || null,
-          telefono: formData.telefono.trim() || null
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
-      if (res.ok && data.id) {
-        setClientes([data, ...clientes]);
-        setStatusMessage({ type: 'success', text: `Cliente "${data.nombre}" registrado exitosamente` });
+      if (res.ok) {
+        if (editingCliente) {
+          setClientes(clientes.map((c) => (c.id === editingCliente.id ? { ...c, ...payload } : c)));
+          setStatusMessage({ type: 'success', text: `Cliente "${payload.nombre}" actualizado exitosamente` });
+        } else {
+          setClientes([data, ...clientes]);
+          setStatusMessage({ type: 'success', text: `Cliente "${data.nombre}" registrado exitosamente` });
+        }
         setIsModalOpen(false);
+        setEditingCliente(null);
         setFormData({ nombre: '', direccion: '', telefono: '', nit: '' });
       } else {
         setStatusMessage({ type: 'error', text: data.error || 'Error al guardar el cliente' });
@@ -110,8 +157,24 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-semibold text-blue-400">#{c.id}</span>
-                <div className="h-8 w-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-xs font-['Outfit']">
-                  {c.nombre.charAt(0).toUpperCase()}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleEditClick(c)}
+                    className="p-1 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg transition-colors"
+                    title="Editar cliente"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCliente(c.id)}
+                    className="p-1 bg-slate-800 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors"
+                    title="Eliminar cliente"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                  <div className="h-7 w-7 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-xs font-['Outfit']">
+                    {c.nombre.charAt(0).toUpperCase()}
+                  </div>
                 </div>
               </div>
 
@@ -140,24 +203,27 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
         )}
       </div>
 
-      {/* Modal Nuevo Cliente */}
+      {/* Modal Nuevo / Editar Cliente */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <h3 className="text-lg font-bold text-white font-['Outfit'] flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-400" />
-                Registrar Nuevo Cliente
+                {editingCliente ? `Editar Cliente #${editingCliente.id}` : 'Registrar Nuevo Cliente'}
               </h3>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingCliente(null);
+                }}
                 className="text-slate-400 hover:text-white transition-colors text-lg"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateCliente} className="space-y-4">
+            <form onSubmit={handleCreateOrUpdateCliente} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-300 uppercase">Nombre / Razón Social *</label>
                 <input

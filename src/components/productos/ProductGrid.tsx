@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Producto } from '../../types';
-import { Package, Plus, Search, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { Package, Plus, Search, CheckCircle2, AlertCircle, Trash2, Edit2 } from 'lucide-react';
+import { apiFetch } from '../../lib/apiClient';
 
 interface ProductGridProps {
   initialProductos: Producto[];
@@ -10,9 +11,10 @@ export default function ProductGrid({ initialProductos = [] }: ProductGridProps)
   const [productos, setProductos] = useState<Producto[]>(initialProductos);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Formulario nuevo producto
+  // Formulario nuevo/editar producto
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
@@ -27,31 +29,77 @@ export default function ProductGrid({ initialProductos = [] }: ProductGridProps)
       p.codigo.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleCreateProducto = async (e: React.FormEvent) => {
+  const handleEditClick = (prod: Producto) => {
+    setEditingProducto(prod);
+    setFormData({
+      codigo: prod.codigo,
+      nombre: prod.nombre,
+      precio_kg: prod.precio_kg ? String(prod.precio_kg) : '',
+      precio_unidad: prod.precio_unidad ? String(prod.precio_unidad) : '',
+      precio_libra: prod.precio_libra ? String(prod.precio_libra) : ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteProducto = async (id: number) => {
+    if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+
+    try {
+      const res = await apiFetch(`/api/productos/${id}`, { method: 'DELETE' });
+
+      // Parseo seguro del body
+      let data: any = {};
+      try { data = await res.json(); } catch (_) {}
+
+      if (res.ok) {
+        setProductos(productos.filter((p) => p.id !== id));
+        setStatusMessage({ type: 'success', text: data.message || 'Producto eliminado exitosamente' });
+      } else {
+        setStatusMessage({ type: 'error', text: data.error || `Error ${res.status} al eliminar el producto` });
+      }
+    } catch (err) {
+      setStatusMessage({ type: 'error', text: 'No se pudo conectar con el servidor para eliminar el producto' });
+    }
+  };
+
+  const handleCreateOrUpdateProducto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.codigo.trim() || !formData.nombre.trim()) {
       setStatusMessage({ type: 'error', text: 'El código y el nombre son requeridos' });
       return;
     }
 
+    const payload = {
+      codigo: formData.codigo.trim(),
+      nombre: formData.nombre.trim(),
+      precio_kg: formData.precio_kg ? Number(formData.precio_kg) : 0,
+      precio_unidad: formData.precio_unidad ? Number(formData.precio_unidad) : 0,
+      precio_libra: formData.precio_libra ? Number(formData.precio_libra) : 0
+    };
+
     try {
-      const res = await fetch('http://localhost:3000/api/productos', {
-        method: 'POST',
+      const url = editingProducto
+        ? `/api/productos/${editingProducto.id}`
+        : '/api/productos';
+      const method = editingProducto ? 'PUT' : 'POST';
+
+      const res = await apiFetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          codigo: formData.codigo.trim(),
-          nombre: formData.nombre.trim(),
-          precio_kg: formData.precio_kg ? Number(formData.precio_kg) : 0,
-          precio_unidad: formData.precio_unidad ? Number(formData.precio_unidad) : 0,
-          precio_libra: formData.precio_libra ? Number(formData.precio_libra) : 0
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
-      if (res.ok && data.id) {
-        setProductos([data, ...productos]);
-        setStatusMessage({ type: 'success', text: `Producto "${data.nombre}" creado con éxito` });
+      if (res.ok) {
+        if (editingProducto) {
+          setProductos(productos.map((p) => (p.id === editingProducto.id ? { ...p, ...payload } : p)));
+          setStatusMessage({ type: 'success', text: `Producto "${payload.nombre}" actualizado con éxito` });
+        } else {
+          setProductos([data, ...productos]);
+          setStatusMessage({ type: 'success', text: `Producto "${data.nombre}" creado con éxito` });
+        }
         setIsModalOpen(false);
+        setEditingProducto(null);
         setFormData({ codigo: '', nombre: '', precio_kg: '', precio_unidad: '', precio_libra: '' });
       } else {
         setStatusMessage({ type: 'error', text: data.error || 'Error al guardar el producto' });
@@ -101,7 +149,7 @@ export default function ProductGrid({ initialProductos = [] }: ProductGridProps)
       {/* Tabla Interactivas de Productos */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
+          <table className="w-full text-left text-sm text-slate-300">
             <thead className="bg-slate-800/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
               <tr>
                 <th className="px-6 py-4">ID</th>
@@ -110,12 +158,13 @@ export default function ProductGrid({ initialProductos = [] }: ProductGridProps)
                 <th className="px-6 py-4">Precio KG</th>
                 <th className="px-6 py-4">Precio Unidad</th>
                 <th className="px-6 py-4">Precio Libra</th>
+                <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredProductos.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                     No se encontraron productos registrados.
                   </td>
                 </tr>
@@ -128,6 +177,24 @@ export default function ProductGrid({ initialProductos = [] }: ProductGridProps)
                     <td className="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_kg || 0).toLocaleString()}</td>
                     <td className="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_unidad || 0).toLocaleString()}</td>
                     <td className="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_libra || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleEditClick(item)}
+                          className="p-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg transition-colors"
+                          title="Editar producto"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProducto(item.id)}
+                          className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors"
+                          title="Eliminar producto"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -136,24 +203,27 @@ export default function ProductGrid({ initialProductos = [] }: ProductGridProps)
         </div>
       </div>
 
-      {/* Modal Nuevo Producto */}
+      {/* Modal Nuevo / Editar Producto */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <h3 className="text-lg font-bold text-white font-['Outfit'] flex items-center gap-2">
                 <Package className="h-5 w-5 text-blue-400" />
-                Registrar Nuevo Producto
+                {editingProducto ? `Editar Producto #${editingProducto.id}` : 'Registrar Nuevo Producto'}
               </h3>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingProducto(null);
+                }}
                 className="text-slate-400 hover:text-white transition-colors text-lg"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateProducto} className="space-y-4">
+            <form onSubmit={handleCreateOrUpdateProducto} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-300 uppercase">Código *</label>

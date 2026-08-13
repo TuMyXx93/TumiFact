@@ -7,9 +7,15 @@ interface Props {
 }
 
 const { 
-  title = 'TumiFact — Sistema de Facturación Enterprise',
-  description = 'Sistema de Facturación Enterprise TumiFact'
+  title = 'TumiFact — Sistema de Facturación',
+  description = 'Sistema de Facturación TumiFact'
 } = Astro.props;
+
+const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim();
+const publicApiPort = (import.meta.env.PUBLIC_API_PORT || '').trim();
+const publicApiPorts = (import.meta.env.PUBLIC_API_PORTS || '').trim();
+const publicApiAutoDiscovery = (import.meta.env.PUBLIC_API_AUTO_DISCOVERY || 'true').trim().toLowerCase();
+const publicApiPortScanRange = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3000-3999').trim();
 ---
 
 <!DOCTYPE html>
@@ -35,7 +41,7 @@ const {
           </div>
           <div>
             <span class="font-['Outfit'] font-bold text-lg text-white tracking-tight">TumiFact</span>
-            <span class="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 ml-2 font-medium">Enterprise v1.0</span>
+            <span class="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 ml-2 font-medium">v1.0</span>
           </div>
         </div>
 
@@ -52,15 +58,28 @@ const {
           <a href="/ventas" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
             Facturación / POS
           </a>
+          <a href="/historial" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
+            Historial Ventas
+          </a>
           <a href="/configuracion" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
             Configuración
           </a>
         </nav>
 
         <div class="flex items-center gap-3">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            BD Conectada
+          <span
+            id="db-status-badge"
+            data-state="connecting"
+            data-api-base={publicApiBaseUrl}
+            data-api-port={publicApiPort}
+            data-api-ports={publicApiPorts}
+            data-api-auto-discovery={publicApiAutoDiscovery}
+            data-api-port-range={publicApiPortScanRange}
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 transition-colors"
+            aria-live="polite"
+          >
+            <span id="db-status-dot" class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+            <span id="db-status-label">BD Conectando...</span>
           </span>
         </div>
       </div>
@@ -73,7 +92,272 @@ const {
 
     <!-- Footer -->
     <footer class="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
-      <p>© 2026 TumiFact Enterprise Billing System · Desarrollado con Astro 7.0 & Express PostgreSQL</p>
+      <p>© 2026 TumiFact</p>
     </footer>
+
+    <script is:inline>
+      (() => {
+        const badge = document.getElementById('db-status-badge');
+        const dot = document.getElementById('db-status-dot');
+        const label = document.getElementById('db-status-label');
+        if (!badge || !dot || !label) return;
+
+        const configuredApiBaseUrl = (badge.dataset.apiBase || '').trim();
+        const configuredApiPort = (badge.dataset.apiPort || '').trim();
+        const configuredApiPorts = (badge.dataset.apiPorts || '').trim();
+        const allowAutoDiscovery = (badge.dataset.apiAutoDiscovery || 'true').trim().toLowerCase() !== 'false';
+        const configuredPortRange = (badge.dataset.apiPortRange || '3000-3999').trim();
+        const healthyApiKey = 'tumifact.healthyApiBase';
+        const localOverrideKey = 'tumifact.apiBaseUrl';
+        let activeApiBase = null;
+        let isChecking = false;
+        let portScanAttempted = false;
+
+        const stateClassMap = {
+          connected: {
+            badge: ['bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20'],
+            dot: ['bg-emerald-400', 'animate-pulse'],
+            text: 'BD Conectada'
+          },
+          connecting: {
+            badge: ['bg-amber-500/10', 'text-amber-400', 'border-amber-500/20'],
+            dot: ['bg-amber-400', 'animate-pulse'],
+            text: 'BD Conectando...'
+          },
+          disconnected: {
+            badge: ['bg-rose-500/10', 'text-rose-400', 'border-rose-500/20'],
+            dot: ['bg-rose-400'],
+            text: 'BD Desconectada'
+          }
+        };
+
+        const allBadgeClasses = [
+          'bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20',
+          'bg-amber-500/10', 'text-amber-400', 'border-amber-500/20',
+          'bg-rose-500/10', 'text-rose-400', 'border-rose-500/20'
+        ];
+        const allDotClasses = ['bg-emerald-400', 'bg-amber-400', 'bg-rose-400', 'animate-pulse'];
+
+        const normalizeBase = (value) => {
+          if (!value || typeof value !== 'string') return null;
+          return value.trim().replace(/\/+$/, '');
+        };
+
+        const parseCsvPorts = (value) => {
+          if (!value) return [];
+          return value
+            .split(',')
+            .map((item) => Number.parseInt(item.trim(), 10))
+            .filter((port) => Number.isInteger(port) && port > 0 && port < 65536);
+        };
+
+        const parseRangePorts = (value) => {
+          const trimmed = value.trim();
+          if (!trimmed.includes('-')) {
+            const singlePort = Number.parseInt(trimmed, 10);
+            return Number.isInteger(singlePort) && singlePort > 0 && singlePort < 65536 ? [singlePort] : [];
+          }
+
+          const [startRaw, endRaw] = trimmed.split('-', 2);
+          const start = Number.parseInt(startRaw, 10);
+          const end = Number.parseInt(endRaw, 10);
+          if (!Number.isInteger(start) || !Number.isInteger(end)) return [];
+
+          const min = Math.max(1, Math.min(start, end));
+          const max = Math.min(65535, Math.max(start, end));
+          if (max - min > 2000) return [];
+
+          const ports = [];
+          for (let port = min; port <= max; port += 1) ports.push(port);
+          return ports;
+        };
+
+        const formatCheckedAt = (date) => {
+          try {
+            return new Intl.DateTimeFormat('es-CO', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            }).format(date);
+          } catch (_err) {
+            return date.toLocaleTimeString();
+          }
+        };
+
+        const buildApiCandidates = () => {
+          const protocol = window.location.protocol;
+          const host = window.location.hostname;
+          const queryParams = new URLSearchParams(window.location.search);
+          const queryBase = normalizeBase(queryParams.get('apiBase') || queryParams.get('api'));
+          const persistedBase = normalizeBase(sessionStorage.getItem(healthyApiKey));
+          const localBase = normalizeBase(localStorage.getItem(localOverrideKey));
+          const globalBase = normalizeBase(window.__TUMIFACT_API_BASE__);
+          const candidates = [
+            normalizeBase(configuredApiBaseUrl),
+            queryBase,
+            globalBase,
+            persistedBase,
+            localBase,
+            normalizeBase(window.location.origin)
+          ];
+
+          const csvPorts = parseCsvPorts(configuredApiPorts);
+          if (host === 'localhost' || host === '127.0.0.1') {
+            if (configuredApiPort) {
+              const singlePort = Number.parseInt(configuredApiPort, 10);
+              if (Number.isInteger(singlePort) && singlePort > 0 && singlePort < 65536) {
+                candidates.push(normalizeBase(`${protocol}//${host}:${singlePort}`));
+              }
+            }
+            for (const port of csvPorts) {
+              candidates.push(normalizeBase(`${protocol}//${host}:${port}`));
+            }
+          }
+
+          return [...new Set(candidates.filter(Boolean))];
+        };
+
+        const scanLocalPorts = async () => {
+          if (portScanAttempted || !allowAutoDiscovery) return null;
+
+          const protocol = window.location.protocol;
+          const host = window.location.hostname;
+          if (!(host === 'localhost' || host === '127.0.0.1')) return null;
+
+          portScanAttempted = true;
+          const ports = parseRangePorts(configuredPortRange);
+          if (ports.length === 0) return null;
+
+          const batchSize = 24;
+          for (let i = 0; i < ports.length; i += batchSize) {
+            const batch = ports.slice(i, i + batchSize);
+            const probeBatch = await Promise.all(
+              batch.map(async (port) => {
+                const candidate = `${protocol}//${host}:${port}`;
+                const result = await probeHealth(candidate);
+                return result.ok ? candidate : null;
+              })
+            );
+
+            const healthyCandidate = probeBatch.find(Boolean);
+            if (healthyCandidate) return healthyCandidate;
+          }
+
+          return null;
+        };
+
+        const setState = (state, details = {}) => {
+          const config = stateClassMap[state] || stateClassMap.disconnected;
+          const checkedAt = details.checkedAt || new Date();
+          const checkedAtText = formatCheckedAt(checkedAt);
+
+          badge.classList.remove(...allBadgeClasses);
+          dot.classList.remove(...allDotClasses);
+
+          badge.classList.add(...config.badge);
+          dot.classList.add(...config.dot);
+
+          badge.dataset.state = state;
+          label.textContent = typeof details.latencyMs === 'number' && state === 'connected'
+            ? `${config.text} (${details.latencyMs}ms)`
+            : config.text;
+
+          const apiBaseText = details.apiBase || activeApiBase || 'No detectada';
+          badge.title = `${config.text} | API: ${apiBaseText} | Verificado: ${checkedAtText}`;
+          badge.setAttribute('aria-label', badge.title);
+        };
+
+        const probeHealth = async (apiBase) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1800);
+
+          try {
+            const startedAt = performance.now();
+            const res = await fetch(`${apiBase}/api/health/db`, {
+              method: 'GET',
+              cache: 'no-store',
+              signal: controller.signal
+            });
+
+            const elapsed = Math.round(performance.now() - startedAt);
+            if (!res.ok) return { ok: false };
+
+            const payload = await res.json();
+            if (payload?.connected === true) {
+              return {
+                ok: true,
+                latencyMs: typeof payload.latencyMs === 'number' ? payload.latencyMs : elapsed
+              };
+            }
+
+            return { ok: false };
+          } catch (_error) {
+            return { ok: false };
+          } finally {
+            clearTimeout(timeoutId);
+          }
+        };
+
+        const checkDbHealth = async (forceConnecting = false) => {
+          if (isChecking) return;
+          isChecking = true;
+
+          try {
+            if (forceConnecting || badge.dataset.state !== 'connected') {
+              setState('connecting', { checkedAt: new Date() });
+            }
+
+            const prioritized = activeApiBase
+              ? [activeApiBase, ...buildApiCandidates()]
+              : buildApiCandidates();
+            const candidates = [...new Set(prioritized.filter(Boolean))];
+
+            for (const apiBase of candidates) {
+              const result = await probeHealth(apiBase);
+              if (result.ok) {
+                activeApiBase = apiBase;
+                window.__TUMIFACT_API_BASE__ = apiBase;
+                sessionStorage.setItem(healthyApiKey, apiBase);
+                localStorage.setItem(localOverrideKey, apiBase);
+                setState('connected', {
+                  latencyMs: result.latencyMs,
+                  apiBase,
+                  checkedAt: new Date()
+                });
+                return;
+              }
+            }
+
+            const scannedCandidate = await scanLocalPorts();
+            if (scannedCandidate) {
+              activeApiBase = scannedCandidate;
+              window.__TUMIFACT_API_BASE__ = scannedCandidate;
+              sessionStorage.setItem(healthyApiKey, scannedCandidate);
+              localStorage.setItem(localOverrideKey, scannedCandidate);
+              setState('connected', {
+                apiBase: scannedCandidate,
+                checkedAt: new Date()
+              });
+              return;
+            }
+
+            activeApiBase = null;
+            delete window.__TUMIFACT_API_BASE__;
+            sessionStorage.removeItem(healthyApiKey);
+            setState('disconnected', { checkedAt: new Date() });
+          } finally {
+            isChecking = false;
+          }
+        };
+
+        checkDbHealth(true);
+        setInterval(() => {
+          checkDbHealth(false);
+        }, 2500);
+
+        window.addEventListener('online', () => checkDbHealth(true));
+        window.addEventListener('offline', () => setState('disconnected', { checkedAt: new Date() }));
+      })();
+    </script>
   </body>
 </html>

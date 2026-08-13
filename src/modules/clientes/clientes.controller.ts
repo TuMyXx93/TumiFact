@@ -63,7 +63,10 @@ clientesRouter.delete('/:id', async (req: Request, res: Response) => {
     if (!success) return res.status(404).json({ error: 'Cliente no encontrado' });
     res.json({ message: 'Cliente eliminado exitosamente', id });
   } catch (error: any) {
-    if (error.code === '23503') {
+    const code = error?.code || error?.cause?.code || error?.driverError?.code || error?.originalError?.code;
+    const isFkError = code === '23503' || /foreign key constraint/i.test(error?.message || '') || /foreign key constraint/i.test(error?.cause?.message || '');
+
+    if (isFkError) {
       return res.status(400).json({ error: 'No se puede eliminar el cliente porque tiene facturas asociadas' });
     }
     res.status(500).json({ error: 'Error al eliminar cliente' });

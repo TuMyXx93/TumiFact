@@ -4,7 +4,18 @@ import db from './lib/db';
 
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
+// Procesar argumentos de línea de comandos
+// Soporta: -p <puerto> o --port <puerto>
+let PORT = parseInt(process.env.PORT || '3000', 10);
+const args = process.argv.slice(2);
+for (let i = 0; i < args.length; i++) {
+    if ((args[i] === '-p' || args[i] === '--port') && i + 1 < args.length) {
+        const portArg = parseInt(args[i + 1], 10);
+        if (!isNaN(portArg)) {
+            PORT = portArg;
+        }
+    }
+}
 
 async function startServer(): Promise<void> {
     try {

@@ -85,7 +85,7 @@ export class FacturasService {
     };
   }
 
-  async getSalesHistory() {
-    return await this.repo.findAllSales();
+  async getSalesHistory(desde?: string, hasta?: string) {
+    return await this.repo.findAllSales(desde, hasta);
   }
 }

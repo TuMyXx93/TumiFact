@@ -3,7 +3,7 @@ import { facturas, FacturaItem, NewFactura } from '../../db/schema/facturas';
 import { detalleFactura, DetalleFacturaItem } from '../../db/schema/detalle_factura';
 import { clientes } from '../../db/schema/clientes';
 import { productos } from '../../db/schema/productos';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, gte, lte, and } from 'drizzle-orm';
 
 export class FacturasRepository {
   async createWithDetails(
@@ -66,8 +66,22 @@ export class FacturasRepository {
     return { factura: facturaRows[0], detalles: detallesRows };
   }
 
-  async findAllSales() {
-    return await db
+  async findAllSales(desde?: string, hasta?: string) {
+    const conditions = [];
+
+    if (desde) {
+      // Parsear como fecha local (sin Z) para evitar desplazamiento UTC
+      const startDate = new Date(`${desde}T00:00:00.000`);
+      conditions.push(gte(facturas.fecha, startDate));
+    }
+
+    if (hasta) {
+      // Parsear como fecha local incluyendo hasta el último ms del día
+      const endDate = new Date(`${hasta}T23:59:59.999`);
+      conditions.push(lte(facturas.fecha, endDate));
+    }
+
+    let query = db
       .select({
         id: facturas.id,
         cliente_id: facturas.cliente_id,
@@ -77,7 +91,12 @@ export class FacturasRepository {
         cliente_nombre: clientes.nombre
       })
       .from(facturas)
-      .leftJoin(clientes, eq(facturas.cliente_id, clientes.id))
-      .orderBy(desc(facturas.fecha));
+      .leftJoin(clientes, eq(facturas.cliente_id, clientes.id));
+
+    if (conditions.length > 0) {
+      return await query.where(and(...conditions)).orderBy(desc(facturas.fecha));
+    }
+
+    return await query.orderBy(desc(facturas.fecha));
   }
 }

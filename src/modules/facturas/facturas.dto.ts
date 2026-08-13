@@ -11,7 +11,7 @@ export const CreateFacturaDTO = z.object({
   cliente_id: z.coerce.number().int().min(1, 'cliente_id debe ser un entero > 0'),
   productos: z.array(DetalleFacturaDTO).min(1, 'productos debe ser un array no vacío'),
   total: z.coerce.number().optional(),
-  forma_pago: z.enum(['efectivo', 'transferencia']).optional().default('efectivo')
+  forma_pago: z.enum(['efectivo', 'transferencia', 'tarjeta']).optional().default('efectivo')
 });
 
 export type CreateFacturaInput = z.infer<typeof CreateFacturaDTO>;

@@ -1,0 +1,27 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SalesHistoryIsland from '../components/facturacion/SalesHistoryIsland';
+---
+
+<Layout title="Historial de Ventas — TumiFact">
+  <div class="space-y-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <h1 class="text-2xl font-bold font-['Outfit'] text-white">
+          📜 Historial de Ventas
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">
+          Consulta de facturas emitidas, filtrado dinámico por rango de fechas, reimpresión de tiquetes y acumulación total.
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/ventas" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-xs rounded-xl shadow-lg transition-all">
+          + Nueva Venta (POS)
+        </a>
+      </div>
+    </div>
+
+    <!-- React Island de Historial de Ventas -->
+    <SalesHistoryIsland client:load />
+  </div>
+</Layout>

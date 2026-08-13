@@ -2,6 +2,10 @@
 import Layout from '../layouts/Layout.astro';
 import db from '../lib/db.js';
 
+const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim();
+const publicApiPort = (import.meta.env.PUBLIC_API_PORT || '').trim();
+const publicApiPorts = (import.meta.env.PUBLIC_API_PORTS || '').trim();
+
 let config = {
   nombre_negocio: 'TumiFact Enterprise',
   direccion: 'Calle Principal #10-20',
@@ -40,7 +44,7 @@ try {
     </div>
 
     <!-- Formulario de Configuración -->
-    <form action="http://localhost:3000/api/configuracion" method="POST" enctype="multipart/form-data" class="bg-slate-900/60 border border-slate-800 p-6 md:p-8 rounded-2xl space-y-6 shadow-xl">
+    <form id="config-form" data-api-base={publicApiBaseUrl} data-api-port={publicApiPort} data-api-ports={publicApiPorts} action="/api/configuracion" method="POST" enctype="multipart/form-data" class="bg-slate-900/60 border border-slate-800 p-6 md:p-8 rounded-2xl space-y-6 shadow-xl">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="space-y-2">
           <label for="nombre_negocio" class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
@@ -161,4 +165,61 @@ try {
       </div>
     </form>
   </div>
+
+  <script is:inline>
+    (() => {
+      const form = document.getElementById('config-form');
+      if (!form) return;
+
+      const normalizeBase = (value) => {
+        if (!value || typeof value !== 'string') return null;
+        return value.trim().replace(/\/+$/, '');
+      };
+
+      const parseCsvPorts = (value) => {
+        if (!value) return [];
+        return value
+          .split(',')
+          .map((item) => Number.parseInt(item.trim(), 10))
+          .filter((port) => Number.isInteger(port) && port > 0 && port < 65536);
+      };
+
+      const resolveActionBase = () => {
+        const params = new URLSearchParams(window.location.search);
+        const fromQuery = normalizeBase(params.get('apiBase') || params.get('api'));
+        const fromGlobal = normalizeBase(window.__TUMIFACT_API_BASE__);
+        const fromSession = normalizeBase(sessionStorage.getItem('tumifact.healthyApiBase'));
+        const fromLocal = normalizeBase(localStorage.getItem('tumifact.apiBaseUrl'));
+        const fromDataBase = normalizeBase(form.dataset.apiBase || '');
+
+        const candidates = [fromQuery, fromGlobal, fromSession, fromLocal, fromDataBase].filter(Boolean);
+        if (candidates.length > 0) return candidates[0];
+
+        const host = window.location.hostname;
+        const protocol = window.location.protocol;
+        if (host === 'localhost' || host === '127.0.0.1') {
+          const fromDataPort = Number.parseInt((form.dataset.apiPort || '').trim(), 10);
+          if (Number.isInteger(fromDataPort) && fromDataPort > 0 && fromDataPort < 65536) {
+            return `${protocol}//${host}:${fromDataPort}`;
+          }
+
+          const fromDataPorts = parseCsvPorts((form.dataset.apiPorts || '').trim());
+          if (fromDataPorts.length > 0) {
+            return `${protocol}//${host}:${fromDataPorts[0]}`;
+          }
+        }
+
+        return null;
+      };
+
+      const updateFormAction = () => {
+        const base = resolveActionBase();
+        form.action = base ? `${base}/api/configuracion` : '/api/configuracion';
+      };
+
+      updateFormAction();
+      form.addEventListener('submit', updateFormAction);
+      window.addEventListener('focus', updateFormAction);
+    })();
+  </script>
 </Layout>

@@ -43,7 +43,9 @@ facturasRouter.get('/:id/detalles', async (req: Request, res: Response) => {
 export const ventasRouter = Router();
 ventasRouter.get('/', async (req: Request, res: Response) => {
   try {
-    const data = await service.getSalesHistory();
+    const desde = req.query.desde ? String(req.query.desde) : undefined;
+    const hasta = req.query.hasta ? String(req.query.hasta) : undefined;
+    const data = await service.getSalesHistory(desde, hasta);
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: 'Error al cargar el historial de ventas' });

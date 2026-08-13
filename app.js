@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const db = require('./db');
 
 const productosRoutes = require('./routes/productos');
 const clientesRoutes = require('./routes/clientes');
@@ -35,6 +36,31 @@ app.get('/', (req, res) => {
     });
 });
 
+app.get('/api/health/db', async (req, res) => {
+    const startedAt = Date.now();
+    try {
+        await Promise.race([
+            db.query('SELECT 1 AS ok'),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('DB health timeout')), 1500))
+        ]);
+
+        res.status(200).json({
+            status: 'connected',
+            connected: true,
+            latencyMs: Date.now() - startedAt,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(503).json({
+            status: 'disconnected',
+            connected: false,
+            latencyMs: Date.now() - startedAt,
+            timestamp: new Date().toISOString(),
+            error: error?.message || 'DB unavailable'
+        });
+    }
+});
+
 app.use('/productos', productosRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/clientes', clientesRoutes);
@@ -44,6 +70,7 @@ app.use('/api/facturas', facturasRoutes);
 app.use('/configuracion', configuracionRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 app.use('/ventas', ventasRoutes);
+app.use('/api/ventas', ventasRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });
