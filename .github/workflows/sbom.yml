@@ -1,0 +1,27 @@
+name: SBOM
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+jobs:
+  sbom:
+    name: Generate CycloneDX SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@v0.20.0
+        with:
+          path: .
+          format: cyclonedx-json
+          artifact-name: tumifact-sbom.cdx.json
+          upload-artifact: true

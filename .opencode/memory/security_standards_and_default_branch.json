@@ -1,0 +1,6 @@
+{
+  "title": "CONFIGURE Default Dev Branch, Security Automation & Formatting Utilities",
+  "type": "security",
+  "topic_key": "tumifact/security-and-dev-branch",
+  "content": "**What**: Configured GitHub default branch to `dev`, unified UI number/currency/date formatting helpers under `src/lib/format.ts`, and implemented enterprise security CI workflows (Semgrep SAST with SARIF upload to GitHub Security, TruffleHog secrets scanning, CycloneDX SBOM generation, and PR dependency reviews).\n**Why**: Aligns repository workflow and branch strategy with the enterprise ecosystem (tumi-suite reference), enhances supply-chain visibility, prevents credential leaks, and ensures consistent Colombian Peso (`es-CO`/`COP`) formatting across POS views.\n**Where**: `.github/workflows/`, `src/lib/format.ts`, `src/components/`, `src/pages/`.\n**Learned**: Public repositories benefit from automated SARIF security dashboard uploads and Dependabot/Dependency reviews with zero configuration barriers, providing continuous enterprise-grade posture."
+}

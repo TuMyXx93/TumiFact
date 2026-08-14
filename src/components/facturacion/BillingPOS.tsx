@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Producto, Cliente, DetalleFacturaInput } from '../../types';
 import { ShoppingCart, User, Plus, Trash2, Printer, Search, CheckCircle2, AlertCircle, FolderOpen, BookmarkPlus, X } from 'lucide-react';
 import { apiFetch } from '../../lib/apiClient';
+import { formatNumber, formatDate } from '../../lib/format';
 
 interface BillingPOSProps {
   initialProductos: Producto[];
@@ -172,7 +173,7 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
       productos: [...cart],
       total: totalFactura,
       forma_pago: formaPago,
-      fecha: new Date().toLocaleString()
+      fecha: formatDate(new Date())
     };
 
     const nuevosPedidos = [nuevoPedido, ...pedidosGuardados];
@@ -324,7 +325,7 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
                       {prod.nombre}
                     </h4>
                     <p className="text-xs text-emerald-400 font-bold mt-1">
-                      ${Number(prod.precio_kg || prod.precio_unidad || 0).toLocaleString()} / {prod.precio_kg ? 'KG' : 'UND'}
+                      ${formatNumber(prod.precio_kg || prod.precio_unidad || 0)} / {prod.precio_kg ? 'KG' : 'UND'}
                     </p>
                   </div>
                   <button className="h-8 w-8 rounded-lg bg-blue-600/20 text-blue-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all">
@@ -507,13 +508,13 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
             {formaPago === 'efectivo' && typeof efectivoRecibido === 'number' && (
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400">Cambio / Devuelta:</span>
-                <span className="font-bold text-cyan-400">${cambioEfectivo.toLocaleString()}</span>
+                <span className="font-bold text-cyan-400">${formatNumber(cambioEfectivo)}</span>
               </div>
             )}
 
             <div className="flex items-center justify-between text-xl font-bold text-white pt-3 border-t border-slate-800">
               <span className="font-['Outfit']">TOTAL:</span>
-              <span className="text-emerald-400 font-mono">${totalFactura.toLocaleString()}</span>
+              <span className="text-emerald-400 font-mono">${formatNumber(totalFactura)}</span>
             </div>
           </div>
 
@@ -563,7 +564,7 @@ export default function BillingPOS({ initialProductos = [], initialClientes = []
                         </span>
                       </div>
                       <p className="text-xs text-slate-400">
-                        {ped.productos.length} producto(s) · Total: <span className="text-emerald-400 font-bold">${ped.total.toLocaleString()}</span>
+                        {ped.productos.length} producto(s) · Total: <span className="text-emerald-400 font-bold">${formatNumber(ped.total)}</span>
                       </p>
                     </div>
 

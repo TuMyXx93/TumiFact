@@ -1,17 +1,28 @@
-name: Security & Code Review
+name: Security
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [main, dev]
   pull_request:
-    branches: [ main, dev ]
+    branches: [main, dev]
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  security-check:
-    name: Security Scan
+  dependency-audit:
+    name: Dependency Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -29,3 +40,84 @@ jobs:
 
       - name: Verify Environment Template
         run: test -f .env.example
+
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level=high
+
+  sast:
+    name: Static Analysis (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: >-
+          docker run --rm
+          -v "${{ github.workspace }}:/src"
+          semgrep/semgrep:latest
+          semgrep scan
+          --config p/owasp-top-ten
+          --config p/nodejs
+          --config p/typescript
+          --sarif
+          --output /src/sarif.sarif
+          --timeout 300
+
+      - name: Archive Semgrep SARIF
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sarif
+          path: sarif.sarif
+          retention-days: 14
+
+      - name: Upload results to GitHub Security
+        if: github.event.repository.visibility == 'public'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif.sarif
+          category: semgrep
+
+  secrets-scan:
+    name: Secrets Detection (TruffleHog)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          extra_args: --only-verified
+
+  dependency-check:
+    name: Outdated Dependencies Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for outdated packages
+        run: pnpm outdated || true

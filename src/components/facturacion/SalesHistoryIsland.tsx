@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Search, Printer, Eye } from 'lucide-react';
 import { apiFetch } from '../../lib/apiClient';
+import { formatNumber, formatDate } from '../../lib/format';
 
 interface Venta {
   id: number;
@@ -158,7 +159,7 @@ export default function SalesHistoryIsland() {
                 ventas.map((v) => (
                   <tr key={v.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-blue-400">#{v.id}</td>
-                    <td className="px-6 py-4 text-xs text-slate-400">{new Date(v.fecha).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-xs text-slate-400">{formatDate(v.fecha)}</td>
                     <td className="px-6 py-4 font-semibold text-white">{v.cliente_nombre || 'Cliente General'}</td>
                     <td className="px-6 py-4 capitalize text-xs">
                       <span
@@ -174,7 +175,7 @@ export default function SalesHistoryIsland() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-white font-mono">
-                      ${Number(v.total).toLocaleString()}
+                      ${formatNumber(v.total)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -204,7 +205,7 @@ export default function SalesHistoryIsland() {
                   Total General Acumulado:
                 </td>
                 <td className="px-6 py-4 text-right text-emerald-400 text-base font-mono">
-                  ${totalGeneral.toLocaleString()}
+                  ${formatNumber(totalGeneral)}
                 </td>
                 <td></td>
               </tr>
@@ -232,9 +233,9 @@ export default function SalesHistoryIsland() {
             <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-2 text-slate-300">
                 <p><strong>Cliente:</strong> {selectedVenta.cliente_nombre}</p>
-                <p><strong>Fecha:</strong> {new Date(selectedVenta.fecha).toLocaleString()}</p>
+                <p><strong>Fecha:</strong> {formatDate(selectedVenta.fecha)}</p>
                 <p><strong>Pago:</strong> {selectedVenta.forma_pago}</p>
-                <p><strong>Total:</strong> <span className="text-emerald-400 font-bold">${Number(selectedVenta.total).toLocaleString()}</span></p>
+                <p><strong>Total:</strong> <span className="text-emerald-400 font-bold">${formatNumber(selectedVenta.total)}</span></p>
               </div>
 
               <h4 className="font-bold text-slate-300 uppercase tracking-wider pt-2 border-t border-slate-800">
@@ -250,11 +251,11 @@ export default function SalesHistoryIsland() {
                       <div>
                         <p className="font-semibold text-white text-xs">{d.producto_nombre}</p>
                         <p className="text-slate-400 text-[11px]">
-                          {d.cantidad} {d.unidad_medida} x ${Number(d.precio_unitario).toLocaleString()}
+                          {d.cantidad} {d.unidad_medida} x ${formatNumber(d.precio_unitario)}
                         </p>
                       </div>
                       <span className="font-bold text-emerald-400 text-xs font-mono">
-                        ${Number(d.subtotal).toLocaleString()}
+                        ${formatNumber(d.subtotal)}
                       </span>
                     </div>
                   ))}

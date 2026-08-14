@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Producto } from '../../types';
 import { Package, Plus, Search, CheckCircle2, AlertCircle, Trash2, Edit2 } from 'lucide-react';
 import { apiFetch } from '../../lib/apiClient';
+import { formatNumber } from '../../lib/format';
 
 interface ProductGridProps {
   initialProductos: Producto[];
@@ -174,9 +175,9 @@ export default function ProductGrid({ initialProductos = [] }: ProductGridProps)
                     <td className="px-6 py-4 font-semibold text-slate-400">#{item.id}</td>
                     <td className="px-6 py-4 font-mono text-blue-400 font-medium">{item.codigo}</td>
                     <td className="px-6 py-4 font-medium text-white">{item.nombre}</td>
-                    <td className="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_kg || 0).toLocaleString()}</td>
-                    <td className="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_unidad || 0).toLocaleString()}</td>
-                    <td className="px-6 py-4 text-emerald-400 font-semibold">${Number(item.precio_libra || 0).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-emerald-400 font-semibold">${formatNumber(item.precio_kg || 0)}</td>
+                    <td className="px-6 py-4 text-emerald-400 font-semibold">${formatNumber(item.precio_unidad || 0)}</td>
+                    <td className="px-6 py-4 text-emerald-400 font-semibold">${formatNumber(item.precio_libra || 0)}</td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
