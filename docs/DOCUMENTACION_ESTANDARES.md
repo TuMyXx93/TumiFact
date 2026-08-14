@@ -1,4 +1,4 @@
-# Estándares de Documentación — TumiFact Enterprise 🏢📖
+# Estándares de Documentación — TumiFact 🏢📖
 
 > **Marco Metodológico**: Basado en el estándar internacional **Diátaxis Documentation Framework** y la estructura profesional de **Tumi Suite**.
 

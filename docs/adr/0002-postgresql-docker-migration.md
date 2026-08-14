@@ -54,7 +54,7 @@ status: accepted
    - Mejor soporte para JSON/JSONB
    - Mejor performance en transacciones complejas
    - Mejor tooling para desarrollo
-   - Más usado en sistemas enterprise
+   - Ampliamente utilizado en sistemas de alta escala
 
 3. **Docker como estándar**
    - Portabilidad entre equipos
@@ -78,7 +78,7 @@ status: accepted
 - **Reproducibilidad**: Ambiente uniforme en Docker
 - **Mantenimiento**: Un solo motor de BD a mantener
 - **Escalabilidad**: PostgreSQL escala mejor
-- **Estándar enterprise**: PostgreSQL es preferido en sistemas críticos
+- **Estándar de la industria**: PostgreSQL es preferido en sistemas críticos
 - **Herramientas**: pgAdmin, DBeaver, psql son excelentes
 - **Documentación**: PostgreSQL tiene mejor documentación
 - **Costo**: PostgreSQL es open source sin limitaciones
@@ -99,7 +99,7 @@ status: accepted
 - No está instalado en WSL
 - Requiere instalación adicional
 - PostgreSQL ya está disponible
-- MySQL está en declive en sistemas enterprise
+- Menor adopción relativa en sistemas modernos de alta demanda
 
 ### 2. ❌ MySQL con Docker
 **Rechazado porque:**

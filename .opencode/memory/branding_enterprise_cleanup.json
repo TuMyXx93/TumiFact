@@ -1,0 +1,6 @@
+{
+  "title": "REMOVE Enterprise branding and descriptions across project",
+  "type": "refactor",
+  "topic_key": "tumifact/branding-cleanup",
+  "content": "**What**: Removed all mentions and descriptions containing the term 'Enterprise' across frontend views (`configuracion.astro`), API services (`app.ts`, `app.js`, `facturas.service.ts`), TypeScript definitions (`src/types/index.ts`), orchestrator rules (`AGENTS.md`), and comprehensive documentation (`README.md`, `docs/`).\n**Why**: Aligns project branding to a clean, focused, and unbloated naming convention without unnecessary marketing fluff.\n**Where**: `src/pages/configuracion.astro`, `src/app.ts`, `app.js`, `src/modules/facturas/facturas.service.ts`, `src/types/index.ts`, `README.md`, `AGENTS.md`, `docs/`.\n**Learned**: Keeping brand and architecture naming consistent across UI fallback values, API welcome messages, documentation, and agent rules prevents terminology divergence."
+}

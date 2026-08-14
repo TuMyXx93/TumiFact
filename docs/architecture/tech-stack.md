@@ -1,4 +1,4 @@
-# Stack Tecnológico — TumiFact Enterprise ⚡
+# Stack Tecnológico — TumiFact ⚡
 
 ## Capa de Presentación (Frontend)
 - **Framework Core:** **Astro v7.1+**

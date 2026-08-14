@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 
 app.get('/', (req, res) => {
     res.json({
-        name: 'TumiFact Enterprise Headless API REST',
+        name: 'TumiFact Headless API REST',
         version: '1.0.0',
         status: 'online',
         timestamp: new Date().toISOString()

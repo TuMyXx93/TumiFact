@@ -30,7 +30,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    name: 'TumiFact Enterprise Modular Monolith Headless API',
+    name: 'TumiFact Modular Monolith Headless API',
     version: '1.0.0',
     architecture: 'DDD (Domain-Driven Design)',
     status: 'online',

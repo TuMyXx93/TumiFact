@@ -1,4 +1,4 @@
-# Portal de Documentación Enterprise — TumiFact 🏢📚
+# Portal de Documentación — TumiFact 🏢📚
 
 Bienvenido al centro de documentación oficial del **Sistema de Facturación TumiFact**. Este portal está organizado siguiendo el marco de documentación **Diátaxis** para garantizar máxima claridad, mantenibilidad y accesibilidad para desarrolladores y operadores.
 

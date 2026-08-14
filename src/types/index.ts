@@ -1,5 +1,5 @@
 // =====================================================
-// DEFINICIONES DE TIPOS ENTERPRISE DE TUMIFACT
+// DEFINICIONES DE TIPOS DE TUMIFACT
 // =====================================================
 
 export interface Producto {

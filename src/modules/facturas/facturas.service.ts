@@ -1,5 +1,5 @@
 import { FacturasRepository } from './facturas.repository';
-import { CreateFacturaInput } from './facturas.dto';
+import type { CreateFacturaInput } from './facturas.dto';
 import { db } from '../../db';
 import { configuracionImpresion } from '../../db/schema/configuracion';
 
@@ -54,7 +54,7 @@ export class FacturasService {
 
     const configRows = await db.select().from(configuracionImpresion).limit(1);
     const configData = configRows[0] || {
-      nombre_negocio: 'TumiFact Enterprise',
+      nombre_negocio: 'TumiFact',
       direccion: '',
       telefono: '',
       nit: '',

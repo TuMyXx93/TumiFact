@@ -1,11 +1,11 @@
-# AGENTS.md — TumiFact · Sistema de Facturación Enterprise
+# AGENTS.md — TumiFact · Sistema de Facturación
 
 > Mantener este archivo compacto. Los detalles de implementación viven en
 > `.opencode/agents/`, `.opencode/commands/` y `.opencode/skills/`.
 
 ## Project Overview
 
-Sistema de Facturación Enterprise **TumiFact**:
+Sistema de Facturación **TumiFact**:
 
 - **Backend:** Node.js (v20+ / v22+ LTS), Express.js API, PostgreSQL 18.4 (Docker)
 - **Frontend:** Astro Framework (v7.1+) + React 19 Islands + Tailwind CSS v4
@@ -94,7 +94,7 @@ Guardar descubrimientos técnicos, patrones de facturación o decisiones de arqu
 ## Astro Frontend Migration Roadmap — ✅ 100% COMPLETADA
 
 - [x] **Fase 1:** Inicialización de Astro v7.1+ & Configuración del Entorno Node.js (COMPLETADA).
-- [x] **Fase 2:** Layouts Enterprise & Páginas Base `.astro` (COMPLETADA).
+- [x] **Fase 2:** Layouts & Páginas Base `.astro` (COMPLETADA).
 - [x] **Fase 3:** Construcción de React 19 Islands (`BillingPOS`, `ProductGrid`, `ClientManager`) (COMPLETADA).
 - [x] **Fase 4:** SSR Data Loading & Vista de Impresión Térmica con Decodificación de Binarios `BYTEA` (COMPLETADA).
 - [x] **Fase 5:** Pruebas, Cobertura, CI/CD Pipeline & Deploy Producción (COMPLETADA).

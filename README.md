@@ -1,4 +1,4 @@
-# Sistema de Facturación Enterprise · TumiFact 🏢⚡
+# Sistema de Facturación · TumiFact 🏢⚡
 
 [![CI/CD Pipeline](https://github.com/TuMyXx93/TumiFact/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/TuMyXx93/TumiFact/actions/workflows/ci.yml)
 [![Node.js Version](https://img.shields.io/badge/node.js-22%2B-brightgreen)](https://nodejs.org)
@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/postgresql-18.4-336791)](https://www.postgresql.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**TumiFact** es un sistema de facturación enterprise moderno y de alto rendimiento diseñado para emisión de comprobantes, gestión de inventarios por peso/unidad, clientes y generación de tiquetes térmicos de impresión (80mm y 58mm).
+**TumiFact** es un sistema de facturación moderno y de alto rendimiento diseñado para emisión de comprobantes, gestión de inventarios por peso/unidad, clientes y generación de tiquetes térmicos de impresión (80mm y 58mm).
 
 Construido bajo una **Arquitectura Híbrida Desacoplada**:
 - **Frontend Presentation Layer:** Framework **Astro 7+** con **React 19 Islands** (hidratación selectiva) y **Tailwind CSS v4**.
@@ -121,7 +121,7 @@ Navega en tu explorador web a: **`http://localhost:4321`**
 
 ---
 
-## 🗂️ Estructura de Directorios Enterprise
+## 🗂️ Estructura de Directorios
 
 ```
 TumiFact/
@@ -130,7 +130,7 @@ TumiFact/
 │   ├── agents/                 # Agentes especializados (architect, frontend, backend, etc.)
 │   ├── commands/               # Comandos de gobernanza (/version-gate, /review, etc.)
 │   └── memory/                 # Memorias persistentes del protocolo Engram (JSON)
-├── docs/                       # Documentación Enterprise (Framework Diátaxis)
+├── docs/                       # Documentación (Framework Diátaxis)
 │   ├── adr/                    # Architectural Decision Records (ADRs)
 │   ├── api/                    # Especificación detallada de endpoints REST
 │   ├── architecture/           # Esquemas de BD y stack tecnológico
@@ -184,4 +184,4 @@ Para consultar guías detalladas, arquitectura de datos y estándares de desarro
 
 ## 📜 Licencia y Derechos
 
-Desarrollado y mantenido bajo estándares **Enterprise 2026**.
+Desarrollado y mantenido bajo estándares **2026**.
