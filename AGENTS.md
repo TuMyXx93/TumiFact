@@ -1,17 +1,18 @@
-# AGENTS.md — TumiFact · Sistema de Facturación
+# AGENTS.md — TumiFact · Sistema de Facturación & POS
 
 > Mantener este archivo compacto. Los detalles de implementación viven en
 > `.opencode/agents/`, `.opencode/commands/` y `.opencode/skills/`.
 
 ## Project Overview
 
-Sistema de Facturación **TumiFact**:
+Sistema de Facturación y Punto de Venta (POS) **TumiFact**:
 
-- **Backend:** Node.js (v20+ / v22+ LTS), Express.js API, PostgreSQL 18.4 (Docker)
-- **Frontend:** Astro Framework (v7.1+) + React 19 Islands + Tailwind CSS v4
-- **Base de Datos:** PostgreSQL 18.4 (`tumifact_db`), Pool de conexiones `pg`, datos binarios `BYTEA` (Logo/QR)
+- **Backend:** Node.js 22+ LTS, Express.js REST API v2, Socket.io (WebSockets), Drizzle ORM, PostgreSQL 18.4 (Docker)
+- **Frontend:** Astro Framework (v7.2+) + React 19 Islands + Tailwind CSS v4
+- **Seguridad:** Criptografía Argon2id, JWT, RBAC, Control de Idempotencia UUID
+- **Base de Datos:** PostgreSQL 18.4 (`tumifact_db`), Modelo normalizado 3NF (19 tablas), datos binarios `BYTEA` (Logo/QR)
 
-Runtime: Node.js 22+ LTS, ESM/CommonJS, pnpm 10+/11+.
+Runtime: Node.js 22+ LTS, ESM/TypeScript, pnpm 10+/11+.
 
 ## Global Commands
 
@@ -19,7 +20,7 @@ Runtime: Node.js 22+ LTS, ESM/CommonJS, pnpm 10+/11+.
 | ------------------ | ---------------------------------------------------------- |
 | `pnpm install`     | Instala dependencias con lockfile estricto                |
 | `pnpm dev`         | Inicia servidor frontend Astro (`http://localhost:4321`)   |
-| `pnpm dev:api`     | Inicia servidor backend API Express con nodemon (`:3000`)  |
+| `pnpm dev:api`     | Inicia servidor backend API Express con Socket.io (`:3000`)|
 | `pnpm build`       | Genera compilado de producción de Astro (`/dist`)          |
 | `pnpm start`       | Inicia servidor backend en modo producción                |
 | `pnpm test`        | Ejecuta la suite de pruebas unitarias/integración con Jest |
@@ -36,10 +37,10 @@ Runtime: Node.js 22+ LTS, ESM/CommonJS, pnpm 10+/11+.
 
 ## Quality Baseline
 
-- **Testing:** Jest + Supertest (`/tests`)
-- **Coverage Minimum:** 40% inicial (meta gradual 70%+ en refactorización a Astro)
-- **Hooks & CI:** Validation Gate, Audit, Tests automatizados y Astro Build en GitHub Actions
-- **Seguridad:** Encriptación de secrets en `.env`, sanitización con `express-validator`
+- **Testing:** Jest + Supertest (`/tests`) con base de datos de pruebas dedicada
+- **Coverage Minimum:** 40% inicial (meta 70%+ en refactorización continua)
+- **Hooks & CI:** Validation Gate, Audit, Tests automatizados, SAST Semgrep, SBOM y Astro Build en GitHub Actions
+- **Seguridad:** Encriptación de secrets en `.env`, sanitización con Zod DTOs y hash Argon2id
 
 ## Agent Orchestration
 
@@ -49,7 +50,7 @@ Runtime: Node.js 22+ LTS, ESM/CommonJS, pnpm 10+/11+.
 | ----------- | ------------------------------------------------------------------ |
 | `architect` | Mantiene agentes, skills, comandos, estándares y arquitectura Astro|
 | `frontend`  | Componentes Astro (`.astro`), React 19 Islands y Tailwind CSS v4   |
-| `backend`   | Express API, PostgreSQL Pool, Transacciones, Middleware           |
+| `backend`   | Express API, PostgreSQL Pool, Transacciones Drizzle, WebSockets    |
 | `reviewer`  | Read-only: calidad de código, arquitectura, seguridad y performance|
 | `tester`    | Jest / Supertest: pruebas unitarias, integración y cobertura       |
 | `devops`    | CI/CD GitHub Actions, Docker Compose, versión, scripts de despliegue|
@@ -91,10 +92,11 @@ Guardar descubrimientos técnicos, patrones de facturación o decisiones de arqu
 }
 ```
 
-## Astro Frontend Migration Roadmap — ✅ 100% COMPLETADA
+## Astro Frontend & Modular Monolith Roadmap — ✅ 100% COMPLETADO
 
 - [x] **Fase 1:** Inicialización de Astro v7.1+ & Configuración del Entorno Node.js (COMPLETADA).
 - [x] **Fase 2:** Layouts & Páginas Base `.astro` (COMPLETADA).
-- [x] **Fase 3:** Construcción de React 19 Islands (`BillingPOS`, `ProductGrid`, `ClientManager`) (COMPLETADA).
+- [x] **Fase 3:** Construcción de React 19 Islands (`POSIsland`, `ControlCaja`, `SeparadosManager`, `InventarioManager`, `ReportesManager`, `ClientManager`) (COMPLETADA).
 - [x] **Fase 4:** SSR Data Loading & Vista de Impresión Térmica con Decodificación de Binarios `BYTEA` (COMPLETADA).
-- [x] **Fase 5:** Pruebas, Cobertura, CI/CD Pipeline & Deploy Producción (COMPLETADA).
+- [x] **Fase 5:** Módulos de Dominio DDD, Autenticación Argon2id + JWT + RBAC, WebSockets Socket.io y Normalización 3NF (19 tablas) (COMPLETADA).
+- [x] **Fase 6:** Pruebas Automatizadas (7 Suites / 17 Tests), Cobertura, CI/CD Pipeline & Security Workflows (COMPLETADA).

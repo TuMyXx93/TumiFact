@@ -1,0 +1,154 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Iniciar Sesión — TumiFact POS">
+  <div class="min-h-[75vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-slate-900/90 border border-slate-800 p-8 rounded-3xl shadow-2xl backdrop-blur-xl">
+      <div class="text-center">
+        <div class="mx-auto h-16 w-16 bg-gradient-to-tr from-blue-600 to-cyan-400 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+          <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 class="mt-4 text-2xl font-extrabold text-white tracking-tight font-['Outfit']">
+          Acceso al Sistema POS
+        </h2>
+        <p class="mt-1 text-xs text-slate-400">
+          Ingrese con su correo electrónico o su número de identificación
+        </p>
+      </div>
+
+      <div id="login-error" class="hidden p-3.5 rounded-xl text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-400 text-center"></div>
+
+      <form id="login-form" class="mt-8 space-y-5">
+        <div>
+          <label for="credential" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            Email o Cédula / Documento *
+          </label>
+          <div class="mt-1">
+            <input
+              id="credential"
+              name="credential"
+              type="text"
+              required
+              placeholder="admin@tumifact.com o 1000000000"
+              class="w-full px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            Contraseña *
+          </label>
+          <div class="mt-1">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              placeholder="••••••••••••"
+              class="w-full px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            id="login-btn"
+            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-sm shadow-lg shadow-blue-500/25 transition-all focus:outline-none flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Iniciar Sesión</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-6 pt-6 border-t border-slate-800/80 text-center">
+        <p class="text-xs text-slate-400 mb-2 font-medium">Accesos Demo preconfigurados:</p>
+        <div class="inline-flex flex-col gap-1 text-[11px] text-slate-500 bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 w-full text-left font-mono">
+          <div><span class="text-red-400 font-semibold">Admin:</span> admin@tumifact.com | 10000001 <span class="text-slate-400">(Password*2026)</span></div>
+          <div><span class="text-amber-400 font-semibold">Gerente:</span> gerente@tumifact.com | 10000002 <span class="text-slate-400">(Password*2026)</span></div>
+          <div><span class="text-blue-400 font-semibold">Cajero:</span> ventas1@tumifact.com | 10000003 <span class="text-slate-400">(Password*2026)</span></div>
+        </div>
+      </div>
+
+      <div class="text-center pt-2">
+        <p class="text-[11px] text-slate-500">
+          TumiFact v2.0 • Seguridad Argon2id + JWT + RBAC
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { apiFetch } from '../lib/apiClient';
+
+    const form = document.getElementById('login-form') as HTMLFormElement;
+    const errorDiv = document.getElementById('login-error') as HTMLDivElement;
+    const btn = document.getElementById('login-btn') as HTMLButtonElement;
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorDiv.classList.add('hidden');
+      btn.disabled = true;
+      btn.innerHTML = '<span>Verificando credenciales...</span>';
+
+      const credential = (document.getElementById('credential') as HTMLInputElement).value;
+      const password = (document.getElementById('password') as HTMLInputElement).value;
+
+      try {
+        const res = await apiFetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential, password })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.token) {
+          // Guardar cookie accesible por el servidor para SSR y middleware
+          document.cookie = `tumifact_token=${data.token}; path=/; max-age=43200; SameSite=Lax`;
+          localStorage.setItem('tumifact_token', data.token);
+          localStorage.setItem('tumifact_user', JSON.stringify(data.user));
+          sessionStorage.setItem('tumifact_token', data.token);
+          sessionStorage.setItem('tumifact_user', JSON.stringify(data.user));
+          
+          window.location.href = '/';
+        } else {
+          errorDiv.textContent = data.error || 'Credenciales inválidas';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        // Fallback directo a :3000 si apiFetch fallase
+        try {
+          const directRes = await fetch('http://localhost:3000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential, password })
+          });
+          const data = await directRes.json();
+          if (directRes.ok && data.token) {
+            document.cookie = `tumifact_token=${data.token}; path=/; max-age=43200; SameSite=Lax`;
+            localStorage.setItem('tumifact_token', data.token);
+            localStorage.setItem('tumifact_user', JSON.stringify(data.user));
+            sessionStorage.setItem('tumifact_token', data.token);
+            sessionStorage.setItem('tumifact_user', JSON.stringify(data.user));
+            window.location.href = '/';
+            return;
+          } else {
+            errorDiv.textContent = data.error || 'Credenciales inválidas';
+            errorDiv.classList.remove('hidden');
+            return;
+          }
+        } catch (_fallbackErr) {
+          errorDiv.textContent = 'Error al contactar con el servidor de autenticación (Puerto 3000)';
+          errorDiv.classList.remove('hidden');
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Iniciar Sesión</span>';
+      }
+    });
+  </script>
+</Layout>

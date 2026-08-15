@@ -1,17 +1,17 @@
-import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import type { Request, Response, NextFunction } from 'express';
+import { ZodError, type ZodType } from 'zod';
 
-export const validateDTO = (schema: ZodSchema) => {
+export const validateDTO = (schema: ZodType<any>) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       req.body = await schema.parseAsync(req.body);
       next();
     } catch (error: any) {
       const issueArray = error?.issues || error?.errors || [];
-      
+
       if (error instanceof ZodError || Array.isArray(issueArray)) {
         const formattedErrors: Record<string, string> = {};
-        
+
         issueArray.forEach((err: any) => {
           const field = Array.isArray(err.path) && err.path.length > 0 ? err.path.join('.') : 'general';
           if (!formattedErrors[field]) {

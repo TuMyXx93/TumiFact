@@ -2,7 +2,7 @@ export * from './storage.interface';
 export * from './storage.service';
 
 import { LocalStorageService, MockS3StorageService } from './storage.service';
-import { IStorageService } from './storage.interface';
+import type { IStorageService } from './storage.interface';
 
 const provider = process.env.STORAGE_PROVIDER || 'local';
 

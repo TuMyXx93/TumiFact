@@ -1,74 +1,79 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
 import { ClientesService } from './clientes.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateClienteDTO, UpdateClienteDTO } from './clientes.dto';
+import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
 
 export const clientesRouter = Router();
 const service = new ClientesService();
 
-clientesRouter.get('/', async (req: Request, res: Response) => {
+// GET /api/clientes/buscar?q=... — Búsqueda de clientes para POS
+clientesRouter.get('/buscar', optionalAuth, async (req, res, next) => {
   try {
-    const data = await service.getClientes();
+    const query = req.query.q as string;
+    if (!query) {
+      const all = await service.getAllClientes();
+      return res.json(all);
+    }
+    const results = await service.searchClientes(query);
+    res.json(results);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/clientes — Directorio de clientes
+clientesRouter.get('/', optionalAuth, async (req, res, next) => {
+  try {
+    const data = await service.getAllClientes();
     res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al obtener clientes' });
+  } catch (error) {
+    next(error);
   }
 });
 
-clientesRouter.get('/buscar', async (req: Request, res: Response) => {
+// GET /api/clientes/:id — Detalle de cliente
+clientesRouter.get('/:id', optionalAuth, async (req, res, next) => {
   try {
-    const q = (req.query.q as string) || '';
-    const data = await service.searchClientes(q);
+    const id = parseInt(String(req.params.id), 10);
+    const data = await service.getClienteById(id);
+    if (!data) return res.status(404).json({ error: 'Cliente no encontrado' });
     res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al buscar clientes' });
+  } catch (error) {
+    next(error);
   }
 });
 
-clientesRouter.get('/:id', async (req: Request, res: Response) => {
+// POST /api/clientes — Crear cliente
+clientesRouter.post('/', optionalAuth, validateDTO(CreateClienteDTO), async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const item = await service.getClienteById(id);
-    if (!item) return res.status(404).json({ error: 'Cliente no encontrado' });
-    res.json(item);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al obtener cliente' });
-  }
-});
-
-clientesRouter.post('/', validateDTO(CreateClienteDTO), async (req: Request, res: Response) => {
-  try {
-    const created = await service.createCliente(req.body);
+    const created = await service.createCliente(req.body, req);
     res.status(201).json(created);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al crear cliente' });
+  } catch (error) {
+    next(error);
   }
 });
 
-clientesRouter.put('/:id', validateDTO(UpdateClienteDTO), async (req: Request, res: Response) => {
+// PUT /api/clientes/:id — Actualizar cliente
+clientesRouter.put('/:id', optionalAuth, validateDTO(UpdateClienteDTO), async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const updated = await service.updateCliente(id, req.body);
+    const id = parseInt(String(req.params.id), 10);
+    const updated = await service.updateCliente(id, req.body, req);
     if (!updated) return res.status(404).json({ error: 'Cliente no encontrado' });
     res.json(updated);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al actualizar cliente' });
+  } catch (error) {
+    next(error);
   }
 });
 
-clientesRouter.delete('/:id', async (req: Request, res: Response) => {
+// DELETE /api/clientes/:id — Eliminar cliente
+clientesRouter.delete('/:id', optionalAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const success = await service.deleteCliente(id);
-    if (!success) return res.status(404).json({ error: 'Cliente no encontrado' });
-    res.json({ message: 'Cliente eliminado exitosamente', id });
-  } catch (error: any) {
-    const code = error?.code || error?.cause?.code || error?.driverError?.code || error?.originalError?.code;
-    const isFkError = code === '23503' || /foreign key constraint/i.test(error?.message || '') || /foreign key constraint/i.test(error?.cause?.message || '');
-
-    if (isFkError) {
-      return res.status(400).json({ error: 'No se puede eliminar el cliente porque tiene facturas asociadas' });
-    }
-    res.status(500).json({ error: 'Error al eliminar cliente' });
+    const id = parseInt(String(req.params.id), 10);
+    const deleted = await service.deleteCliente(id, req);
+    if (!deleted) return res.status(404).json({ error: 'Cliente no encontrado' });
+    res.json({ message: 'Cliente eliminado exitosamente' });
+  } catch (error) {
+    next(error);
   }
 });

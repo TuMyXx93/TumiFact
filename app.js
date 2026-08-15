@@ -3,11 +3,16 @@ const express = require('express');
 const path = require('path');
 const db = require('./db');
 
+const authRoutes = require('./routes/auth');
 const productosRoutes = require('./routes/productos');
 const clientesRoutes = require('./routes/clientes');
 const facturasRoutes = require('./routes/facturas');
 const configuracionRoutes = require('./routes/configuracion');
 const ventasRoutes = require('./routes/ventas');
+const cajaRoutes = require('./routes/caja');
+const separadosRoutes = require('./routes/separados');
+const inventarioRoutes = require('./routes/inventario');
+const reportesRoutes = require('./routes/reportes');
 
 const app = express();
 
@@ -21,16 +26,27 @@ app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    const origin = req.headers.origin;
+    if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Idempotency-Key');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
     next();
 });
 
+const { optionalAuth } = require('./middleware/auth');
+app.use(optionalAuth);
+
 app.get('/', (req, res) => {
     res.json({
-        name: 'TumiFact Headless API REST',
-        version: '1.0.0',
+        name: 'TumiFact Headless API REST v2.0',
+        version: '2.0.0',
         status: 'online',
         timestamp: new Date().toISOString()
     });
@@ -61,16 +77,35 @@ app.get('/api/health/db', async (req, res) => {
     }
 });
 
+app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
+
 app.use('/productos', productosRoutes);
 app.use('/api/productos', productosRoutes);
+
 app.use('/clientes', clientesRoutes);
 app.use('/api/clientes', clientesRoutes);
+
 app.use('/facturas', facturasRoutes);
 app.use('/api/facturas', facturasRoutes);
+
 app.use('/configuracion', configuracionRoutes);
 app.use('/api/configuracion', configuracionRoutes);
+
 app.use('/ventas', ventasRoutes);
 app.use('/api/ventas', ventasRoutes);
+
+app.use('/caja', cajaRoutes);
+app.use('/api/caja', cajaRoutes);
+
+app.use('/separados', separadosRoutes);
+app.use('/api/separados', separadosRoutes);
+
+app.use('/inventario', inventarioRoutes);
+app.use('/api/inventario', inventarioRoutes);
+
+app.use('/reportes', reportesRoutes);
+app.use('/api/reportes', reportesRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ error: 'Ruta no encontrada' });

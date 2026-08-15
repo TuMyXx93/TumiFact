@@ -2,8 +2,15 @@ import { z } from 'zod';
 
 export const CreateClienteDTO = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
-  direccion: z.string().optional().nullable(),
-  telefono: z.string().optional().nullable()
+  apellido: z.string().optional(),
+  tipo_identificacion_id: z.coerce.number().int().optional().nullable(),
+  numero_identificacion: z.string().optional().nullable(),
+  email: z.string().email('Correo electrónico inválido').optional().or(z.literal('')).nullable(),
+  telefono: z.string().optional().nullable(),
+  telefono_secundario: z.string().optional().nullable(),
+  direccion_texto: z.string().optional().nullable(),
+  tipo_cliente: z.enum(['detal', 'mayorista', 'vip']).optional().default('detal'),
+  notas: z.string().optional().nullable()
 });
 
 export const UpdateClienteDTO = CreateClienteDTO.partial();

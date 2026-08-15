@@ -1,42 +1,15 @@
-# Architectural Decision Records (ADRs) - ECL FRUVER
+# Registros de Decisiones de Arquitectura (ADRs) — TumiFact 🧠
 
-> **Status**: ✅ Activo | v1.0.0
-
-## Decisiones Registradas
-
-1. **[ADR-0001: Multer 2.x Migration](0001-multer-2x-migration.md)**
-   - Status: Accepted
-   - Migración de Multer 1.x a 2.x
-   - Razón: Seguridad (CVE-2022-24434)
-
-2. **[ADR-0001: Security Improvements](0001-multer-2x-security.md)**
-   - Status: Accepted
-   - Validación dual de archivos
-   - Límites de tamaño y MIME type
+> **Marco**: Michael Nygard ADR Template  
+> **Status**: ✅ Documentación viva del proyecto
 
 ---
 
-## Formato de ADR
+## 📋 Lista de Decisiones de Arquitectura
 
-```
-# ADR-XXXX: Título
-
-## Status
-[Accepted | Rejected | Deprecated]
-
-## Context
-(Por qué era necesaria esta decisión)
-
-## Decision
-(Qué se decidió)
-
-## Consequences
-(Impacto positivo y negativo)
-
-## Alternatives Considered
-(Otras opciones evaluadas)
-```
-
----
-
-*Para crear una nueva ADR, sigue el formato arriba y actualiza este README*
+* **[ADR 0001: Arquitectura Híbrida Desacoplada](0001-multer-2x-migration.md)**
+  - Contexto y decisión de separar la capa de presentación (Astro SSR + React Islands) del backend Headless API.
+* **[ADR 0002: Migración a PostgreSQL 18.4 en Docker](0002-postgresql-docker-migration.md)**
+  - Decisión técnica de migrar a PostgreSQL en contenedor Alpine, soporte de datos binarios `BYTEA` para logotipos y normalización 3NF.
+* **[ADR 0003: Migración a Astro Framework & React 19 Islands](0003-astro-react-islands-migration.md)**
+  - Selección de Astro v7+ con hidratación selectiva para el rendimiento del Punto de Venta (POS).

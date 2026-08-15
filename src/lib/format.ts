@@ -33,11 +33,14 @@ export function formatCurrency(value: number | bigint | string | null | undefine
   return currencyFormat.format(num);
 }
 
+export const APP_TIMEZONE = 'America/Bogota';
+
 export function formatDate(value: string | number | Date | null | undefined): string {
   if (!value) return '';
   try {
     const date = value instanceof Date ? value : new Date(value);
     return date.toLocaleString(APP_LOCALE, {
+      timeZone: APP_TIMEZONE,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -54,9 +57,25 @@ export function formatDateShort(value: string | number | Date | null | undefined
   try {
     const date = value instanceof Date ? value : new Date(value);
     return date.toLocaleDateString(APP_LOCALE, {
+      timeZone: APP_TIMEZONE,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
+    });
+  } catch {
+    return '';
+  }
+}
+
+export function formatTime(value: string | number | Date | null | undefined): string {
+  if (!value) return '';
+  try {
+    const date = value instanceof Date ? value : new Date(value);
+    return date.toLocaleTimeString(APP_LOCALE, {
+      timeZone: APP_TIMEZONE,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
   } catch {
     return '';

@@ -1,27 +1,34 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import SalesHistoryIsland from '../components/facturacion/SalesHistoryIsland';
+import HistorialVentasManager from '../components/historial/HistorialVentasManager';
 ---
 
-<Layout title="Historial de Ventas — TumiFact">
-  <div class="space-y-8">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+<Layout title="Historial de Ventas & Facturación — TumiFact POS">
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-5">
       <div>
-        <h1 class="text-2xl font-bold font-['Outfit'] text-white">
-          📜 Historial de Ventas
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-['Outfit'] flex items-center gap-2.5">
+          <span class="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            📜
+          </span>
+          Historial de Facturación POS
         </h1>
-        <p class="text-slate-400 text-sm mt-1">
-          Consulta de facturas emitidas, filtrado dinámico por rango de fechas, reimpresión de tiquetes y acumulación total.
+        <p class="text-xs sm:text-sm text-slate-400 mt-1">
+          Auditoría, trazabilidad y reimpresión de tiquetes térmicos emitidos en el sistema.
         </p>
       </div>
+
       <div class="flex items-center gap-3">
-        <a href="/ventas" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-xs rounded-xl shadow-lg transition-all">
-          + Nueva Venta (POS)
+        <a
+          href="/ventas"
+          class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5"
+        >
+          + Nueva Venta POS
         </a>
       </div>
     </div>
 
-    <!-- React Island de Historial de Ventas -->
-    <SalesHistoryIsland client:load />
+    <!-- React Island Hidratada de Historial -->
+    <HistorialVentasManager client:load />
   </div>
 </Layout>

@@ -1,80 +1,79 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
 import { ProductosService } from './productos.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateProductoDTO, UpdateProductoDTO } from './productos.dto';
+import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
 
 export const productosRouter = Router();
 const service = new ProductosService();
 
-productosRouter.get('/', async (req: Request, res: Response) => {
+// GET /api/productos/buscar?q=... — Búsqueda predictiva para el POS
+productosRouter.get('/buscar', optionalAuth, async (req, res, next) => {
   try {
-    const data = await service.getProductos();
-    res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al obtener productos', message: error.message });
-  }
-});
-
-productosRouter.get('/buscar', async (req: Request, res: Response) => {
-  try {
-    const q = (req.query.q as string) || '';
-    const data = await service.searchProductos(q);
-    res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al buscar productos' });
-  }
-});
-
-productosRouter.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const item = await service.getProductoById(id);
-    if (!item) return res.status(404).json({ error: 'Producto no encontrado' });
-    res.json(item);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al obtener producto' });
-  }
-});
-
-productosRouter.post('/', validateDTO(CreateProductoDTO), async (req: Request, res: Response) => {
-  try {
-    const created = await service.createProducto(req.body);
-    res.status(201).json({ message: 'Producto creado exitosamente', ...created });
-  } catch (error: any) {
-    if (error.statusCode === 400 || error.code === '23505') {
-      return res.status(400).json({ error: error.message || 'Ya existe un producto con ese código' });
+    const query = req.query.q as string;
+    if (!query) {
+      const all = await service.getAllProductos();
+      return res.json(all);
     }
-    res.status(500).json({ error: 'Error al crear producto' });
+    const results = await service.searchProductos(query);
+    res.json(results);
+  } catch (error) {
+    next(error);
   }
 });
 
-productosRouter.put('/:id', validateDTO(UpdateProductoDTO), async (req: Request, res: Response) => {
+// GET /api/productos — Catálogo completo
+productosRouter.get('/', optionalAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const updated = await service.updateProducto(id, req.body);
+    const data = await service.getAllProductos();
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/productos/:id — Detalle de producto
+productosRouter.get('/:id', optionalAuth, async (req, res, next) => {
+  try {
+    const id = parseInt(String(req.params.id), 10);
+    const data = await service.getProductoById(id);
+    if (!data) return res.status(404).json({ error: 'Producto no encontrado' });
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/productos — Crear producto (Gerente / Admin)
+productosRouter.post('/', verifyAuth, requireRole('gerente', 'admin'), validateDTO(CreateProductoDTO), async (req, res, next) => {
+  try {
+    const created = await service.createProducto(req.body, req);
+    res.status(201).json(created);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/productos/:id — Actualizar producto (Gerente / Admin)
+productosRouter.put('/:id', verifyAuth, requireRole('gerente', 'admin'), validateDTO(UpdateProductoDTO), async (req, res, next) => {
+  try {
+    const id = parseInt(String(req.params.id), 10);
+    const updated = await service.updateProducto(id, req.body, req);
     if (!updated) return res.status(404).json({ error: 'Producto no encontrado' });
-    res.json({ message: 'Producto actualizado exitosamente', ...updated });
-  } catch (error: any) {
-    if (error.statusCode === 400 || error.code === '23505') {
-      return res.status(400).json({ error: error.message || 'Ya existe un producto con ese código' });
-    }
-    res.status(500).json({ error: 'Error al actualizar producto' });
+    res.json(updated);
+  } catch (error) {
+    next(error);
   }
 });
 
-productosRouter.delete('/:id', async (req: Request, res: Response) => {
+// DELETE /api/productos/:id — Desactivar producto (Gerente / Admin)
+productosRouter.delete('/:id', verifyAuth, requireRole('gerente', 'admin'), async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const success = await service.deleteProducto(id);
-    if (!success) return res.status(404).json({ error: 'Producto no encontrado' });
-    res.json({ message: 'Producto eliminado exitosamente', id });
-  } catch (error: any) {
-    const code = error?.code || error?.cause?.code || error?.driverError?.code || error?.originalError?.code;
-    const isFkError = code === '23503' || /foreign key constraint/i.test(error?.message || '') || /foreign key constraint/i.test(error?.cause?.message || '');
-
-    if (isFkError) {
-      return res.status(400).json({ error: 'No se puede eliminar el producto porque está referenciado en facturas' });
-    }
-    res.status(500).json({ error: 'Error al eliminar producto' });
+    const id = parseInt(String(req.params.id), 10);
+    const deleted = await service.deleteProducto(id, req);
+    if (!deleted) return res.status(404).json({ error: 'Producto no encontrado' });
+    res.json({ message: 'Producto eliminado exitosamente' });
+  } catch (error) {
+    next(error);
   }
 });

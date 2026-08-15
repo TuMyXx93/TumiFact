@@ -7,8 +7,8 @@ interface Props {
 }
 
 const { 
-  title = 'TumiFact — Sistema de Facturación',
-  description = 'Sistema de Facturación TumiFact'
+  title = 'TumiFact v2.0 — Sistema de Facturación & POS',
+  description = 'Sistema de Facturación y Punto de Venta POS 2026'
 } = Astro.props;
 
 const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim();
@@ -16,6 +16,27 @@ const publicApiPort = (import.meta.env.PUBLIC_API_PORT || '').trim();
 const publicApiPorts = (import.meta.env.PUBLIC_API_PORTS || '').trim();
 const publicApiAutoDiscovery = (import.meta.env.PUBLIC_API_AUTO_DISCOVERY || 'true').trim().toLowerCase();
 const publicApiPortScanRange = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3000-3999').trim();
+
+const currentPath = Astro.url.pathname;
+const isLoginPage = currentPath === '/login';
+const user = Astro.locals.user as any;
+
+const baseNavItems = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/ventas', label: 'Terminal POS' },
+  { href: '/separados', label: 'Separados' },
+  { href: '/caja', label: 'Control Caja' },
+  { href: '/inventario', label: 'Inventario' },
+  { href: '/productos', label: 'Productos' },
+  { href: '/clientes', label: 'Clientes' },
+  { href: '/empleados', label: 'Empleados', requiresAdmin: true },
+  { href: '/reportes', label: 'Reportes' },
+  { href: '/historial', label: 'Historial' },
+  { href: '/configuracion', label: 'Config' },
+];
+
+const isAdminOrGerente = user?.rol_nombre === 'admin' || user?.rol_nombre === 'gerente';
+const navItems = baseNavItems.filter(item => !item.requiresAdmin || isAdminOrGerente);
 ---
 
 <!DOCTYPE html>
@@ -29,44 +50,51 @@ const publicApiPortScanRange = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
-  <body class="min-h-screen bg-[#0b0f19] text-slate-100 antialiased selection:bg-blue-600 selection:text-white flex flex-col">
+  <body class="min-h-screen bg-[#060913] text-slate-100 antialiased selection:bg-blue-600 selection:text-white flex flex-col font-['Inter']">
     <!-- Header / Navbar Principal -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-[#0f172a]/80 border-b border-slate-800/80">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20 font-['Outfit']">
-            TF
-          </div>
-          <div>
-            <span class="font-['Outfit'] font-bold text-lg text-white tracking-tight">TumiFact</span>
-            <span class="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 ml-2 font-medium">v1.0</span>
-          </div>
+    <header class="sticky top-0 z-50 backdrop-blur-xl bg-[#0d1424]/90 border-b border-slate-800/80 shadow-2xl">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        
+        <!-- Logo & Marca -->
+        <div class="flex items-center gap-3 shrink-0">
+          <a href="/" class="flex items-center gap-2 group">
+            <div class="flex flex-col">
+              <span class="font-['Outfit'] font-black text-xl text-white tracking-tight leading-none group-hover:text-blue-300 transition-colors">
+                TumiFact
+              </span>
+              <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider font-mono">
+                v2.0 POS
+              </span>
+            </div>
+          </a>
         </div>
 
-        <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-          <a href="/" class="text-slate-200 hover:text-blue-400 transition-colors flex items-center gap-2">
-            Dashboard
-          </a>
-          <a href="/productos" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
-            Productos
-          </a>
-          <a href="/clientes" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
-            Clientes
-          </a>
-          <a href="/ventas" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
-            Facturación / POS
-          </a>
-          <a href="/historial" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
-            Historial Ventas
-          </a>
-          <a href="/configuracion" class="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2">
-            Configuración
-          </a>
-        </nav>
+        <!-- Navegación de Escritorio (Si no es página de login) -->
+        {!isLoginPage && (
+          <nav class="hidden xl:flex items-center gap-1 text-xs font-semibold">
+            {navItems.map((item) => {
+              const isActive = currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href));
+              return (
+                <a
+                  href={item.href}
+                  class={`px-3 py-1.5 rounded-xl transition-all ${
+                    isActive
+                      ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 font-bold shadow-sm'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
+          </nav>
+        )}
 
-        <div class="flex items-center gap-3">
+        <!-- Acciones Derecha: Estado BD, Perfil Usuario & Salir -->
+        <div class="flex items-center gap-3 shrink-0">
+          <!-- DB Status Badge -->
           <span
             id="db-status-badge"
             data-state="connecting"
@@ -75,26 +103,113 @@ const publicApiPortScanRange = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3
             data-api-ports={publicApiPorts}
             data-api-auto-discovery={publicApiAutoDiscovery}
             data-api-port-range={publicApiPortScanRange}
-            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 transition-colors"
+            class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 transition-colors font-mono"
             aria-live="polite"
           >
             <span id="db-status-dot" class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
-            <span id="db-status-label">BD Conectando...</span>
+            <span id="db-status-label">BD...</span>
           </span>
+
+          <!-- Usuario Logueado / Logout -->
+          {!isLoginPage && user && (
+            <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+              <div class="hidden md:flex flex-col text-right">
+                <span class="text-xs font-bold text-white leading-tight">
+                  {user.nombre} {user.apellido || ''}
+                </span>
+                <span class="text-[10px] text-blue-400 uppercase font-mono font-semibold">
+                  {user.rol_nombre || 'Operador'}
+                </span>
+              </div>
+
+              <div class="h-8 w-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-blue-400 shadow-inner font-['Outfit']">
+                {(user.nombre || 'U').charAt(0).toUpperCase()}
+              </div>
+
+              <button
+                id="logout-btn"
+                type="button"
+                title="Cerrar sesión segura"
+                class="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700/80 hover:border-rose-500/30 transition-all cursor-pointer"
+              >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          <!-- Botón Menú Móvil -->
+          {!isLoginPage && (
+            <button
+              id="mobile-menu-btn"
+              type="button"
+              class="xl:hidden p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700"
+            >
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
+
+      <!-- Drawer / Menú Móvil Desplegable -->
+      {!isLoginPage && (
+        <div id="mobile-menu" class="hidden xl:hidden border-t border-slate-800/80 bg-slate-900/95 px-4 py-4 space-y-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {navItems.map((item) => {
+              const isActive = currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href));
+              return (
+                <a
+                  href={item.href}
+                  class={`p-2.5 rounded-xl text-xs font-semibold flex items-center justify-center transition-all ${
+                    isActive
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </header>
 
-    <!-- Contenido Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Contenido Principal de la Aplicación -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <slot />
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
-      <p>© 2026 TumiFact</p>
+    <footer class="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500 bg-[#0a0f1d]">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p>© 2026 TumiFact POS • Plataforma de Facturación & Inventario</p>
+      </div>
     </footer>
 
+    <!-- Script de Logout -->
+    <script is:inline>
+      document.getElementById('logout-btn')?.addEventListener('click', () => {
+        // Limpiar storage local primero
+        localStorage.removeItem('tumifact_token');
+        localStorage.removeItem('tumifact_user');
+        sessionStorage.clear();
+        // Navegar al endpoint server-side que borra la cookie y redirige a /login
+        // Esto elimina la condición de carrera del enfoque client-side
+        window.location.href = '/logout';
+      });
+
+      const mobileBtn = document.getElementById('mobile-menu-btn');
+      const mobileMenu = document.getElementById('mobile-menu');
+      mobileBtn?.addEventListener('click', () => {
+        mobileMenu?.classList.toggle('hidden');
+      });
+    </script>
+
+    <!-- Probing y Monitoreo de Salud de la Base de Datos -->
     <script is:inline>
       (() => {
         const badge = document.getElementById('db-status-badge');
@@ -117,17 +232,17 @@ const publicApiPortScanRange = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3
           connected: {
             badge: ['bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20'],
             dot: ['bg-emerald-400', 'animate-pulse'],
-            text: 'BD Conectada'
+            text: 'BD OK'
           },
           connecting: {
             badge: ['bg-amber-500/10', 'text-amber-400', 'border-amber-500/20'],
             dot: ['bg-amber-400', 'animate-pulse'],
-            text: 'BD Conectando...'
+            text: 'BD...'
           },
           disconnected: {
             badge: ['bg-rose-500/10', 'text-rose-400', 'border-rose-500/20'],
             dot: ['bg-rose-400'],
-            text: 'BD Desconectada'
+            text: 'BD OFF'
           }
         };
 
@@ -147,7 +262,7 @@ const publicApiPortScanRange = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3
           if (!value) return [];
           return value
             .split(',')
-            .map((item) => Number.parseInt(item.trim(), 10))
+            .map((p) => Number.parseInt(p.trim(), 10))
             .filter((port) => Number.isInteger(port) && port > 0 && port < 65536);
         };
 

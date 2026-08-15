@@ -1,8 +1,8 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
+import { Pool } from 'pg';
 import * as schema from './schema';
 
-const pool = new pg.Pool({
+const pool = new Pool({
   user: process.env.DB_USER || 'tumifact_user',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_DATABASE || 'tumifact_db',

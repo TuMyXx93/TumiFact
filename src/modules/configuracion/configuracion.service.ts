@@ -1,6 +1,6 @@
 import { ConfiguracionRepository } from './configuracion.repository';
-import { SaveConfiguracionInput } from './configuracion.dto';
-import { ConfiguracionItem } from '../../db/schema/configuracion';
+import type { SaveConfiguracionInput } from './configuracion.dto';
+import type { ConfiguracionItem } from '../../db/schema/configuracion';
 import { storageService } from '../../services/storage';
 
 export class ConfiguracionService {
@@ -19,9 +19,7 @@ export class ConfiguracionService {
         font_size: 1
       };
     }
-    const cleanConfig = { ...config };
-    delete cleanConfig.logo_data;
-    delete cleanConfig.qr_data;
+    const { logo_data, qr_data, ...cleanConfig } = config;
     return cleanConfig;
   }
 

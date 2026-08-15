@@ -1,0 +1,85 @@
+---
+import Layout from '../layouts/Layout.astro';
+import EmpleadoManager from '../components/empleados/EmpleadoManager';
+import db from '../lib/db.js';
+
+const currentUser = Astro.locals.user as any;
+
+// Protección RBAC en SSR: Solo Admin o Gerente
+if (!currentUser || (currentUser.rol_nombre !== 'admin' && currentUser.rol_nombre !== 'gerente')) {
+  return Astro.redirect('/');
+}
+
+let empleados = [];
+let roles = [];
+let tiposDoc = [];
+
+try {
+  const [empRes, rolesRes, tiposRes] = await Promise.all([
+    db.query(`
+      SELECT 
+        e.id,
+        e.usuario_id,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.telefono,
+        u.numero_identificacion,
+        ti.codigo as tipo_identificacion,
+        u.tipo_identificacion_id,
+        u.rol_id,
+        r.nombre as rol_nombre,
+        e.cargo,
+        e.departamento,
+        e.salario,
+        e.turno,
+        e.descuento_max_porcentaje,
+        e.descuento_max_monto,
+        u.activo,
+        u.ultimo_login,
+        e.created_at
+      FROM empleados e
+      INNER JOIN usuarios u ON e.usuario_id = u.id
+      LEFT JOIN roles r ON u.rol_id = r.id
+      LEFT JOIN tipos_identificacion ti ON u.tipo_identificacion_id = ti.id
+      ORDER BY e.id ASC
+    `),
+    db.query('SELECT * FROM roles ORDER BY id ASC'),
+    db.query('SELECT * FROM tipos_identificacion ORDER BY id ASC')
+  ]);
+
+  empleados = empRes.rows.map(e => ({
+    ...e,
+    salario: parseFloat(e.salario || '0'),
+    descuento_max_porcentaje: parseFloat(e.descuento_max_porcentaje || '0'),
+    descuento_max_monto: parseFloat(e.descuento_max_monto || '0')
+  }));
+  roles = rolesRes.rows || [];
+  tiposDoc = tiposRes.rows || [];
+} catch (e) {
+  console.error('Error al consultar empleados SSR:', e);
+}
+---
+
+<Layout title="Gestión de Empleados & Auditoría — TumiFact">
+  <div class="space-y-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <h1 class="text-2xl font-bold font-['Outfit'] text-white">
+          👥 Gestión de Empleados & Equipo
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">
+          Directorio del personal, asignación de roles RBAC, métricas de ventas y auditoría forense de operaciones.
+        </p>
+      </div>
+    </div>
+
+    <!-- React Island de Gestión de Empleados -->
+    <EmpleadoManager 
+      client:load 
+      initialEmpleados={empleados} 
+      initialRoles={roles} 
+      initialTiposDoc={tiposDoc} 
+    />
+  </div>
+</Layout>

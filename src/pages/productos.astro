@@ -4,28 +4,43 @@ import ProductGrid from '../components/productos/ProductGrid';
 import db from '../lib/db.js';
 
 let productos = [];
+let categorias = [];
 try {
-  const result = await db.query('SELECT * FROM productos ORDER BY id DESC');
-  productos = result.rows || [];
+  const [prodRes, catRes] = await Promise.all([
+    db.query(`
+      SELECT p.*, c.nombre as categoria_nombre, c.tipo as categoria_tipo
+      FROM productos p
+      LEFT JOIN categorias_producto c ON p.categoria_id = c.id
+      ORDER BY p.id DESC
+    `),
+    db.query('SELECT * FROM categorias_producto WHERE activo = true ORDER BY id ASC')
+  ]);
+  productos = prodRes.rows || [];
+  categorias = catRes.rows || [];
 } catch (e) {
   console.error('Error al consultar productos SSR:', e);
 }
 ---
 
-<Layout title="Gestión de Productos — TumiFact">
+<Layout title="Catálogo y Productos — TumiFact 2026">
   <div class="space-y-8">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
       <div>
-        <h1 class="text-2xl font-bold font-['Outfit'] text-white">
-          📦 Catálogo de Productos
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wider">
+            CATALOG-SVC • ESPECIFICACIÓN 2026
+          </span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight mt-1">
+          Catálogo & Familias de Productos
         </h1>
-        <p class="text-slate-400 text-sm mt-1">
-          Inventario y lista de precios por kilogramo, libra o unidad con creación dinámica.
+        <p class="text-slate-400 text-xs sm:text-sm mt-1">
+          Gestión integral de prendas, calzado, tecnología, perecederos, artesanías y bisutería con precios al detal y mayorista.
         </p>
       </div>
     </div>
 
-    <!-- React Island de Gestión de Productos -->
-    <ProductGrid client:idle initialProductos={productos} />
+    <!-- React Island de Gestión de Productos Multi-Categoría -->
+    <ProductGrid client:load initialProductos={productos} initialCategorias={categorias} />
   </div>
 </Layout>

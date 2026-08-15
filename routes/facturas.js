@@ -18,9 +18,22 @@ router.post('/', validateFacturas, async (req, res) => {
     try {
         await client.query('BEGIN');
 
+        let sesion_caja_id = req.body.sesion_caja_id || null;
+        const usuario_id = req.user?.id || req.body.usuario_id || null;
+
+        if (!sesion_caja_id && usuario_id) {
+            const cajaActiva = await client.query(
+                "SELECT id FROM sesiones_caja WHERE usuario_id = $1 AND estado = 'abierta' ORDER BY abierta_at DESC LIMIT 1",
+                [usuario_id]
+            );
+            if (cajaActiva.rows.length > 0) {
+                sesion_caja_id = cajaActiva.rows[0].id;
+            }
+        }
+
         const facturaResult = await client.query(
-            'INSERT INTO facturas (cliente_id, total, forma_pago) VALUES ($1, $2, $3) RETURNING id',
-            [cliente_id, 0, forma_pago || 'efectivo']
+            'INSERT INTO facturas (cliente_id, sesion_caja_id, usuario_id, total, forma_pago) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+            [cliente_id, sesion_caja_id, usuario_id, 0, forma_pago || 'efectivo']
         );
 
         const factura_id = facturaResult.rows[0].id;
@@ -34,9 +47,11 @@ router.post('/', validateFacturas, async (req, res) => {
 
             total_calculado = Math.round((total_calculado + subtotal) * 100) / 100;
 
+            const unidadFinal = p.unidad ? p.unidad.toUpperCase() : 'UND';
+
             await client.query(
                 'INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal) VALUES ($1, $2, $3, $4, $5, $6)',
-                [factura_id, p.producto_id, cantidad, precio_unitario, p.unidad || 'KG', subtotal]
+                [factura_id, p.producto_id, cantidad, precio_unitario, unidadFinal, subtotal]
             );
         }
 
@@ -54,6 +69,21 @@ router.post('/', validateFacturas, async (req, res) => {
         );
 
         await client.query('COMMIT');
+
+        // Emitir evento Socket.io para actualización en tiempo real de dashboards y cajas
+        try {
+            const { emitEvent } = require('../src/server/socket');
+            emitEvent('factura:creada', {
+                id: factura_id,
+                cliente_id,
+                usuario_id,
+                sesion_caja_id,
+                total: total_calculado,
+                forma_pago: forma_pago || 'efectivo',
+                productos_count: productos.length,
+                timestamp: new Date().toISOString()
+            });
+        } catch (_) {}
 
         res.status(201).json({ id: factura_id });
 

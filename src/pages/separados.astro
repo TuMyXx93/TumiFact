@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SeparadosManager from '../components/separados/SeparadosManager';
+---
+
+<Layout title="Separados & Planes de Pago — TumiFact POS">
+  <div class="space-y-6">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-['Outfit']">
+          Sistema de Separados & Abonos
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Gestione planes de apartado a 30-45 días con abonos parciales y reserva de inventario.
+        </p>
+      </div>
+    </header>
+
+    <SeparadosManager client:load />
+  </div>
+</Layout>

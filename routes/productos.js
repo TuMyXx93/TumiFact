@@ -6,12 +6,17 @@ const { validateProductos } = require('../middleware/validate');
 // GET /productos - Obtener catálogo de productos
 router.get('/', async (req, res) => {
     try {
-        const result = await db.query('SELECT * FROM productos ORDER BY nombre');
+        const result = await db.query(`
+            SELECT p.*, c.nombre as categoria_nombre, c.tipo as categoria_tipo
+            FROM productos p
+            LEFT JOIN categorias_producto c ON p.categoria_id = c.id
+            ORDER BY p.nombre
+        `);
         const productos = result.rows || [];
         res.json(productos);
     } catch (error) {
         console.error('Error al obtener productos:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Error al obtener productos',
             message: process.env.NODE_ENV === 'development' ? error.message : ''
         });
@@ -24,10 +29,12 @@ router.get('/buscar', async (req, res) => {
         const query = req.query.q || '';
         const searchTerm = `%${query}%`;
         const sql = `
-            SELECT * FROM productos 
-            WHERE nombre ILIKE $1 OR codigo ILIKE $2
-            ORDER BY nombre
-            LIMIT 10
+            SELECT p.*, c.nombre as categoria_nombre, c.tipo as categoria_tipo
+            FROM productos p
+            LEFT JOIN categorias_producto c ON p.categoria_id = c.id
+            WHERE p.nombre ILIKE $1 OR p.codigo ILIKE $2
+            ORDER BY p.nombre
+            LIMIT 15
         `;
         const result = await db.query(sql, [searchTerm, searchTerm]);
         res.json(result.rows || []);
@@ -55,18 +62,46 @@ router.get('/:id', async (req, res) => {
 // POST /productos - Crear nuevo producto
 router.post('/', validateProductos, async (req, res) => {
     try {
-        const { codigo, nombre, precio_kg, precio_unidad, precio_libra } = req.body;
+        const {
+            codigo,
+            nombre,
+            descripcion,
+            categoria_id,
+            proveedor_id,
+            precio_kg,
+            precio_unidad,
+            precio_libra,
+            precio_detal,
+            precio_mayorista,
+            cantidad_mayorista,
+            stock_actual,
+            stock_minimo,
+            atributos
+        } = req.body;
 
         const result = await db.query(`
-            INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO productos (
+                codigo, nombre, descripcion, categoria_id, proveedor_id,
+                precio_kg, precio_unidad, precio_libra, precio_detal, precio_mayorista,
+                cantidad_mayorista, stock_actual, stock_minimo, atributos
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *
         `, [
-            codigo.trim(), 
-            nombre.trim(), 
-            precio_kg || 0, 
-            precio_unidad || 0, 
-            precio_libra || 0
+            codigo.trim(),
+            nombre.trim(),
+            descripcion || null,
+            categoria_id || null,
+            proveedor_id || null,
+            precio_kg || 0,
+            precio_unidad || 0,
+            precio_libra || 0,
+            precio_detal || (precio_unidad || precio_kg || 0),
+            precio_mayorista || 0,
+            cantidad_mayorista || 10,
+            stock_actual || 0,
+            stock_minimo || 5,
+            JSON.stringify(atributos || {})
         ]);
 
         const productoCreado = result.rows[0];
@@ -86,20 +121,58 @@ router.post('/', validateProductos, async (req, res) => {
 // PUT /productos/:id - Actualizar producto
 router.put('/:id', validateProductos, async (req, res) => {
     try {
-        const { codigo, nombre, precio_kg, precio_unidad, precio_libra } = req.body;
+        const {
+            codigo,
+            nombre,
+            descripcion,
+            categoria_id,
+            proveedor_id,
+            precio_kg,
+            precio_unidad,
+            precio_libra,
+            precio_detal,
+            precio_mayorista,
+            cantidad_mayorista,
+            stock_actual,
+            stock_minimo,
+            atributos
+        } = req.body;
         const id = req.params.id;
 
         const result = await db.query(`
             UPDATE productos 
-            SET codigo = $1, nombre = $2, precio_kg = $3, precio_unidad = $4, precio_libra = $5
-            WHERE id = $6
+            SET codigo = $1, 
+                nombre = $2, 
+                descripcion = $3,
+                categoria_id = $4,
+                proveedor_id = $5,
+                precio_kg = $6, 
+                precio_unidad = $7, 
+                precio_libra = $8,
+                precio_detal = $9,
+                precio_mayorista = $10,
+                cantidad_mayorista = $11,
+                stock_actual = $12,
+                stock_minimo = $13,
+                atributos = $14,
+                updated_at = NOW()
+            WHERE id = $15
             RETURNING *
         `, [
-            codigo.trim(), 
-            nombre.trim(), 
-            precio_kg || 0, 
-            precio_unidad || 0, 
-            precio_libra || 0, 
+            codigo.trim(),
+            nombre.trim(),
+            descripcion || null,
+            categoria_id || null,
+            proveedor_id || null,
+            precio_kg || 0,
+            precio_unidad || 0,
+            precio_libra || 0,
+            precio_detal || (precio_unidad || precio_kg || 0),
+            precio_mayorista || 0,
+            cantidad_mayorista || 10,
+            stock_actual || 0,
+            stock_minimo || 5,
+            JSON.stringify(atributos || {}),
             id
         ]);
 

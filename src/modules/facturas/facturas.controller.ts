@@ -1,53 +1,69 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
 import { FacturasService } from './facturas.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateFacturaDTO } from './facturas.dto';
+import { optionalAuth, verifyAuth } from '../../shared/middleware/auth';
+import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
+import { CajaService } from '../caja/caja.service';
 
 export const facturasRouter = Router();
 const service = new FacturasService();
+const cajaService = new CajaService();
 
-facturasRouter.post('/', validateDTO(CreateFacturaDTO), async (req: Request, res: Response) => {
-  try {
-    const result = await service.createFactura(req.body);
-    res.status(201).json(result);
-  } catch (error: any) {
-    if (error.statusCode === 400) {
-      return res.status(400).json({ error: error.message });
+// POST /api/facturas — Crear nueva factura con cálculo de subtotales, descuentos e idempotencia
+facturasRouter.post(
+  '/',
+  optionalAuth,
+  ensureIdempotencyKey,
+  validateDTO(CreateFacturaDTO),
+  async (req, res, next) => {
+    try {
+      const userId = req.user?.id || 1; // Default admin if unauthenticated
+      const activeCaja = await cajaService.getActiveSession(userId);
+
+      const result = await service.createFactura(req.body, userId, activeCaja?.id, req);
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
     }
-    res.status(500).json({ error: 'Error al crear la factura' });
+  }
+);
+
+// GET /api/facturas/:id/imprimir — Factura completa con detalles y configuración para tiquete térmico
+facturasRouter.get('/:id/imprimir', optionalAuth, async (req, res, next) => {
+  try {
+    const data = await service.getFacturaWithDetails(parseInt(String(req.params.id), 10));
+    if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
+    res.json(data);
+  } catch (error) {
+    next(error);
   }
 });
 
-facturasRouter.get('/:id/imprimir', async (req: Request, res: Response) => {
+// GET /api/facturas/:id/detalles — Solo líneas de productos
+facturasRouter.get('/:id/detalles', optionalAuth, async (req, res, next) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const data = await service.getFacturaWithDetails(id);
+    const data = await service.getFacturaDetailsOnly(parseInt(String(req.params.id), 10));
     if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
     res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al obtener datos de factura' });
-  }
-});
-
-facturasRouter.get('/:id/detalles', async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const data = await service.getFacturaDetailsOnly(id);
-    if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
-    res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al obtener detalles de la factura' });
+  } catch (error) {
+    next(error);
   }
 });
 
 export const ventasRouter = Router();
-ventasRouter.get('/', async (req: Request, res: Response) => {
+
+// GET /api/ventas — Historial de ventas con filtros de fecha, cajero y estado
+ventasRouter.get('/', optionalAuth, async (req, res, next) => {
   try {
     const desde = req.query.desde ? String(req.query.desde) : undefined;
     const hasta = req.query.hasta ? String(req.query.hasta) : undefined;
-    const data = await service.getSalesHistory(desde, hasta);
+    const usuarioId = req.query.usuario_id ? parseInt(req.query.usuario_id as string, 10) : undefined;
+    const estado = req.query.estado ? String(req.query.estado) : undefined;
+
+    const data = await service.getSalesHistory(desde, hasta, usuarioId, estado);
     res.json(data);
-  } catch (error: any) {
-    res.status(500).json({ error: 'Error al cargar el historial de ventas' });
+  } catch (error) {
+    next(error);
   }
 });

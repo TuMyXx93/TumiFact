@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { IStorageService, StorageFile, StorageUploadResult } from './storage.interface';
+import type { IStorageService, StorageFile, StorageUploadResult } from './storage.interface';
 
 export class LocalStorageService implements IStorageService {
   private baseDir: string;

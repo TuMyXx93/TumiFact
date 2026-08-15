@@ -1,4 +1,5 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
+import type { Request, Response } from 'express';
 import multer from 'multer';
 import { ConfiguracionService } from './configuracion.service';
 import { validateDTO } from '../../shared/middleware/validate';

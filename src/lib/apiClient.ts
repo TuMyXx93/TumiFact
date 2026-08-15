@@ -2,6 +2,9 @@ const HEALTH_PATH = '/api/health/db';
 const SESSION_HEALTHY_KEY = 'tumifact.healthyApiBase';
 const LOCAL_OVERRIDE_KEY = 'tumifact.apiBaseUrl';
 
+/** Timeout global para todas las peticiones apiFetch (ms) */
+const FETCH_TIMEOUT_MS = 10_000;
+
 const ENV_API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || '').trim();
 const ENV_API_PORT = (import.meta.env.PUBLIC_API_PORT || '').trim();
 const ENV_API_PORTS = (import.meta.env.PUBLIC_API_PORTS || '').trim();
@@ -202,21 +205,89 @@ export async function resolveApiBaseUrl(force = false): Promise<string | null> {
   return null;
 }
 
+export function getStoredAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const fromLocal = localStorage.getItem('tumifact_token');
+  if (fromLocal) return fromLocal;
+  const fromSession = sessionStorage.getItem('tumifact_token');
+  if (fromSession) return fromSession;
+  
+  // Buscar en cookies
+  const match = document.cookie.match(/(?:^|;\s*)tumifact_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export async function resolveApiUrl(path: string): Promise<string> {
   const cleanPath = normalizePath(path);
   const baseUrl = await resolveApiBaseUrl();
   return baseUrl ? `${baseUrl}${cleanPath}` : cleanPath;
 }
 
-export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+function handleUnauthorized(): void {
+  if (typeof window === 'undefined' || window.location.pathname === '/login') return;
+  localStorage.removeItem('tumifact_token');
+  localStorage.removeItem('tumifact_user');
+  sessionStorage.removeItem('tumifact_token');
+  sessionStorage.removeItem('tumifact_user');
+  document.cookie = 'tumifact_token=; path=/; max-age=0; SameSite=Lax';
+  window.location.href = '/login';
+}
+
+export async function apiFetch(
+  path: string,
+  init?: RequestInit & { timeoutMs?: number }
+): Promise<Response> {
   const cleanPath = normalizePath(path);
   const primaryUrl = await resolveApiUrl(cleanPath);
 
+  // Headers por defecto + inyección de Token JWT si existe
+  const headers = new Headers(init?.headers || {});
+  const token = getStoredAuthToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // AbortController con timeout configurable (default: FETCH_TIMEOUT_MS)
+  const timeoutMs = init?.timeoutMs ?? FETCH_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  // Quitar timeoutMs de las opciones nativas de fetch
+  const { timeoutMs: _omit, ...restInit } = init ?? {};
+  const fetchInit: RequestInit = {
+    ...restInit,
+    headers,
+    credentials: restInit.credentials || 'include',
+    signal: controller.signal
+  };
+
   try {
-    return await fetch(primaryUrl, init);
+    const res = await fetch(primaryUrl, fetchInit);
+    clearTimeout(timeoutId);
+    if (res.status === 401) handleUnauthorized();
+    return res;
   } catch (err) {
-    const recoveredBase = await resolveApiBaseUrl(true);
-    if (!recoveredBase) throw err;
-    return fetch(`${recoveredBase}${cleanPath}`, init);
+    clearTimeout(timeoutId);
+
+    // Recovery: solo reintenta si tenemos un base cacheado (NO re-escanea puertos)
+    const fallbackBase = cachedApiBase;
+    if (!fallbackBase || fallbackBase === primaryUrl.replace(cleanPath, '')) {
+      throw err;
+    }
+
+    const fallbackController = new AbortController();
+    const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${fallbackBase}${cleanPath}`, {
+        ...fetchInit,
+        signal: fallbackController.signal
+      });
+      clearTimeout(fallbackTimeoutId);
+      if (res.status === 401) handleUnauthorized();
+      return res;
+    } catch (fallbackErr) {
+      clearTimeout(fallbackTimeoutId);
+      throw fallbackErr;
+    }
   }
 }

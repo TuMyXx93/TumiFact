@@ -37,6 +37,7 @@ async function setupTestDatabase() {
     const testClient = new Client(testConfig);
     await testClient.connect();
     try {
+        await testClient.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
         await testClient.query(sql);
         console.log('✓ Schema ejecutado en tumifact_test');
     } finally {

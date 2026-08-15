@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import type { Cliente } from '../../types';
-import { Users, UserPlus, Search, CheckCircle2, AlertCircle, Phone, MapPin, Edit2, Trash2 } from 'lucide-react';
+import { Users, UserPlus, Search, CheckCircle2, AlertCircle, Phone, MapPin, Edit2, Trash2, Mail, CreditCard, Award } from 'lucide-react';
 import { apiFetch } from '../../lib/apiClient';
+import { formatNumber } from '../../lib/format';
 
 interface ClientManagerProps {
   initialClientes: Cliente[];
@@ -17,25 +18,37 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
   // Formulario nuevo/editar cliente
   const [formData, setFormData] = useState({
     nombre: '',
-    direccion: '',
+    apellido: '',
+    numero_identificacion: '',
+    email: '',
     telefono: '',
-    nit: ''
+    telefono_secundario: '',
+    direccion_texto: '',
+    tipo_cliente: 'detal',
+    notas: ''
   });
 
-  const filteredClientes = clientes.filter(
-    (c) =>
-      c.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      (c.telefono && c.telefono.includes(search)) ||
-      (c.direccion && c.direccion.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredClientes = clientes.filter((c) => {
+    const term = search.toLowerCase();
+    const fullName = `${c.nombre} ${c.apellido || ''}`.toLowerCase();
+    const ident = (c.numero_identificacion || '').toLowerCase();
+    const tel = (c.telefono || '').toLowerCase();
+    const email = (c.email || '').toLowerCase();
+    return fullName.includes(term) || ident.includes(term) || tel.includes(term) || email.includes(term);
+  });
 
   const handleEditClick = (c: Cliente) => {
     setEditingCliente(c);
     setFormData({
       nombre: c.nombre,
-      direccion: c.direccion || '',
+      apellido: c.apellido || '',
+      numero_identificacion: c.numero_identificacion || '',
+      email: c.email || '',
       telefono: c.telefono || '',
-      nit: c.nit || ''
+      telefono_secundario: c.telefono_secundario || '',
+      direccion_texto: c.direccion_texto || c.direccion?.calle || '',
+      tipo_cliente: c.tipo_cliente || 'detal',
+      notas: c.notas || ''
     });
     setIsModalOpen(true);
   };
@@ -45,10 +58,10 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
 
     try {
       const res = await apiFetch(`/api/clientes/${id}`, { method: 'DELETE' });
-
-      // Parseo seguro del body: el DELETE puede devolver JSON de error o éxito
       let data: any = {};
-      try { data = await res.json(); } catch (_) {}
+      try {
+        data = await res.json();
+      } catch (_) {}
 
       if (res.ok) {
         setClientes(clientes.filter((c) => c.id !== id));
@@ -70,14 +83,18 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
 
     const payload = {
       nombre: formData.nombre.trim(),
-      direccion: formData.direccion.trim() || null,
-      telefono: formData.telefono.trim() || null
+      apellido: formData.apellido.trim() || null,
+      numero_identificacion: formData.numero_identificacion.trim() || null,
+      email: formData.email.trim() || null,
+      telefono: formData.telefono.trim() || null,
+      telefono_secundario: formData.telefono_secundario.trim() || null,
+      direccion_texto: formData.direccion_texto.trim() || null,
+      tipo_cliente: formData.tipo_cliente,
+      notas: formData.notas.trim() || null
     };
 
     try {
-      const url = editingCliente
-        ? `/api/clientes/${editingCliente.id}`
-        : '/api/clientes';
+      const url = editingCliente ? `/api/clientes/${editingCliente.id}` : '/api/clientes';
       const method = editingCliente ? 'PUT' : 'POST';
 
       const res = await apiFetch(url, {
@@ -97,7 +114,17 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
         }
         setIsModalOpen(false);
         setEditingCliente(null);
-        setFormData({ nombre: '', direccion: '', telefono: '', nit: '' });
+        setFormData({
+          nombre: '',
+          apellido: '',
+          numero_identificacion: '',
+          email: '',
+          telefono: '',
+          telefono_secundario: '',
+          direccion_texto: '',
+          tipo_cliente: 'detal',
+          notas: ''
+        });
       } else {
         setStatusMessage({ type: 'error', text: data.error || 'Error al guardar el cliente' });
       }
@@ -114,7 +141,7 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por nombre, teléfono..."
+            placeholder="Buscar por nombre, documento, tel..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
@@ -122,7 +149,21 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingCliente(null);
+            setFormData({
+              nombre: '',
+              apellido: '',
+              numero_identificacion: '',
+              email: '',
+              telefono: '',
+              telefono_secundario: '',
+              direccion_texto: '',
+              tipo_cliente: 'detal',
+              notas: ''
+            });
+            setIsModalOpen(true);
+          }}
           className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
         >
           <UserPlus className="h-4 w-4" />
@@ -158,6 +199,17 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-semibold text-blue-400">#{c.id}</span>
                 <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      c.tipo_cliente === 'vip'
+                        ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                        : c.tipo_cliente === 'mayorista'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    {c.tipo_cliente || 'detal'}
+                  </span>
                   <button
                     onClick={() => handleEditClick(c)}
                     className="p-1 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg transition-colors"
@@ -172,16 +224,19 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                  <div className="h-7 w-7 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-xs font-['Outfit']">
-                    {c.nombre.charAt(0).toUpperCase()}
-                  </div>
                 </div>
               </div>
 
               <div>
                 <h3 className="font-bold text-white text-base group-hover:text-blue-300 transition-colors">
-                  {c.nombre}
+                  {c.nombre} {c.apellido || ''}
                 </h3>
+                {c.numero_identificacion && (
+                  <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <CreditCard className="h-3 w-3 text-slate-500" />
+                    <span>Doc: {c.numero_identificacion}</span>
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5 pt-2 border-t border-slate-800/80 text-xs text-slate-400">
@@ -191,12 +246,26 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
                     <span>{c.telefono}</span>
                   </div>
                 )}
-                {c.direccion && (
+                {c.email && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-slate-500" />
-                    <span className="truncate">{c.direccion}</span>
+                    <Mail className="h-3.5 w-3.5 text-slate-500" />
+                    <span className="truncate">{c.email}</span>
                   </div>
                 )}
+                {(c.direccion_texto || c.direccion?.calle) && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3.5 w-3.5 text-slate-500" />
+                    <span className="truncate">{c.direccion_texto || c.direccion?.calle}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Métricas del cliente */}
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <span>Compras: <strong>{c.numero_facturas || 0}</strong></span>
+                <span className="text-emerald-400 font-semibold">
+                  ${formatNumber(c.total_compras || 0)}
+                </span>
               </div>
             </div>
           ))
@@ -206,7 +275,7 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
       {/* Modal Nuevo / Editar Cliente */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-6 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <h3 className="text-lg font-bold text-white font-['Outfit'] flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-400" />
@@ -224,36 +293,88 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
             </div>
 
             <form onSubmit={handleCreateOrUpdateCliente} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">Nombre / Razón Social *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ej. Distribuidora Central S.A.S."
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">Nombre *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ej. Juan"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">Apellido / Razón</label>
+                  <input
+                    type="text"
+                    placeholder="ej. Pérez o S.A.S."
+                    value={formData.apellido}
+                    onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                    className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">Documento / NIT</label>
+                  <input
+                    type="text"
+                    placeholder="ej. 1020304050"
+                    value={formData.numero_identificacion}
+                    onChange={(e) => setFormData({ ...formData, numero_identificacion: e.target.value })}
+                    className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">Tipo de Cliente</label>
+                  <select
+                    value={formData.tipo_cliente}
+                    onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value })}
+                    className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="detal">Detal / Minorista</option>
+                    <option value="mayorista">Mayorista</option>
+                    <option value="vip">VIP / Especial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">Teléfono Principal</label>
+                  <input
+                    type="text"
+                    placeholder="ej. 301 523 4567"
+                    value={formData.telefono}
+                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                    className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">Correo Electrónico</label>
+                  <input
+                    type="email"
+                    placeholder="cliente@ejemplo.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">Teléfono de Contacto</label>
-                <input
-                  type="text"
-                  placeholder="ej. 301 523 4567"
-                  value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">Dirección Principal</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase">Dirección</label>
                 <input
                   type="text"
                   placeholder="ej. Calle 50 #25-15, Medellín"
-                  value={formData.direccion}
-                  onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                  value={formData.direccion_texto}
+                  onChange={(e) => setFormData({ ...formData, direccion_texto: e.target.value })}
                   className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>

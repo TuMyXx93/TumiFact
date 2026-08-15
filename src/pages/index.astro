@@ -1,74 +1,350 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import LiveMonitoringIsland from '../components/dashboard/LiveMonitoringIsland';
+import { db } from '../lib/db.js';
+
+// KPIs via SSR directo desde PostgreSQL
+let kpis = {
+  totalVentasHoy: 0,
+  totalFacturasHoy: 0,
+  separadosActivos: 0,
+  clientesTotal: 0,
+  productosTotal: 0,
+  stockCritico: 0,
+  ventasEfectivo: 0,
+  ventasTransferencia: 0,
+  ventasTarjeta: 0,
+  cajaAbierta: false,
+  cajaMonto: 0
+};
+
+const currentUser = Astro.locals.user as any;
+const currentUserId = currentUser?.id || null;
+
+try {
+  const hoy = new Date().toISOString().split('T')[0];
+
+  const cajaQuery = currentUserId
+    ? db.query(`SELECT * FROM sesiones_caja WHERE usuario_id = $1 AND estado = 'abierta' ORDER BY abierta_at DESC LIMIT 1`, [currentUserId])
+    : Promise.resolve({ rows: [] } as any);
+
+  const [ventasHoy, sepActivos, totClientes, totProductos, criticos, caja] = await Promise.allSettled([
+    db.query(`
+      SELECT COALESCE(SUM(total), 0) AS total_ventas,
+             COUNT(*) AS total_facturas,
+             COALESCE(SUM(CASE WHEN forma_pago='efectivo' THEN total ELSE 0 END), 0) AS efectivo,
+             COALESCE(SUM(CASE WHEN forma_pago='transferencia' THEN total ELSE 0 END), 0) AS transferencia,
+             COALESCE(SUM(CASE WHEN forma_pago='tarjeta' THEN total ELSE 0 END), 0) AS tarjeta
+      FROM facturas WHERE DATE(fecha) = $1
+    `, [hoy]),
+    db.query(`SELECT COUNT(*) AS total FROM separados WHERE estado = 'activo'`),
+    db.query(`SELECT COUNT(*) AS total FROM clientes WHERE activo = true`),
+    db.query(`SELECT COUNT(*) AS total FROM productos WHERE activo = true`),
+    db.query(`SELECT COUNT(*) AS total FROM productos WHERE activo = true AND stock_actual <= stock_minimo`),
+    cajaQuery
+  ]);
+
+  if (ventasHoy.status === 'fulfilled') {
+    const r = ventasHoy.value.rows[0];
+    kpis.totalVentasHoy = parseFloat(r?.total_ventas || 0);
+    kpis.totalFacturasHoy = parseInt(r?.total_facturas || 0, 10);
+    kpis.ventasEfectivo = parseFloat(r?.efectivo || 0);
+    kpis.ventasTransferencia = parseFloat(r?.transferencia || 0);
+    kpis.ventasTarjeta = parseFloat(r?.tarjeta || 0);
+  }
+  if (sepActivos.status === 'fulfilled') kpis.separadosActivos = parseInt(sepActivos.value.rows[0]?.total || 0, 10);
+  if (totClientes.status === 'fulfilled') kpis.clientesTotal = parseInt(totClientes.value.rows[0]?.total || 0, 10);
+  if (totProductos.status === 'fulfilled') kpis.productosTotal = parseInt(totProductos.value.rows[0]?.total || 0, 10);
+  if (criticos.status === 'fulfilled') kpis.stockCritico = parseInt(criticos.value.rows[0]?.total || 0, 10);
+  if (caja.status === 'fulfilled' && caja.value.rows.length > 0) {
+    kpis.cajaAbierta = true;
+    kpis.cajaMonto = parseFloat(caja.value.rows[0].monto_apertura || 0);
+  }
+} catch (e) {
+  // KPIs fallback — frontend fetch al montar
+}
+
+const fmt = (n: number) => new Intl.NumberFormat('es-CO').format(Math.round(n));
+const today = new Date().toLocaleDateString('es-CO', { 
+  timeZone: 'America/Bogota',
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric' 
+});
 ---
 
-<Layout title="TumiFact - Dashboard">
+<Layout title="TumiFact v2.0 — Dashboard POS">
   <div class="space-y-8">
-    <!-- Header Dashboard -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+
+    <!-- === HEADER === -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold font-['Outfit'] text-white">
-          Sistema de Facturación
+        <h1 class="text-2xl md:text-3xl font-extrabold font-['Outfit'] text-white tracking-tight">
+          Panel de Control <span class="text-blue-400">POS</span>
         </h1>
-        <p class="text-slate-400 text-sm mt-1">
-          Bienvenido al centro de control de facturación.
-        </p>
+        <p class="text-slate-400 text-sm mt-1 capitalize">{today}</p>
       </div>
-      <div class="flex items-center gap-3">
-        <a href="/ventas" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5">
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Estado de Caja badge -->
+        <span class={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${kpis.cajaAbierta ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+          <span class={`h-2 w-2 rounded-full ${kpis.cajaAbierta ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
+          {kpis.cajaAbierta ? 'Caja Abierta' : 'Caja Cerrada'}
+        </span>
+        <a href="/caja" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-all">
+          Gestionar Caja
+        </a>
+        <a href="/ventas" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-sm shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5">
           + Nueva Factura (POS)
         </a>
       </div>
     </div>
 
-    <!-- Secciones Rápidas -->
-    <div class="grid grid-cols-1 gap-6">
-      <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-800 space-y-4">
-        <h2 class="text-lg font-bold text-white font-['Outfit'] flex items-center gap-2">
-          📋 Accesos Rápidos del Sistema
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <a href="/productos" class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-all flex items-center justify-between group">
-            <div>
-              <h3 class="font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">Gestión de Productos</h3>
-              <p class="text-xs text-slate-400">Catálogo, precios por KG/LB/UND e inventario</p>
-            </div>
-            <span class="text-slate-500 group-hover:translate-x-1 transition-transform">→</span>
-          </a>
+    <!-- === KPI CARDS PRINCIPALES === -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-          <a href="/clientes" class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-all flex items-center justify-between group">
-            <div>
-              <h3 class="font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">Gestión de Clientes</h3>
-              <p class="text-xs text-slate-400">Directorio, NIT/Cédula e historial</p>
-            </div>
-            <span class="text-slate-500 group-hover:translate-x-1 transition-transform">→</span>
-          </a>
+      <!-- Ventas del Día -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2 hover:border-blue-500/30 transition-all shadow-lg col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ventas de Hoy</span>
+          <div class="h-8 w-8 min-w-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+            <svg class="h-4 w-4 shrink-0 block" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+        <p class="text-2xl font-extrabold text-white tracking-tight font-mono">${fmt(kpis.totalVentasHoy)}</p>
+        <p class="text-xs text-slate-400">{kpis.totalFacturasHoy} {kpis.totalFacturasHoy === 1 ? 'factura' : 'facturas'} emitidas</p>
+      </div>
 
-          <a href="/ventas" class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-all flex items-center justify-between group">
-            <div>
-              <h3 class="font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">Caja / Facturación POS</h3>
-              <p class="text-xs text-slate-400">Generación inmediata con cálculo de totales</p>
-            </div>
-            <span class="text-slate-500 group-hover:translate-x-1 transition-transform">→</span>
-          </a>
+      <!-- Separados Activos -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2 hover:border-amber-500/30 transition-all shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Separados</span>
+          <div class="h-8 w-8 min-w-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+            <svg class="h-4 w-4 shrink-0 block" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+          </div>
+        </div>
+        <p class="text-2xl font-extrabold text-white tracking-tight font-mono">{kpis.separadosActivos}</p>
+        <p class="text-xs text-slate-400">planes de pago activos</p>
+      </div>
 
-          <a href="/historial" class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-all flex items-center justify-between group">
-            <div>
-              <h3 class="font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">Historial de Ventas</h3>
-              <p class="text-xs text-slate-400">Consulta y seguimiento de ventas registradas</p>
-            </div>
-            <span class="text-slate-500 group-hover:translate-x-1 transition-transform">→</span>
-          </a>
+      <!-- Stock Crítico -->
+      <div class={`bg-slate-900/80 border rounded-2xl p-5 space-y-2 transition-all shadow-lg ${kpis.stockCritico > 0 ? 'border-rose-500/30 hover:border-rose-500/50' : 'border-slate-800 hover:border-emerald-500/30'}`}>
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stock Crítico</span>
+          <div class={`h-8 w-8 min-w-8 rounded-xl flex items-center justify-center shrink-0 ${kpis.stockCritico > 0 ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+            <svg class="h-4 w-4 shrink-0 block" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+        </div>
+        <p class={`text-2xl font-extrabold tracking-tight font-mono ${kpis.stockCritico > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{kpis.stockCritico}</p>
+        <p class="text-xs text-slate-400">{kpis.stockCritico > 0 ? 'artículos bajo mínimo' : 'inventario estable'}</p>
+      </div>
 
-          <a href="/configuracion" class="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800/80 transition-all flex items-center justify-between group">
-            <div>
-              <h3 class="font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">Configuración</h3>
-              <p class="text-xs text-slate-400">Datos de empresa, Logo y QR de pagos</p>
-            </div>
-            <span class="text-slate-500 group-hover:translate-x-1 transition-transform">→</span>
-          </a>
+      <!-- Clientes -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2 hover:border-cyan-500/30 transition-all shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes</span>
+          <div class="h-8 w-8 min-w-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+            <svg class="h-4 w-4 shrink-0 block" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+        </div>
+        <p class="text-2xl font-extrabold text-white tracking-tight font-mono">{kpis.clientesTotal}</p>
+        <p class="text-xs text-slate-400">{kpis.productosTotal} productos en catálogo</p>
+      </div>
+    </div>
+
+    <!-- === DESGLOSE FORMAS DE PAGO HOY === -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4 hover:border-emerald-500/20 transition-all">
+        <div class="h-10 w-10 min-w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+          <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Efectivo</p>
+          <p class="text-lg font-extrabold text-white font-mono truncate">${fmt(kpis.ventasEfectivo)}</p>
+        </div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4 hover:border-blue-500/20 transition-all">
+        <div class="h-10 w-10 min-w-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+          <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Transferencia</p>
+          <p class="text-lg font-extrabold text-white font-mono truncate">${fmt(kpis.ventasTransferencia)}</p>
+        </div>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-4 hover:border-purple-500/20 transition-all">
+        <div class="h-10 w-10 min-w-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+          <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tarjeta</p>
+          <p class="text-lg font-extrabold text-white font-mono truncate">${fmt(kpis.ventasTarjeta)}</p>
         </div>
       </div>
     </div>
+
+    <!-- === MONITOREO EN VIVO REACT ISLAND (EXCLUSIVO ADMIN / GERENTE) === -->
+    {(currentUser?.rol_nombre === 'admin' || currentUser?.rol_nombre === 'gerente') && (
+      <LiveMonitoringIsland client:load />
+    )}
+
+    <!-- === MÓDULOS DEL SISTEMA === -->
+    <div>
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 pl-1">Módulos del Sistema v2.0 POS</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <!-- POS / Facturación -->
+        <a href="/ventas" class="group bg-slate-900/80 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-5 transition-all shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-blue-500/10 text-blue-400 group-hover:bg-blue-500/20 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-blue-300 transition-colors">Punto de Venta POS</h3>
+              <p class="text-xs text-slate-400">Facturación con descuentos inline</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">Abrir POS →</span>
+        </a>
+
+        <!-- Separados -->
+        <a href="/separados" class="group bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 transition-all shadow-lg hover:shadow-amber-500/10 hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-amber-300 transition-colors">Separados & Abonos</h3>
+              <p class="text-xs text-slate-400">Planes de pago 30-45 días — {kpis.separadosActivos} activos</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Ver Separados →</span>
+        </a>
+
+        <!-- Caja -->
+        <a href="/caja" class="group bg-slate-900/80 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 transition-all shadow-lg hover:shadow-emerald-500/10 hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-emerald-300 transition-colors">Control de Caja</h3>
+              <p class="text-xs text-slate-400">{kpis.cajaAbierta ? 'Turno activo — Apertura $' + fmt(kpis.cajaMonto) : 'Sin sesión abierta'}</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Gestionar Caja →</span>
+        </a>
+
+        <!-- Inventario -->
+        <a href="/inventario" class={`group bg-slate-900/80 border rounded-2xl p-5 transition-all shadow-lg hover:-translate-y-0.5 ${kpis.stockCritico > 0 ? 'border-rose-500/30 hover:border-rose-500/60' : 'border-slate-800 hover:border-slate-600'}`}>
+          <div class="flex items-center gap-3 mb-3">
+            <div class={`h-10 w-10 min-w-10 rounded-xl flex items-center justify-center transition-colors shrink-0 ${kpis.stockCritico > 0 ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-700 text-slate-300'}`}>
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <div>
+              <h3 class={`font-bold transition-colors ${kpis.stockCritico > 0 ? 'text-rose-300' : 'text-white group-hover:text-slate-200'}`}>Inventario & Kardex</h3>
+              <p class="text-xs text-slate-400">{kpis.stockCritico > 0 ? `⚠ ${kpis.stockCritico} artículos bajo mínimo` : 'Stock saludable'}</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ver Kardex →</span>
+        </a>
+
+        <!-- Clientes -->
+        <a href="/clientes" class="group bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 transition-all shadow-lg hover:shadow-cyan-500/10 hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-cyan-300 transition-colors">Gestión de Clientes</h3>
+              <p class="text-xs text-slate-400">{kpis.clientesTotal} clientes registrados (3NF)</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-cyan-400 uppercase tracking-wider">Ver Clientes →</span>
+        </a>
+
+        <!-- Empleados (Exclusivo Admin / Gerente) -->
+        {(currentUser?.rol_nombre === 'admin' || currentUser?.rol_nombre === 'gerente') && (
+          <a href="/empleados" class="group bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 transition-all shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="h-10 w-10 min-w-10 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20 flex items-center justify-center transition-colors shrink-0">
+                <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              </div>
+              <div>
+                <h3 class="font-bold text-white group-hover:text-indigo-300 transition-colors">Gestión de Empleados</h3>
+                <p class="text-xs text-slate-400">Equipo, roles, auditoría y métricas</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">Administrar Equipo →</span>
+          </a>
+        )}
+
+        <!-- Reportes -->
+        <a href="/reportes" class="group bg-slate-900/80 border border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 transition-all shadow-lg hover:shadow-purple-500/10 hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-purple-300 transition-colors">Reportes & Exportaciones</h3>
+              <p class="text-xs text-slate-400">PDF, CSV con filtros avanzados</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">Ver Reportes →</span>
+        </a>
+
+        <!-- Productos -->
+        <a href="/productos" class="group bg-slate-900/80 border border-slate-800 hover:border-slate-600 rounded-2xl p-5 transition-all shadow-lg hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-slate-700 text-slate-300 group-hover:bg-slate-600 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-slate-200 transition-colors">Catálogo de Productos</h3>
+              <p class="text-xs text-slate-400">{kpis.productosTotal} productos • Detal y Mayorista</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ver Catálogo →</span>
+        </a>
+
+        <!-- Historial -->
+        <a href="/historial" class="group bg-slate-900/80 border border-slate-800 hover:border-slate-600 rounded-2xl p-5 transition-all shadow-lg hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-slate-700 text-slate-300 group-hover:bg-slate-600 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-slate-200 transition-colors">Historial de Ventas</h3>
+              <p class="text-xs text-slate-400">Consulta y seguimiento de todas las facturas</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ver Historial →</span>
+        </a>
+
+        <!-- Configuración -->
+        <a href="/configuracion" class="group bg-slate-900/80 border border-slate-800 hover:border-slate-600 rounded-2xl p-5 transition-all shadow-lg hover:-translate-y-0.5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="h-10 w-10 min-w-10 rounded-xl bg-slate-700 text-slate-300 group-hover:bg-slate-600 flex items-center justify-center transition-colors shrink-0">
+              <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-white group-hover:text-slate-200 transition-colors">Configuración del Sistema</h3>
+              <p class="text-xs text-slate-400">Empresa, logo, tickets y políticas</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Abrir Config →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- === FOOTER INFO === -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+      <p class="text-[11px] text-slate-600">TumiFact v2.0 POS — Stack: Astro v7 + React 19 + PostgreSQL 18.4 + Argon2id + Socket.io</p>
+      <div class="flex items-center gap-3">
+        <a href="/login" class="text-[11px] text-slate-500 hover:text-blue-400 transition-colors">Portal de Acceso</a>
+        <a href="/historial" class="text-[11px] text-slate-500 hover:text-blue-400 transition-colors">Ver Todas las Facturas</a>
+      </div>
+    </div>
+
   </div>
 </Layout>

@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ReportesManager from '../components/reportes/ReportesManager';
+---
+
+<Layout title="Reportes & Exportaciones — TumiFact POS">
+  <div class="space-y-6">
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-['Outfit']">
+          Centro de Reportes & Exportaciones
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Exportación de ventas y balances en formatos PDF oficial y CSV para Excel.
+        </p>
+      </div>
+    </header>
+
+    <ReportesManager client:load />
+  </div>
+</Layout>

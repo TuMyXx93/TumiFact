@@ -1,5 +1,6 @@
 import { db } from '../../db';
-import { configuracionImpresion, ConfiguracionItem, NewConfiguracion } from '../../db/schema/configuracion';
+import { configuracionImpresion } from '../../db/schema/configuracion';
+import type { ConfiguracionItem, NewConfiguracion } from '../../db/schema/configuracion';
 import { eq } from 'drizzle-orm';
 
 export class ConfiguracionRepository {
