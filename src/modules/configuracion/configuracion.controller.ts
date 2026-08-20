@@ -4,6 +4,7 @@ import multer from 'multer';
 import { ConfiguracionService } from './configuracion.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { SaveConfiguracionDTO } from './configuracion.dto';
+import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 
 export const configuracionRouter = Router();
 const service = new ConfiguracionService();
@@ -13,7 +14,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-configuracionRouter.get('/', async (req: Request, res: Response) => {
+configuracionRouter.get('/', verifyAuth, async (req: Request, res: Response) => {
   try {
     const data = await service.getConfiguracion();
     res.json(data);
@@ -24,6 +25,8 @@ configuracionRouter.get('/', async (req: Request, res: Response) => {
 
 configuracionRouter.post(
   '/',
+  verifyAuth,
+  requireRole('admin'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'qr', maxCount: 1 }

@@ -1,11 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../../config/security';
 import { db } from '../../db';
 import { usuarios } from '../../db/schema/usuarios';
 import { roles } from '../../db/schema/roles';
 import { eq } from 'drizzle-orm';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'tumifact-super-secret-jwt-key-2026';
 
 export interface AuthenticatedUser {
   id: number;
@@ -15,7 +14,7 @@ export interface AuthenticatedUser {
   numero_identificacion?: string | null;
   rol_id: number;
   rol_nombre: string;
-  permisos: Record<string, any>;
+  permisos: Record<string, unknown>;
 }
 
 declare global {
@@ -81,7 +80,7 @@ export async function verifyAuth(req: Request, res: Response, next: NextFunction
       numero_identificacion: user.numero_identificacion,
       rol_id: user.rol_id,
       rol_nombre: user.rol_nombre || 'empleado',
-      permisos: (user.permisos as Record<string, any>) || {}
+      permisos: (user.permisos as Record<string, unknown>) || {}
     };
 
     next();
@@ -138,7 +137,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
         numero_identificacion: userRows[0].numero_identificacion,
         rol_id: userRows[0].rol_id,
         rol_nombre: userRows[0].rol_nombre || 'empleado',
-        permisos: (userRows[0].permisos as Record<string, any>) || {}
+        permisos: (userRows[0].permisos as Record<string, unknown>) || {}
       };
     }
   } catch (_) {

@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { DescuentosService } from './descuentos.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateDescuentoDTO, UpdateDescuentoDTO } from './descuentos.dto';
-import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 
 export const descuentosRouter = Router();
 const service = new DescuentosService();
 
 // GET /api/descuentos — Listar descuentos activos para POS
-descuentosRouter.get('/', optionalAuth, async (req, res, next) => {
+descuentosRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const list = await service.getAll();
     res.json(list);
@@ -18,7 +18,7 @@ descuentosRouter.get('/', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/descuentos/:id — Detalle de descuento
-descuentosRouter.get('/:id', optionalAuth, async (req, res, next) => {
+descuentosRouter.get('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const d = await service.getById(id);

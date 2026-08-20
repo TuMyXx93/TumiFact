@@ -1,5 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
+import { CORS_ORIGINS } from '../config/security';
 
 export let io: SocketIOServer | null = null;
 
@@ -23,7 +24,8 @@ export const SOCKET_EVENTS = {
 export function initSocketIO(httpServer: HttpServer): SocketIOServer {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: '*',
+      origin: CORS_ORIGINS,
+      credentials: true,
       methods: ['GET', 'POST']
     }
   });

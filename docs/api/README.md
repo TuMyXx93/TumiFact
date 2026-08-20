@@ -17,11 +17,15 @@
 ## 🔒 Autenticación & Seguridad
 
 ### Formato de Cabecera de Autorización
-Las solicitudes a rutas protegidas deben incluir el token JWT en el encabezado:
+Las integraciones no navegador pueden solicitar explícitamente el token JWT usando:
+```http
+Accept: application/vnd.tumifact.auth+json
+```
+Después deben enviarlo en:
 ```http
 Authorization: Bearer <token_jwt>
 ```
-*Alternativamente, en entornos de navegador (Astro SSR), el token se transmite de forma segura en la cookie `tumifact_token`.*
+En el frontend Astro, la autenticación usa exclusivamente la cookie `tumifact_token` `HttpOnly`; el navegador la envía automáticamente con `credentials: include`.
 
 ### Clave de Idempotencia (`Idempotency-Key`)
 Para operaciones financieras críticas (`POST /api/facturas`, `POST /api/separados/:id/abonos`), se debe enviar un identificador único en la cabecera:

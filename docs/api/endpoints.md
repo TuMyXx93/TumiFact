@@ -19,11 +19,10 @@ Autenticación dual con correo electrónico o documento de identidad (cédula/NI
 }
 ```
 
-**Respuesta Exitosa (HTTP 200 OK):**
+**Respuesta Exitosa (HTTP 200 OK):** Por defecto la sesión se entrega exclusivamente en la cookie `tumifact_token` con atributos `HttpOnly` y `SameSite=Lax`. Una integración no navegador puede enviar `Accept: application/vnd.tumifact.auth+json` para solicitar también el JWT y usarlo como Bearer.
 ```json
 {
-  "status": "success",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "message": "Inicio de sesión exitoso",
   "user": {
     "id": 1,
     "nombre": "Administrador",
@@ -219,4 +218,3 @@ El servidor emite eventos en tiempo real en el namespace principal para sincroni
 | `caja:movimiento` | Notifica entradas o salidas de efectivo manuales |
 | `empleado:actualizado` | Notifica creación, edición o cambio de estado de un empleado |
 | `stock:actualizado` | Notifica cambios en existencias tras venta o ajuste manual |
-

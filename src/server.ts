@@ -1,7 +1,7 @@
 import http from 'http';
 import dotenv from 'dotenv';
 import app from './app';
-import db from './lib/db';
+import { pool } from './db';
 import { initSocketIO } from './server/socket';
 
 dotenv.config();
@@ -20,7 +20,7 @@ for (let i = 0; i < args.length; i++) {
 async function startServer(): Promise<void> {
   try {
     console.log('Intentando conectar a la base de datos...');
-    await db.query('SELECT NOW()');
+    await pool.query('SELECT NOW()');
     console.log('✓ Conexión exitosa a PostgreSQL');
     console.log(`  Base de datos: ${process.env.DB_DATABASE || 'tumifact_db'}`);
     console.log(`  Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);

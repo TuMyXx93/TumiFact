@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { ProductosService } from './productos.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateProductoDTO, UpdateProductoDTO } from './productos.dto';
-import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 
 export const productosRouter = Router();
 const service = new ProductosService();
 
 // GET /api/productos/buscar?q=... — Búsqueda predictiva para el POS
-productosRouter.get('/buscar', optionalAuth, async (req, res, next) => {
+productosRouter.get('/buscar', verifyAuth, async (req, res, next) => {
   try {
     const query = req.query.q as string;
     if (!query) {
@@ -23,7 +23,7 @@ productosRouter.get('/buscar', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/productos — Catálogo completo
-productosRouter.get('/', optionalAuth, async (req, res, next) => {
+productosRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getAllProductos();
     res.json(data);
@@ -33,7 +33,7 @@ productosRouter.get('/', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/productos/:id — Detalle de producto
-productosRouter.get('/:id', optionalAuth, async (req, res, next) => {
+productosRouter.get('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const data = await service.getProductoById(id);

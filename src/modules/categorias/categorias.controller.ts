@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { CategoriasService } from './categorias.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateCategoriaDTO, UpdateCategoriaDTO } from './categorias.dto';
-import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 
 export const categoriasRouter = Router();
 const service = new CategoriasService();
 
 // GET /api/categorias — Listar todas las categorías activas (Público/Autenticado)
-categoriasRouter.get('/', optionalAuth, async (req, res, next) => {
+categoriasRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const list = await service.getAll();
     res.json(list);
@@ -18,7 +18,7 @@ categoriasRouter.get('/', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/categorias/:id — Detalle de categoría
-categoriasRouter.get('/:id', optionalAuth, async (req, res, next) => {
+categoriasRouter.get('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const cat = await service.getById(id);

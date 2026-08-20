@@ -21,7 +21,9 @@ export const validateDTO = (schema: ZodType<any>) => {
 
         return res.status(400).json({
           error: 'Validación DTO fallida',
-          details: formattedErrors
+          details: formattedErrors,
+          code: 'VALIDATION_ERROR',
+          correlationId: req.correlationId
         });
       }
       next(error);

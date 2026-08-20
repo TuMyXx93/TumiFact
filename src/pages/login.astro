@@ -106,12 +106,9 @@ import Layout from '../layouts/Layout.astro';
         });
 
         const data = await res.json();
-        if (res.ok && data.token) {
-          // Guardar cookie accesible por el servidor para SSR y middleware
-          document.cookie = `tumifact_token=${data.token}; path=/; max-age=43200; SameSite=Lax`;
-          localStorage.setItem('tumifact_token', data.token);
+        if (res.ok && data.user) {
+          // La sesión se mantiene exclusivamente en la cookie HttpOnly emitida por la API.
           localStorage.setItem('tumifact_user', JSON.stringify(data.user));
-          sessionStorage.setItem('tumifact_token', data.token);
           sessionStorage.setItem('tumifact_user', JSON.stringify(data.user));
           
           window.location.href = '/';
@@ -128,11 +125,8 @@ import Layout from '../layouts/Layout.astro';
             body: JSON.stringify({ credential, password })
           });
           const data = await directRes.json();
-          if (directRes.ok && data.token) {
-            document.cookie = `tumifact_token=${data.token}; path=/; max-age=43200; SameSite=Lax`;
-            localStorage.setItem('tumifact_token', data.token);
+          if (directRes.ok && data.user) {
             localStorage.setItem('tumifact_user', JSON.stringify(data.user));
-            sessionStorage.setItem('tumifact_token', data.token);
             sessionStorage.setItem('tumifact_user', JSON.stringify(data.user));
             window.location.href = '/';
             return;

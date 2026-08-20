@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { ReportesService } from './reportes.service';
-import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 
 export const reportesRouter = Router();
 const service = new ReportesService();
 
 // GET /api/reportes/ventas — Exportar ventas en PDF o CSV
-reportesRouter.get('/ventas', optionalAuth, async (req, res, next) => {
+reportesRouter.get('/ventas', verifyAuth, requireRole('gerente', 'admin'), async (req, res, next) => {
   try {
     const format = (req.query.format as string)?.toLowerCase() || 'json';
     const filtros = {
@@ -39,7 +39,7 @@ reportesRouter.get('/ventas', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/reportes/inventario — Exportar inventario en CSV
-reportesRouter.get('/inventario', optionalAuth, async (req, res, next) => {
+reportesRouter.get('/inventario', verifyAuth, requireRole('gerente', 'admin'), async (req, res, next) => {
   try {
     const csv = await service.generateInventarioCSV();
     res.setHeader('Content-Type', 'text/csv');
@@ -51,7 +51,7 @@ reportesRouter.get('/inventario', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/reportes/separados — Exportar reporte de separados en CSV
-reportesRouter.get('/separados', optionalAuth, async (req, res, next) => {
+reportesRouter.get('/separados', verifyAuth, requireRole('gerente', 'admin'), async (req, res, next) => {
   try {
     const estado = req.query.estado as string;
     const csv = await service.generateSeparadosCSV(estado);

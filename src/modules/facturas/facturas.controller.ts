@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { FacturasService } from './facturas.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateFacturaDTO } from './facturas.dto';
-import { optionalAuth, verifyAuth } from '../../shared/middleware/auth';
+import { verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
 import { CajaService } from '../caja/caja.service';
 
@@ -13,12 +13,12 @@ const cajaService = new CajaService();
 // POST /api/facturas — Crear nueva factura con cálculo de subtotales, descuentos e idempotencia
 facturasRouter.post(
   '/',
-  optionalAuth,
+  verifyAuth,
   ensureIdempotencyKey,
   validateDTO(CreateFacturaDTO),
   async (req, res, next) => {
     try {
-      const userId = req.user?.id || 1; // Default admin if unauthenticated
+      const userId = req.user!.id;
       const activeCaja = await cajaService.getActiveSession(userId);
 
       const result = await service.createFactura(req.body, userId, activeCaja?.id, req);
@@ -30,7 +30,7 @@ facturasRouter.post(
 );
 
 // GET /api/facturas/:id/imprimir — Factura completa con detalles y configuración para tiquete térmico
-facturasRouter.get('/:id/imprimir', optionalAuth, async (req, res, next) => {
+facturasRouter.get('/:id/imprimir', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getFacturaWithDetails(parseInt(String(req.params.id), 10));
     if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
@@ -41,7 +41,7 @@ facturasRouter.get('/:id/imprimir', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/facturas/:id/detalles — Solo líneas de productos
-facturasRouter.get('/:id/detalles', optionalAuth, async (req, res, next) => {
+facturasRouter.get('/:id/detalles', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getFacturaDetailsOnly(parseInt(String(req.params.id), 10));
     if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
@@ -54,7 +54,7 @@ facturasRouter.get('/:id/detalles', optionalAuth, async (req, res, next) => {
 export const ventasRouter = Router();
 
 // GET /api/ventas — Historial de ventas con filtros de fecha, cajero y estado
-ventasRouter.get('/', optionalAuth, async (req, res, next) => {
+ventasRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const desde = req.query.desde ? String(req.query.desde) : undefined;
     const hasta = req.query.hasta ? String(req.query.hasta) : undefined;

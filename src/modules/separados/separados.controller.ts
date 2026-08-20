@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { SeparadosService } from './separados.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateSeparadoDTO, RegistrarAbonoDTO } from './separados.dto';
-import { verifyAuth, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
 import { CajaService } from '../caja/caja.service';
 
@@ -11,7 +11,7 @@ const service = new SeparadosService();
 const cajaService = new CajaService();
 
 // GET /api/separados — Listar todos los separados (filtros por estado)
-separadosRouter.get('/', optionalAuth, async (req, res, next) => {
+separadosRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const estado = req.query.estado as string;
     const list = await service.getAllSeparados(estado);
@@ -22,7 +22,7 @@ separadosRouter.get('/', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/separados/:id — Detalle del separado con productos e historial de abonos
-separadosRouter.get('/:id', optionalAuth, async (req, res, next) => {
+separadosRouter.get('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const item = await service.getSeparadoById(id);
@@ -36,7 +36,7 @@ separadosRouter.get('/:id', optionalAuth, async (req, res, next) => {
 // POST /api/separados — Crear nuevo separado (con abono inicial y reserva de inventario)
 separadosRouter.post(
   '/',
-  optionalAuth,
+  verifyAuth,
   ensureIdempotencyKey,
   validateDTO(CreateSeparadoDTO),
   async (req, res, next) => {
@@ -58,7 +58,7 @@ separadosRouter.post(
 // POST /api/separados/:id/abonos — Registrar abono en efectivo/tarjeta/transferencia
 separadosRouter.post(
   '/:id/abonos',
-  optionalAuth,
+  verifyAuth,
   ensureIdempotencyKey,
   validateDTO(RegistrarAbonoDTO),
   async (req, res, next) => {

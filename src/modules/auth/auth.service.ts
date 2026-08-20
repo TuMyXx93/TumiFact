@@ -1,5 +1,6 @@
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../../config/security';
 import { db } from '../../db';
 import { usuarios } from '../../db/schema/usuarios';
 import { roles } from '../../db/schema/roles';
@@ -9,7 +10,6 @@ import type { LoginInput, RegisterUserInput } from './auth.dto';
 import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tumifact-super-secret-jwt-key-2026';
 const JWT_EXPIRES_IN = '12h';
 
 export class AuthService {

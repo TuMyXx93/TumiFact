@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { DevolucionesService } from './devoluciones.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateDevolucionDTO } from './devoluciones.dto';
-import { verifyAuth, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
 import { CajaService } from '../caja/caja.service';
 
@@ -11,7 +11,7 @@ const service = new DevolucionesService();
 const cajaService = new CajaService();
 
 // GET /api/devoluciones — Historial de devoluciones
-devolucionesRouter.get('/', optionalAuth, async (req, res, next) => {
+devolucionesRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const list = await service.getAll();
     res.json(list);
@@ -21,7 +21,7 @@ devolucionesRouter.get('/', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/devoluciones/:id — Detalle de devolución
-devolucionesRouter.get('/:id', optionalAuth, async (req, res, next) => {
+devolucionesRouter.get('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const item = await service.getById(id);
@@ -35,7 +35,7 @@ devolucionesRouter.get('/:id', optionalAuth, async (req, res, next) => {
 // POST /api/devoluciones — Registrar devolución o cambio de mercancía
 devolucionesRouter.post(
   '/',
-  optionalAuth,
+  verifyAuth,
   ensureIdempotencyKey,
   validateDTO(CreateDevolucionDTO),
   async (req, res, next) => {

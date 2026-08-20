@@ -31,11 +31,18 @@ authRouter.post('/login', loginLimiter, validateDTO(LoginDTO), async (req, res, 
       maxAge: 12 * 60 * 60 * 1000 // 12 horas
     });
 
-    res.json({
+    const response = {
       message: 'Inicio de sesión exitoso',
-      token: result.token,
       user: result.user
-    });
+    } as { message: string; user: typeof result.user; token?: string };
+
+    // Browser clients use the HttpOnly cookie. Explicit API clients may opt in
+    // to receiving the access token for Authorization: Bearer usage.
+    if (req.get('Accept')?.includes('application/vnd.tumifact.auth+json')) {
+      response.token = result.token;
+    }
+
+    res.json(response);
   } catch (error) {
     next(error);
   }

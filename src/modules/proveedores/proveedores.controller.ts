@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { ProveedoresService } from './proveedores.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateProveedorDTO, UpdateProveedorDTO } from './proveedores.dto';
-import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 
 export const proveedoresRouter = Router();
 const service = new ProveedoresService();
 
 // GET /api/proveedores — Directorio de proveedores
-proveedoresRouter.get('/', optionalAuth, async (req, res, next) => {
+proveedoresRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const query = req.query.q as string;
     if (query && query.trim()) {
@@ -23,7 +23,7 @@ proveedoresRouter.get('/', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/proveedores/:id — Detalle de proveedor
-proveedoresRouter.get('/:id', optionalAuth, async (req, res, next) => {
+proveedoresRouter.get('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const p = await service.getById(id);

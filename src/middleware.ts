@@ -1,7 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { jwtVerify } from 'jose';
+import { JWT_SECRET } from './config/security';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tumifact-super-secret-jwt-key-2026';
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 // Rutas totalmente públicas que no requieren autenticación
@@ -35,7 +35,22 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (token) {
     try {
       const { payload } = await jwtVerify(token, secretKey);
-      validatedUser = payload;
+      if (
+        typeof payload.id !== 'number' ||
+        typeof payload.nombre !== 'string' ||
+        typeof payload.email !== 'string' ||
+        typeof payload.rol_id !== 'number'
+      ) {
+        throw new Error('Token sin claims de usuario válidos');
+      }
+      validatedUser = {
+        id: payload.id,
+        nombre: payload.nombre,
+        apellido: typeof payload.apellido === 'string' ? payload.apellido : undefined,
+        email: payload.email,
+        rol_id: payload.rol_id,
+        rol_nombre: typeof payload.rol_nombre === 'string' ? payload.rol_nombre : undefined
+      };
       context.locals.user = validatedUser;
     } catch (_err) {
       // Token inválido o expirado

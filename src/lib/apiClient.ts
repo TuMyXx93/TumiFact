@@ -206,15 +206,8 @@ export async function resolveApiBaseUrl(force = false): Promise<string | null> {
 }
 
 export function getStoredAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  const fromLocal = localStorage.getItem('tumifact_token');
-  if (fromLocal) return fromLocal;
-  const fromSession = sessionStorage.getItem('tumifact_token');
-  if (fromSession) return fromSession;
-  
-  // Buscar en cookies
-  const match = document.cookie.match(/(?:^|;\s*)tumifact_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  // The access token is HttpOnly. Browser requests authenticate via credentials.
+  return null;
 }
 
 export async function resolveApiUrl(path: string): Promise<string> {
@@ -225,11 +218,8 @@ export async function resolveApiUrl(path: string): Promise<string> {
 
 function handleUnauthorized(): void {
   if (typeof window === 'undefined' || window.location.pathname === '/login') return;
-  localStorage.removeItem('tumifact_token');
   localStorage.removeItem('tumifact_user');
-  sessionStorage.removeItem('tumifact_token');
   sessionStorage.removeItem('tumifact_user');
-  document.cookie = 'tumifact_token=; path=/; max-age=0; SameSite=Lax';
   window.location.href = '/login';
 }
 

@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { ClientesService } from './clientes.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateClienteDTO, UpdateClienteDTO } from './clientes.dto';
-import { verifyAuth, requireRole, optionalAuth } from '../../shared/middleware/auth';
+import { verifyAuth } from '../../shared/middleware/auth';
 
 export const clientesRouter = Router();
 const service = new ClientesService();
 
 // GET /api/clientes/buscar?q=... — Búsqueda de clientes para POS
-clientesRouter.get('/buscar', optionalAuth, async (req, res, next) => {
+clientesRouter.get('/buscar', verifyAuth, async (req, res, next) => {
   try {
     const query = req.query.q as string;
     if (!query) {
@@ -23,7 +23,7 @@ clientesRouter.get('/buscar', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/clientes — Directorio de clientes
-clientesRouter.get('/', optionalAuth, async (req, res, next) => {
+clientesRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getAllClientes();
     res.json(data);
@@ -33,7 +33,7 @@ clientesRouter.get('/', optionalAuth, async (req, res, next) => {
 });
 
 // GET /api/clientes/:id — Detalle de cliente
-clientesRouter.get('/:id', optionalAuth, async (req, res, next) => {
+clientesRouter.get('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const data = await service.getClienteById(id);
@@ -45,7 +45,7 @@ clientesRouter.get('/:id', optionalAuth, async (req, res, next) => {
 });
 
 // POST /api/clientes — Crear cliente
-clientesRouter.post('/', optionalAuth, validateDTO(CreateClienteDTO), async (req, res, next) => {
+clientesRouter.post('/', verifyAuth, validateDTO(CreateClienteDTO), async (req, res, next) => {
   try {
     const created = await service.createCliente(req.body, req);
     res.status(201).json(created);
@@ -55,7 +55,7 @@ clientesRouter.post('/', optionalAuth, validateDTO(CreateClienteDTO), async (req
 });
 
 // PUT /api/clientes/:id — Actualizar cliente
-clientesRouter.put('/:id', optionalAuth, validateDTO(UpdateClienteDTO), async (req, res, next) => {
+clientesRouter.put('/:id', verifyAuth, validateDTO(UpdateClienteDTO), async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const updated = await service.updateCliente(id, req.body, req);
@@ -67,7 +67,7 @@ clientesRouter.put('/:id', optionalAuth, validateDTO(UpdateClienteDTO), async (r
 });
 
 // DELETE /api/clientes/:id — Eliminar cliente
-clientesRouter.delete('/:id', optionalAuth, async (req, res, next) => {
+clientesRouter.delete('/:id', verifyAuth, async (req, res, next) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     const deleted = await service.deleteCliente(id, req);
