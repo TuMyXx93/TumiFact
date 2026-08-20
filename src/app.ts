@@ -22,6 +22,8 @@ import { reportesRouter } from './modules/reportes/reportes.controller';
 import { isAllowedOrigin } from './config/security';
 import { correlationId } from './shared/middleware/correlation';
 import { requestLogging } from './shared/middleware/request-logging';
+import { openApiDocument } from './contracts/openapi';
+import { csrfOriginGuard } from './shared/middleware/csrf';
 
 dotenv.config();
 
@@ -32,6 +34,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 app.use(correlationId);
 app.use(requestLogging);
+app.use(csrfOriginGuard);
 
 app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 app.get('/ready', async (req, res) => {
@@ -42,6 +45,7 @@ app.get('/ready', async (req, res) => {
     res.status(503).json({ status: 'not_ready', correlationId: req.correlationId });
   }
 });
+app.get(['/openapi.json', '/api/openapi.json'], (_req, res) => res.json(openApiDocument));
 
 app.use('/static', express.static(path.join(process.cwd(), 'public')));
 app.use(express.static(path.join(process.cwd(), 'public')));

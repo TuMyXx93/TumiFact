@@ -8,6 +8,8 @@ import rateLimit from 'express-rate-limit';
 
 export const authRouter = Router();
 const service = new AuthService();
+const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, maxAge: 15 * 60 * 1000 };
+const refreshCookieOptions = { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 };
 
 // Rate limiter estricto para intentos de login (10 intentos por minuto por IP)
 const loginLimiter = rateLimit({
@@ -24,12 +26,8 @@ authRouter.post('/login', loginLimiter, validateDTO(LoginDTO), async (req, res, 
     const result = await service.login(req.body, req);
     
     // Configurar cookie HTTP-only
-    res.cookie('tumifact_token', result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 12 * 60 * 60 * 1000 // 12 horas
-    });
+    res.cookie('tumifact_token', result.token, cookieOptions);
+    res.cookie('tumifact_refresh', result.refreshToken, refreshCookieOptions);
 
     const response = {
       message: 'Inicio de sesión exitoso',
@@ -50,8 +48,29 @@ authRouter.post('/login', loginLimiter, validateDTO(LoginDTO), async (req, res, 
 
 // POST /api/auth/logout — Cerrar sesión
 authRouter.post('/logout', (req, res) => {
-  res.clearCookie('tumifact_token');
-  res.json({ message: 'Sesión finalizada correctamente' });
+  service.revokeRefreshToken(req.cookies?.tumifact_refresh).finally(() => {
+    res.clearCookie('tumifact_token');
+    res.clearCookie('tumifact_refresh');
+    res.json({ message: 'Sesión finalizada correctamente' });
+  });
+});
+
+authRouter.post('/refresh', async (req, res, next) => {
+  try {
+    const result = await service.refresh(req.cookies?.tumifact_refresh, req);
+    res.cookie('tumifact_token', result.accessToken, cookieOptions);
+    res.cookie('tumifact_refresh', result.refreshToken, refreshCookieOptions);
+    res.json({ message: 'Sesión renovada correctamente', user: result.user });
+  } catch (error) { next(error); }
+});
+
+authRouter.post('/logout-all', verifyAuth, async (req, res, next) => {
+  try {
+    await service.revokeAllSessions(req.user!.id);
+    res.clearCookie('tumifact_token');
+    res.clearCookie('tumifact_refresh');
+    res.json({ message: 'Todas las sesiones fueron revocadas' });
+  } catch (error) { next(error); }
 });
 
 // GET /api/auth/me — Perfil del usuario autenticado

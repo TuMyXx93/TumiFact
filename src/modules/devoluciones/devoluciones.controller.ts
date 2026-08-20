@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { DevolucionesService } from './devoluciones.service';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateDevolucionDTO } from './devoluciones.dto';
-import { verifyAuth } from '../../shared/middleware/auth';
+import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
 import { CajaService } from '../caja/caja.service';
 
@@ -36,11 +36,12 @@ devolucionesRouter.get('/:id', verifyAuth, async (req, res, next) => {
 devolucionesRouter.post(
   '/',
   verifyAuth,
+  requireRole('gerente', 'admin'),
   ensureIdempotencyKey,
   validateDTO(CreateDevolucionDTO),
   async (req, res, next) => {
     try {
-      const userId = req.user?.id || 1;
+      const userId = req.user!.id;
       const activeCaja = await cajaService.getActiveSession(userId);
 
       const result = await service.create(req.body, userId, activeCaja?.id, req);

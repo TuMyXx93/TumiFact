@@ -16,4 +16,5 @@ export * from './abonos_separado';
 export * from './devoluciones';
 export * from './inventario';
 export * from './audit_log';
+export * from './auth_sessions';
 export * from './configuracion';

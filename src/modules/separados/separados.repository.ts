@@ -9,7 +9,7 @@ import { productos } from '../../db/schema/productos';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
 export class SeparadosRepository {
-  async findAll(estado?: string) {
+  async findAll(estado?: string, usuarioId?: number) {
     let query = db
       .select({
         id: separados.id,
@@ -38,9 +38,9 @@ export class SeparadosRepository {
       .leftJoin(clientes, eq(separados.cliente_id, clientes.id))
       .leftJoin(usuarios, eq(separados.usuario_apertura_id, usuarios.id));
 
-    if (estado) {
-      return await query.where(eq(separados.estado, estado)).orderBy(desc(separados.created_at));
-    }
+    if (estado && usuarioId) return await query.where(and(eq(separados.estado, estado), eq(separados.usuario_apertura_id, usuarioId))).orderBy(desc(separados.created_at));
+    if (estado) return await query.where(eq(separados.estado, estado)).orderBy(desc(separados.created_at));
+    if (usuarioId) return await query.where(eq(separados.usuario_apertura_id, usuarioId)).orderBy(desc(separados.created_at));
 
     return await query.orderBy(desc(separados.created_at));
   }

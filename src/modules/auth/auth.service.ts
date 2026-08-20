@@ -9,8 +9,14 @@ import { eq, or } from 'drizzle-orm';
 import type { LoginInput, RegisterUserInput } from './auth.dto';
 import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { authSessions } from '../../db/schema/auth_sessions';
+import { and, isNull } from 'drizzle-orm';
 
-const JWT_EXPIRES_IN = '12h';
+const JWT_EXPIRES_IN = '15m';
+const REFRESH_DAYS = 7;
+
+const hashRefreshToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 export class AuthService {
   async login(input: LoginInput, req?: Request) {
@@ -144,6 +150,7 @@ export class AuthService {
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const refreshToken = await this.createRefreshSession(user.id, req);
 
     await recordAudit({
       usuarioId: user.id,
@@ -156,6 +163,7 @@ export class AuthService {
 
     return {
       token,
+      refreshToken,
       user: {
         id: user.id,
         nombre: user.nombre,
@@ -170,6 +178,65 @@ export class AuthService {
         descuento_max_monto: empData ? parseFloat(empData.descuento_max_monto) : 50000
       }
     };
+  }
+
+  async createRefreshSession(userId: number, req?: Request, familyId: `${string}-${string}-${string}-${string}-${string}` = randomUUID()) {
+    const refreshToken = randomBytes(48).toString('base64url');
+    const expiresAt = new Date(Date.now() + REFRESH_DAYS * 24 * 60 * 60 * 1000);
+    await db.insert(authSessions).values({
+      usuario_id: userId,
+      token_hash: hashRefreshToken(refreshToken),
+      family_id: familyId,
+      expires_at: expiresAt,
+      ip_address: req?.ip || null,
+      user_agent: req?.get('user-agent')?.slice(0, 512) || null
+    });
+    return refreshToken;
+  }
+
+  async refresh(refreshToken: string | undefined, req?: Request) {
+    if (!refreshToken) {
+      const error: any = new Error('Refresh token no proporcionado');
+      error.statusCode = 401;
+      throw error;
+    }
+    const tokenHash = hashRefreshToken(refreshToken);
+    const rows = await db.select().from(authSessions).where(eq(authSessions.token_hash, tokenHash)).limit(1);
+    const session = rows[0];
+    if (!session) {
+      const error: any = new Error('Refresh token inválido, expirado o revocado');
+      error.statusCode = 401;
+      error.code = 'AUTH_REFRESH_REJECTED';
+      throw error;
+    }
+    if (session.revoked_at || session.expires_at <= new Date()) {
+      if (session.revoked_at) await db.update(authSessions).set({ revoked_at: new Date() }).where(eq(authSessions.family_id, session.family_id));
+      const error: any = new Error('Refresh token inválido, expirado o revocado');
+      error.statusCode = 401;
+      error.code = 'AUTH_REFRESH_REJECTED';
+      throw error;
+    }
+    const user = await this.getMe(session.usuario_id);
+    if (!user) {
+      const error: any = new Error('Usuario no encontrado');
+      error.statusCode = 401;
+      throw error;
+    }
+    const accessToken = jwt.sign({ id: user.id, email: user.email, rol_nombre: user.rol_nombre }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const replacement = await this.createRefreshSession(session.usuario_id, req, session.family_id as `${string}-${string}-${string}-${string}-${string}`);
+    const replacementHash = hashRefreshToken(replacement);
+    const replacementRow = await db.select({ id: authSessions.id }).from(authSessions).where(eq(authSessions.token_hash, replacementHash)).limit(1);
+    await db.update(authSessions).set({ revoked_at: new Date(), replaced_by: replacementRow[0]?.id || null, last_used_at: new Date() }).where(eq(authSessions.id, session.id));
+    return { accessToken, refreshToken: replacement, user };
+  }
+
+  async revokeRefreshToken(refreshToken?: string) {
+    if (!refreshToken) return;
+    await db.update(authSessions).set({ revoked_at: new Date() }).where(and(eq(authSessions.token_hash, hashRefreshToken(refreshToken)), isNull(authSessions.revoked_at)));
+  }
+
+  async revokeAllSessions(userId: number) {
+    await db.update(authSessions).set({ revoked_at: new Date() }).where(and(eq(authSessions.usuario_id, userId), isNull(authSessions.revoked_at)));
   }
 
   async register(input: RegisterUserInput, req?: Request) {

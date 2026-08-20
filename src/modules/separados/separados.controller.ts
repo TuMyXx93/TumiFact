@@ -14,7 +14,8 @@ const cajaService = new CajaService();
 separadosRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const estado = req.query.estado as string;
-    const list = await service.getAllSeparados(estado);
+    const scopedUserId = req.user!.rol_nombre === 'cajero' ? req.user!.id : undefined;
+    const list = await service.getAllSeparados(estado, scopedUserId);
     res.json(list);
   } catch (error) {
     next(error);
@@ -27,6 +28,7 @@ separadosRouter.get('/:id', verifyAuth, async (req, res, next) => {
     const id = parseInt(String(req.params.id), 10);
     const item = await service.getSeparadoById(id);
     if (!item) return res.status(404).json({ error: 'Separado no encontrado' });
+    if (req.user!.rol_nombre === 'cajero' && item.usuario_apertura_id !== req.user!.id) return res.status(404).json({ error: 'Separado no encontrado' });
     res.json(item);
   } catch (error) {
     next(error);
@@ -41,7 +43,7 @@ separadosRouter.post(
   validateDTO(CreateSeparadoDTO),
   async (req, res, next) => {
     try {
-      const userId = req.user?.id || 1; // Default admin if unauthenticated
+      const userId = req.user!.id;
       const activeCaja = await cajaService.getActiveSession(userId);
 
       const result = await service.createSeparado(req.body, userId, activeCaja?.id, req);
@@ -64,7 +66,9 @@ separadosRouter.post(
   async (req, res, next) => {
     try {
       const id = parseInt(String(req.params.id), 10);
-      const userId = req.user?.id || 1;
+      const existing = await service.getSeparadoById(id);
+      if (!existing || (req.user!.rol_nombre === 'cajero' && existing.usuario_apertura_id !== req.user!.id)) return res.status(404).json({ error: 'Separado no encontrado' });
+      const userId = req.user!.id;
       const activeCaja = await cajaService.getActiveSession(userId);
 
       const result = await service.registrarAbono(id, req.body, userId, activeCaja?.id, req);

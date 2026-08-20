@@ -14,8 +14,8 @@ import type { Request } from 'express';
 export class SeparadosService {
   constructor(private repo: SeparadosRepository = new SeparadosRepository()) {}
 
-  async getAllSeparados(estado?: string) {
-    const list = await this.repo.findAll(estado);
+  async getAllSeparados(estado?: string, usuarioId?: number) {
+    const list = await this.repo.findAll(estado, usuarioId);
     return list.map((s) => ({
       ...s,
       valor_total: parseFloat(s.valor_total),

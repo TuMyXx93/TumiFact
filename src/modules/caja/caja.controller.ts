@@ -71,6 +71,7 @@ cajaRouter.get('/:id', verifyAuth, async (req, res, next) => {
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
     const session = await service.getSessionById(id);
     if (!session) return res.status(404).json({ error: 'Sesión no encontrada' });
+    if (req.user!.rol_nombre === 'cajero' && session.usuario_id !== req.user!.id) return res.status(404).json({ error: 'Sesión no encontrada' });
     res.json(session);
   } catch (error) {
     next(error);
