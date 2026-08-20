@@ -46,6 +46,23 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  redis:
+    image: redis:7-alpine
+    container_name: tumifact_redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - tumifact_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tumifact_network
+    restart: unless-stopped
+
 # Red personalizada para facilitar comunicación entre servicios
 networks:
   tumifact_network:
@@ -54,4 +71,6 @@ networks:
 # Volúmenes
 volumes:
   tumifact_postgres_data:
+    driver: local
+  tumifact_redis_data:
     driver: local

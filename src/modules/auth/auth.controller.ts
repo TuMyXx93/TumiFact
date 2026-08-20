@@ -5,6 +5,9 @@ import { LoginDTO, RegisterUserDTO } from './auth.dto';
 import { verifyAuth, requireRole } from '../../shared/middleware/auth';
 import { pool } from '../../db';
 import rateLimit from 'express-rate-limit';
+import { refreshRateLimiter } from '../../shared/middleware/rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import { redisSendCommand } from '../../config/redis';
 
 export const authRouter = Router();
 const service = new AuthService();
@@ -17,7 +20,8 @@ const loginLimiter = rateLimit({
   max: 10,
   message: { error: 'Demasiados intentos de inicio de sesión. Por favor intente más tarde.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  store: new RedisStore({ prefix: 'tumifact:rl:login:', sendCommand: redisSendCommand })
 });
 
 // POST /api/auth/login — Inicio de sesión con correo O número de identificación
@@ -55,7 +59,7 @@ authRouter.post('/logout', (req, res) => {
   });
 });
 
-authRouter.post('/refresh', async (req, res, next) => {
+authRouter.post('/refresh', refreshRateLimiter, async (req, res, next) => {
   try {
     const result = await service.refresh(req.cookies?.tumifact_refresh, req);
     res.cookie('tumifact_token', result.accessToken, cookieOptions);

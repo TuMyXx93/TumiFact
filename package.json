@@ -28,6 +28,7 @@
     "rebuild": "pnpm clean && pnpm install",
     "audit": "pnpm audit",
     "test": "jest --runInBand",
+    "test:api": "node --import tsx --test tests/api/*.test.ts",
     "test:coverage": "jest --coverage --runInBand",
     "test:setup": "node tests/db-test-setup.js"
   },
@@ -54,8 +55,10 @@
     "multer": "^2.0.0",
     "pdfkit": "^0.19.1",
     "pg": "^8.11.0",
+    "rate-limit-redis": "^6.0.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "redis": "^6.2.1",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.3.3",

@@ -5,3 +5,4 @@ process.env.DB_HOST = process.env.DB_HOST || 'localhost';
 process.env.DB_PORT = process.env.DB_PORT || '5432';
 process.env.DB_DATABASE = process.env.DB_DATABASE || 'tumifact_test';
 process.env.PORT = process.env.PORT || '3001';
+process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6380/15';

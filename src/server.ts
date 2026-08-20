@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import app from './app';
 import { pool } from './db';
 import { initSocketIO } from './server/socket';
+import { initRedis, closeRedis } from './config/redis';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ async function startServer(): Promise<void> {
   try {
     console.log('Intentando conectar a la base de datos...');
     await pool.query('SELECT NOW()');
+    await initRedis();
     console.log('✓ Conexión exitosa a PostgreSQL');
     console.log(`  Base de datos: ${process.env.DB_DATABASE || 'tumifact_db'}`);
     console.log(`  Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);
@@ -57,12 +59,12 @@ async function startServer(): Promise<void> {
 
 process.on('SIGTERM', () => {
   console.log('Recibida señal SIGTERM. Cerrando servidor...');
-  process.exit(0);
+  Promise.all([pool.end(), closeRedis()]).finally(() => process.exit(0));
 });
 
 process.on('SIGINT', () => {
   console.log('Recibida señal SIGINT. Cerrando servidor...');
-  process.exit(0);
+  Promise.all([pool.end(), closeRedis()]).finally(() => process.exit(0));
 });
 
 startServer();
