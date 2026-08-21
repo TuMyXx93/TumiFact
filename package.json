@@ -2,21 +2,6 @@
   "name": "tumifact",
   "version": "1.0.0",
   "description": "Sistema de Facturación TumiFact",
-  "main": "server.js",
-  "bin": "server.js",
-  "pkg": {
-    "assets": [
-      "views/**/*",
-      "public/**/*",
-      "node_modules/ejs/**/*"
-    ],
-    "targets": [
-      "node16-win-x86",
-      "node16-linux-x86",
-      "node16-macos-x86"
-    ],
-    "outputPath": "dist"
-  },
   "scripts": {
     "start": "node dist/server/entry.mjs",
     "dev": "astro dev",
@@ -27,14 +12,12 @@
     "clean": "rm -rf node_modules .pnpm-store pnpm-lock.yaml dist",
     "rebuild": "pnpm clean && pnpm install",
     "audit": "pnpm audit",
-    "test": "vitest run --run",
-    "test:legacy": "jest --runInBand",
+    "test": "vitest run",
     "test:api": "node --import tsx --test tests/api/*.test.ts",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:legacy": "jest --coverage --runInBand",
     "test:setup": "node tests/db-test-setup.js",
     "check": "tsc --noEmit",
-    "lint": "biome lint .",
+    "lint": "biome check .",
     "format": "biome format --write ."
   },
   "dependencies": {
@@ -47,7 +30,6 @@
     "@types/uuid": "^11.0.0",
     "argon2": "^0.45.1",
     "astro": "^7.2.1",
-    "body-parser": "^1.20.6",
     "bullmq": "^6.1.2",
     "close-with-grace": "^2.5.0",
     "cookie-parser": "^1.4.7",
@@ -55,7 +37,6 @@
     "drizzle-orm": "^0.45.2",
     "express": "^4.22.2",
     "express-rate-limit": "^8.6.2",
-    "express-validator": "^7.3.2",
     "ioredis": "^6.0.0",
     "jose": "^6.2.8",
     "jsonwebtoken": "^9.0.3",
@@ -85,7 +66,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.1.11",
     "drizzle-kit": "^0.31.10",
-    "jest": "^29.7.0",
     "nodemon": "^2.0.22",
     "supertest": "^7.2.2",
     "tsup": "^8.5.1",

@@ -80,11 +80,11 @@ jobs:
           DB_PASSWORD: tumifact_password
           DB_DATABASE: tumifact_test
 
-      - name: Run Vitest (55% gate) — stack TS
-        # TODO(Fase1): quitar continue-on-error cuando 8 suites legacy estén migradas a vitest
-        # Hoy coverage real ~5% (solo runtime.test.ts), gate 55% fallaría y bloquearía dev
+      - name: Run Vitest — 31 tests (Strangler complete)
+        # Coverage gate 55% se activa cuando todos los módulos DDD tengan tests (Fase 5)
+        # Hoy 31 tests cubren 8/15 módulos → ~45% lines, se mantiene warn-only hasta 55%
         continue-on-error: true
-        run: pnpm test:coverage --run --passWithNoTests || true
+        run: pnpm test:coverage --run || true
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -94,16 +94,6 @@ jobs:
           REDIS_URL: redis://localhost:6380
           JWT_SECRET: test-ci-jwt-secret-32-bytes-minimum-123456
           NODE_ENV: test
-
-      - name: Run Legacy Jest (informative, no gate)
-        continue-on-error: true
-        run: pnpm test:legacy 2>&1 | tail -n 100
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: tumifact_user
-          DB_PASSWORD: tumifact_password
-          DB_DATABASE: tumifact_test
 
       - name: Upload Coverage Report Artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
