@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitest/config';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@tumifact/schemas': path.resolve(__dirname, 'packages/schemas/src/index.ts'),
+      '@tumifact/types': path.resolve(__dirname, 'packages/types/src/index.ts'),
+      '@': path.resolve(__dirname, 'src')
+    }
+  },
   test: {
     environment: 'node',
     globals: true,

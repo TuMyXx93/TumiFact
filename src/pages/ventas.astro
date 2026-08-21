@@ -1,6 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import POSTerminal from '../components/pos/POSTerminal';
+import Layout from '../layouts/Layout.astro';
 import { db } from '../lib/db.js';
 
 let productos = [];
@@ -21,7 +21,7 @@ try {
       LEFT JOIN tipos_identificacion t ON c.tipo_identificacion_id = t.id
       WHERE c.activo = true
       ORDER BY c.nombre, c.apellido ASC
-    `)
+    `),
   ]);
 
   productos = prodRes.rows || [];

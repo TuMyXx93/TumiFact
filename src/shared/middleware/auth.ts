@@ -1,10 +1,10 @@
-import type { Request, Response, NextFunction } from 'express';
+import { eq } from 'drizzle-orm';
+import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/security';
 import { db } from '../../db';
-import { usuarios } from '../../db/schema/usuarios';
 import { roles } from '../../db/schema/roles';
-import { eq } from 'drizzle-orm';
+import { usuarios } from '../../db/schema/usuarios';
 
 export interface AuthenticatedUser {
   id: number;
@@ -44,7 +44,7 @@ export async function verifyAuth(req: Request, res: Response, next: NextFunction
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
-    
+
     const userRows = await db
       .select({
         id: usuarios.id,
@@ -56,7 +56,7 @@ export async function verifyAuth(req: Request, res: Response, next: NextFunction
         rol_nombre: roles.nombre,
         permisos: roles.permisos,
         activo: usuarios.activo,
-        bloqueado_hasta: usuarios.bloqueado_hasta
+        bloqueado_hasta: usuarios.bloqueado_hasta,
       })
       .from(usuarios)
       .leftJoin(roles, eq(usuarios.rol_id, roles.id))
@@ -80,7 +80,7 @@ export async function verifyAuth(req: Request, res: Response, next: NextFunction
       numero_identificacion: user.numero_identificacion,
       rol_id: user.rol_id,
       rol_nombre: user.rol_nombre || 'empleado',
-      permisos: (user.permisos as Record<string, unknown>) || {}
+      permisos: (user.permisos as Record<string, unknown>) || {},
     };
 
     next();
@@ -100,7 +100,7 @@ export function requireRole(...allowedRoles: string[]) {
     }
 
     return res.status(403).json({
-      error: `Acceso denegado: Se requiere rol ${allowedRoles.join(' o ')}`
+      error: `Acceso denegado: Se requiere rol ${allowedRoles.join(' o ')}`,
     });
   };
 }
@@ -123,7 +123,7 @@ export function requirePermission(...requiredPerms: string[]) {
     if (!hasAll) {
       return res.status(403).json({
         error: `Permiso denegado: requiere ${requiredPerms.join(', ')}`,
-        code: 'FORBIDDEN_PERMISSION'
+        code: 'FORBIDDEN_PERMISSION',
       });
     }
     next();
@@ -146,7 +146,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
         rol_id: usuarios.rol_id,
         rol_nombre: roles.nombre,
         permisos: roles.permisos,
-        activo: usuarios.activo
+        activo: usuarios.activo,
       })
       .from(usuarios)
       .leftJoin(roles, eq(usuarios.rol_id, roles.id))
@@ -162,7 +162,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
         numero_identificacion: userRows[0].numero_identificacion,
         rol_id: userRows[0].rol_id,
         rol_nombre: userRows[0].rol_nombre || 'empleado',
-        permisos: (userRows[0].permisos as Record<string, unknown>) || {}
+        permisos: (userRows[0].permisos as Record<string, unknown>) || {},
       };
     }
   } catch (_) {

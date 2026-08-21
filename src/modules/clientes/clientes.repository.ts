@@ -1,8 +1,8 @@
+import { desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db';
-import { clientes } from '../../db/schema/clientes';
 import type { ClienteItem, NewCliente } from '../../db/schema/clientes';
+import { clientes } from '../../db/schema/clientes';
 import { tiposIdentificacion } from '../../db/schema/tipos_identificacion';
-import { eq, ilike, or, desc } from 'drizzle-orm';
 
 export class ClientesRepository {
   async findAll() {
@@ -25,7 +25,7 @@ export class ClientesRepository {
         ultima_compra: clientes.ultima_compra,
         activo: clientes.activo,
         created_at: clientes.created_at,
-        updated_at: clientes.updated_at
+        updated_at: clientes.updated_at,
       })
       .from(clientes)
       .leftJoin(tiposIdentificacion, eq(clientes.tipo_identificacion_id, tiposIdentificacion.id))
@@ -51,7 +51,7 @@ export class ClientesRepository {
         notas: clientes.notas,
         total_compras: clientes.total_compras,
         numero_facturas: clientes.numero_facturas,
-        activo: clientes.activo
+        activo: clientes.activo,
       })
       .from(clientes)
       .leftJoin(tiposIdentificacion, eq(clientes.tipo_identificacion_id, tiposIdentificacion.id))
@@ -88,7 +88,7 @@ export class ClientesRepository {
         ultima_compra: clientes.ultima_compra,
         activo: clientes.activo,
         created_at: clientes.created_at,
-        updated_at: clientes.updated_at
+        updated_at: clientes.updated_at,
       })
       .from(clientes)
       .leftJoin(tiposIdentificacion, eq(clientes.tipo_identificacion_id, tiposIdentificacion.id))

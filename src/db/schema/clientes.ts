@@ -1,12 +1,23 @@
-import { pgTable, serial, varchar, text, integer, numeric, boolean, timestamp } from 'drizzle-orm/pg-core';
-import { tiposIdentificacion } from './tipos_identificacion';
+import {
+  boolean,
+  integer,
+  numeric,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { direcciones } from './direcciones';
+import { tiposIdentificacion } from './tipos_identificacion';
 
 export const clientes = pgTable('clientes', {
   id: serial('id').primaryKey(),
   nombre: varchar('nombre', { length: 80 }).notNull(),
   apellido: varchar('apellido', { length: 80 }),
-  tipo_identificacion_id: integer('tipo_identificacion_id').references(() => tiposIdentificacion.id),
+  tipo_identificacion_id: integer('tipo_identificacion_id').references(
+    () => tiposIdentificacion.id
+  ),
   numero_identificacion: varchar('numero_identificacion', { length: 30 }),
   email: varchar('email', { length: 150 }),
   telefono: varchar('telefono', { length: 20 }),
@@ -21,7 +32,7 @@ export const clientes = pgTable('clientes', {
   ultima_compra: timestamp('ultima_compra'),
   activo: boolean('activo').default(true).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export type ClienteItem = typeof clientes.$inferSelect;

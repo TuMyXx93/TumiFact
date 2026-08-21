@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { ZodError, type ZodType } from 'zod';
 
 export const validateDTO = (schema: ZodType<any>) => {
@@ -13,7 +13,8 @@ export const validateDTO = (schema: ZodType<any>) => {
         const formattedErrors: Record<string, string> = {};
 
         issueArray.forEach((err: any) => {
-          const field = Array.isArray(err.path) && err.path.length > 0 ? err.path.join('.') : 'general';
+          const field =
+            Array.isArray(err.path) && err.path.length > 0 ? err.path.join('.') : 'general';
           if (!formattedErrors[field]) {
             formattedErrors[field] = err.message || 'Valor inválido';
           }
@@ -23,7 +24,7 @@ export const validateDTO = (schema: ZodType<any>) => {
           error: 'Validación DTO fallida',
           details: formattedErrors,
           code: 'VALIDATION_ERROR',
-          correlationId: req.correlationId
+          correlationId: req.correlationId,
         });
       }
       next(error);

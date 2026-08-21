@@ -1,12 +1,12 @@
-import { CajaRepository } from './caja.repository';
-import type { AbrirCajaInput, CerrarCajaInput } from './caja.dto';
+import { and, eq, sql } from 'drizzle-orm';
+import type { Request } from 'express';
 import { db, pool } from '../../db';
-import { facturas } from '../../db/schema/facturas';
 import { abonosSeparado } from '../../db/schema/abonos_separado';
 import { devoluciones } from '../../db/schema/devoluciones';
-import { eq, and, sql } from 'drizzle-orm';
+import { facturas } from '../../db/schema/facturas';
 import { recordAudit } from '../../shared/utils/audit';
-import type { Request } from 'express';
+import type { AbrirCajaInput, CerrarCajaInput } from './caja.dto';
+import { CajaRepository } from './caja.repository';
 
 export class CajaService {
   constructor(private repo: CajaRepository = new CajaRepository()) {}
@@ -23,7 +23,7 @@ export class CajaService {
       usuario_id: userId,
       estado: 'abierta',
       monto_apertura: input.monto_apertura.toString(),
-      notas: input.notas || null
+      notas: input.notas || null,
     });
 
     await recordAudit({
@@ -33,7 +33,7 @@ export class CajaService {
       entidad: 'sesiones_caja',
       entidadId: session.id,
       datosNuevos: { monto_apertura: input.monto_apertura },
-      req
+      req,
     });
 
     return session;
@@ -48,7 +48,7 @@ export class CajaService {
       .select({
         forma_pago: facturas.forma_pago,
         total: sql<string>`COALESCE(SUM(total), 0)`,
-        count: sql<number>`COUNT(*)`
+        count: sql<number>`COUNT(*)`,
       })
       .from(facturas)
       .where(and(eq(facturas.sesion_caja_id, session.id), eq(facturas.estado, 'completada')))
@@ -75,7 +75,7 @@ export class CajaService {
       .select({
         forma_pago: abonosSeparado.forma_pago,
         total: sql<string>`COALESCE(SUM(monto), 0)`,
-        count: sql<number>`COUNT(*)`
+        count: sql<number>`COUNT(*)`,
       })
       .from(abonosSeparado)
       .where(eq(abonosSeparado.sesion_caja_id, session.id))
@@ -94,7 +94,7 @@ export class CajaService {
     // Devoluciones
     const devolucionStats = await db
       .select({
-        total: sql<string>`COALESCE(SUM(monto_devuelto), 0)`
+        total: sql<string>`COALESCE(SUM(monto_devuelto), 0)`,
       })
       .from(devoluciones)
       .where(and(eq(devoluciones.sesion_caja_id, session.id), eq(devoluciones.estado, 'aprobada')));
@@ -114,7 +114,7 @@ export class CajaService {
       total_separados_abonos: abonosTotal,
       total_devoluciones: totalDevoluciones,
       numero_transacciones: txCount,
-      efectivo_esperado: efectivoEsperado
+      efectivo_esperado: efectivoEsperado,
     };
   }
 
@@ -143,7 +143,7 @@ export class CajaService {
       total_separados_abonos: active.total_separados_abonos.toString(),
       numero_transacciones: active.numero_transacciones,
       cerrada_at: new Date(),
-      notas: input.notas || active.notas
+      notas: input.notas || active.notas,
     });
 
     await recordAudit({
@@ -155,9 +155,9 @@ export class CajaService {
       datosNuevos: {
         monto_declarado: montoDeclarado,
         monto_calculado: montoCalculado,
-        diferencia
+        diferencia,
       },
-      req
+      req,
     });
 
     return {
@@ -176,8 +176,8 @@ export class CajaService {
         monto_cierre_calculado: montoCalculado,
         monto_cierre_declarado: montoDeclarado,
         diferencia_caja: diferencia,
-        numero_transacciones: active.numero_transacciones
-      }
+        numero_transacciones: active.numero_transacciones,
+      },
     };
   }
 

@@ -1,9 +1,9 @@
+import { desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db';
-import { productos } from '../../db/schema/productos';
-import type { ProductoItem, NewProducto } from '../../db/schema/productos';
 import { categoriasProducto } from '../../db/schema/categorias';
+import type { NewProducto, ProductoItem } from '../../db/schema/productos';
+import { productos } from '../../db/schema/productos';
 import { proveedores } from '../../db/schema/proveedores';
-import { eq, ilike, or, desc } from 'drizzle-orm';
 
 export class ProductosRepository {
   async findAll() {
@@ -29,7 +29,7 @@ export class ProductosRepository {
         atributos: productos.atributos,
         activo: productos.activo,
         created_at: productos.created_at,
-        updated_at: productos.updated_at
+        updated_at: productos.updated_at,
       })
       .from(productos)
       .leftJoin(categoriasProducto, eq(productos.categoria_id, categoriasProducto.id))
@@ -60,7 +60,7 @@ export class ProductosRepository {
         stock_actual: productos.stock_actual,
         stock_minimo: productos.stock_minimo,
         atributos: productos.atributos,
-        activo: productos.activo
+        activo: productos.activo,
       })
       .from(productos)
       .leftJoin(categoriasProducto, eq(productos.categoria_id, categoriasProducto.id))
@@ -99,7 +99,7 @@ export class ProductosRepository {
         atributos: productos.atributos,
         activo: productos.activo,
         created_at: productos.created_at,
-        updated_at: productos.updated_at
+        updated_at: productos.updated_at,
       })
       .from(productos)
       .leftJoin(categoriasProducto, eq(productos.categoria_id, categoriasProducto.id))

@@ -1,15 +1,15 @@
-import { SeparadosRepository } from './separados.repository';
-import type { CreateSeparadoInput, RegistrarAbonoInput } from './separados.dto';
-import { db } from '../../db';
-import { separados, separadosProductos } from '../../db/schema/separados';
-import { abonosSeparado } from '../../db/schema/abonos_separado';
-import { facturas } from '../../db/schema/facturas';
-import { detalleFactura } from '../../db/schema/detalle_factura';
-import { productos } from '../../db/schema/productos';
-import { movimientosInventario } from '../../db/schema/inventario';
 import { eq, sql } from 'drizzle-orm';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { db } from '../../db';
+import { abonosSeparado } from '../../db/schema/abonos_separado';
+import { detalleFactura } from '../../db/schema/detalle_factura';
+import { facturas } from '../../db/schema/facturas';
+import { movimientosInventario } from '../../db/schema/inventario';
+import { productos } from '../../db/schema/productos';
+import { separados, separadosProductos } from '../../db/schema/separados';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateSeparadoInput, RegistrarAbonoInput } from './separados.dto';
+import { SeparadosRepository } from './separados.repository';
 
 export class SeparadosService {
   constructor(private repo: SeparadosRepository = new SeparadosRepository()) {}
@@ -21,7 +21,7 @@ export class SeparadosService {
       valor_total: parseFloat(s.valor_total),
       abono_inicial: parseFloat(s.abono_inicial),
       total_abonado: parseFloat(s.total_abonado),
-      saldo_pendiente: parseFloat(s.saldo_pendiente)
+      saldo_pendiente: parseFloat(s.saldo_pendiente),
     }));
   }
 
@@ -39,16 +39,21 @@ export class SeparadosService {
         cantidad: parseFloat(p.cantidad),
         precio_unitario: parseFloat(p.precio_unitario),
         subtotal: parseFloat(p.subtotal),
-        descuento_aplicado: parseFloat(p.descuento_aplicado)
+        descuento_aplicado: parseFloat(p.descuento_aplicado),
       })),
       abonos: s.abonos.map((a) => ({
         ...a,
-        monto: parseFloat(a.monto)
-      }))
+        monto: parseFloat(a.monto),
+      })),
     };
   }
 
-  async createSeparado(input: CreateSeparadoInput, userId: number, sesionCajaId?: number, req?: Request) {
+  async createSeparado(
+    input: CreateSeparadoInput,
+    userId: number,
+    sesionCajaId?: number,
+    req?: Request
+  ) {
     // Check idempotency
     if (input.idempotency_key) {
       const existing = await this.repo.findByIdempotencyKey(input.idempotency_key);
@@ -84,7 +89,7 @@ export class SeparadosService {
           saldo_pendiente: saldoPendiente.toString(),
           dias_plazo: diasPlazo,
           fecha_limite: fechaLimiteStr,
-          estado: 'activo'
+          estado: 'activo',
         })
         .returning();
 
@@ -100,16 +105,23 @@ export class SeparadosService {
           precio_unitario: prod.precio_unitario.toString(),
           unidad_medida: prod.unidad_medida || 'UND',
           subtotal: prod.subtotal.toString(),
-          descuento_aplicado: (prod.descuento_aplicado || 0).toString()
+          descuento_aplicado: (prod.descuento_aplicado || 0).toString(),
         });
 
         // Decrementar stock / reservar
-        const pRows = await tx.select().from(productos).where(eq(productos.id, prod.producto_id)).limit(1);
+        const pRows = await tx
+          .select()
+          .from(productos)
+          .where(eq(productos.id, prod.producto_id))
+          .limit(1);
         if (pRows[0]) {
           const currentStock = parseFloat(pRows[0].stock_actual);
           const newStock = Math.max(0, currentStock - prod.cantidad);
 
-          await tx.update(productos).set({ stock_actual: newStock.toString() }).where(eq(productos.id, prod.producto_id));
+          await tx
+            .update(productos)
+            .set({ stock_actual: newStock.toString() })
+            .where(eq(productos.id, prod.producto_id));
 
           await tx.insert(movimientosInventario).values({
             producto_id: prod.producto_id,
@@ -121,7 +133,7 @@ export class SeparadosService {
             stock_nuevo: newStock.toString(),
             referencia_tipo: 'separado',
             referencia_id: newSeparado.id,
-            notas: `Reserva por separado #${newSeparado.id}`
+            notas: `Reserva por separado #${newSeparado.id}`,
           });
         }
       }
@@ -136,7 +148,7 @@ export class SeparadosService {
         forma_pago: input.forma_pago_abono || 'efectivo',
         referencia_pago: input.referencia_pago || null,
         notas: 'Abono inicial de apertura de separado',
-        es_abono_final: saldoPendiente <= 0
+        es_abono_final: saldoPendiente <= 0,
       });
 
       await recordAudit({
@@ -145,15 +157,25 @@ export class SeparadosService {
         accion: 'SEPARADO_CREADO',
         entidad: 'separados',
         entidadId: newSeparado.id,
-        datosNuevos: { valor_total: valorTotal, abono_inicial: abonoInicial, fecha_limite: fechaLimiteStr },
-        req
+        datosNuevos: {
+          valor_total: valorTotal,
+          abono_inicial: abonoInicial,
+          fecha_limite: fechaLimiteStr,
+        },
+        req,
       });
     });
 
     return await this.getSeparadoById(newSeparadoId!);
   }
 
-  async registrarAbono(separadoId: number, input: RegistrarAbonoInput, userId: number, sesionCajaId?: number, req?: Request) {
+  async registrarAbono(
+    separadoId: number,
+    input: RegistrarAbonoInput,
+    userId: number,
+    sesionCajaId?: number,
+    req?: Request
+  ) {
     // Check idempotency
     if (input.idempotency_key) {
       const existingAbono = await this.repo.findAbonoByIdempotencyKey(input.idempotency_key);
@@ -161,7 +183,7 @@ export class SeparadosService {
         return {
           idempotent: true,
           separado: await this.getSeparadoById(separadoId),
-          abono: existingAbono
+          abono: existingAbono,
         };
       }
     }
@@ -171,7 +193,11 @@ export class SeparadosService {
     let _facturaId: number | null = null;
 
     await db.transaction(async (tx) => {
-      const sepRows = await tx.select().from(separados).where(eq(separados.id, separadoId)).limit(1);
+      const sepRows = await tx
+        .select()
+        .from(separados)
+        .where(eq(separados.id, separadoId))
+        .limit(1);
       const sep = sepRows[0];
 
       if (!sep) {
@@ -195,7 +221,10 @@ export class SeparadosService {
       _esCompletado = esCompletado;
 
       // Obtener conteo de abonos anteriores
-      const prevAbonos = await tx.select({ count: sql<number>`COUNT(*)` }).from(abonosSeparado).where(eq(abonosSeparado.separado_id, separadoId));
+      const prevAbonos = await tx
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(abonosSeparado)
+        .where(eq(abonosSeparado.separado_id, separadoId));
       const nextNumeroAbono = Number(prevAbonos[0]?.count || 0) + 1;
 
       // Insertar nuevo abono
@@ -211,7 +240,7 @@ export class SeparadosService {
           forma_pago: input.forma_pago || 'efectivo',
           referencia_pago: input.referencia_pago || null,
           notas: input.notas || null,
-          es_abono_final: esCompletado
+          es_abono_final: esCompletado,
         })
         .returning();
 
@@ -231,14 +260,17 @@ export class SeparadosService {
             total: valorTotal.toString(),
             forma_pago: input.forma_pago || 'efectivo',
             tipo: 'separado_final',
-            estado: 'completada'
+            estado: 'completada',
           })
           .returning();
 
         facturaGeneradaId = fRows[0].id;
 
         // Trasladar productos a detalle_factura
-        const sepProds = await tx.select().from(separadosProductos).where(eq(separadosProductos.separado_id, separadoId));
+        const sepProds = await tx
+          .select()
+          .from(separadosProductos)
+          .where(eq(separadosProductos.separado_id, separadoId));
         for (const sp of sepProds) {
           await tx.insert(detalleFactura).values({
             factura_id: facturaGeneradaId,
@@ -247,7 +279,7 @@ export class SeparadosService {
             precio_unitario: sp.precio_unitario,
             unidad_medida: sp.unidad_medida,
             subtotal: sp.subtotal,
-            descuento_aplicado: sp.descuento_aplicado
+            descuento_aplicado: sp.descuento_aplicado,
           });
         }
       }
@@ -262,7 +294,7 @@ export class SeparadosService {
           saldo_pendiente: nuevoSaldo.toString(),
           estado: esCompletado ? 'completado' : 'activo',
           factura_id: facturaGeneradaId || sep.factura_id,
-          updated_at: new Date()
+          updated_at: new Date(),
         })
         .where(eq(separados.id, separadoId));
 
@@ -273,17 +305,19 @@ export class SeparadosService {
         entidad: 'separados',
         entidadId: separadoId,
         datosNuevos: { monto: montoAbono, saldo_restante: nuevoSaldo, completado: esCompletado },
-        req
+        req,
       });
     });
 
     const separadoFinal = await this.getSeparadoById(separadoId);
     return {
-      message: _esCompletado ? '¡Separado cancelado en su totalidad y completado exitosamente!' : 'Abono registrado exitosamente',
+      message: _esCompletado
+        ? '¡Separado cancelado en su totalidad y completado exitosamente!'
+        : 'Abono registrado exitosamente',
       separado: separadoFinal,
       abono: _insertedAbono,
       completado: _esCompletado,
-      factura_id: _facturaId
+      factura_id: _facturaId,
     };
   }
 }

@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { SeparadosService } from './separados.service';
-import { validateDTO } from '../../shared/middleware/validate';
-import { CreateSeparadoDTO, RegistrarAbonoDTO } from './separados.dto';
 import { verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
+import { validateDTO } from '../../shared/middleware/validate';
 import { CajaService } from '../caja/caja.service';
+import { CreateSeparadoDTO, RegistrarAbonoDTO } from './separados.dto';
+import { SeparadosService } from './separados.service';
 
 export const separadosRouter = Router();
 const service = new SeparadosService();
@@ -28,7 +28,8 @@ separadosRouter.get('/:id', verifyAuth, async (req, res, next) => {
     const id = parseInt(String(req.params.id), 10);
     const item = await service.getSeparadoById(id);
     if (!item) return res.status(404).json({ error: 'Separado no encontrado' });
-    if (req.user!.rol_nombre === 'cajero' && item.usuario_apertura_id !== req.user!.id) return res.status(404).json({ error: 'Separado no encontrado' });
+    if (req.user!.rol_nombre === 'cajero' && item.usuario_apertura_id !== req.user!.id)
+      return res.status(404).json({ error: 'Separado no encontrado' });
     res.json(item);
   } catch (error) {
     next(error);
@@ -49,7 +50,7 @@ separadosRouter.post(
       const result = await service.createSeparado(req.body, userId, activeCaja?.id, req);
       res.status(201).json({
         message: 'Separado creado exitosamente',
-        separado: result
+        separado: result,
       });
     } catch (error) {
       next(error);
@@ -67,7 +68,11 @@ separadosRouter.post(
     try {
       const id = parseInt(String(req.params.id), 10);
       const existing = await service.getSeparadoById(id);
-      if (!existing || (req.user!.rol_nombre === 'cajero' && existing.usuario_apertura_id !== req.user!.id)) return res.status(404).json({ error: 'Separado no encontrado' });
+      if (
+        !existing ||
+        (req.user!.rol_nombre === 'cajero' && existing.usuario_apertura_id !== req.user!.id)
+      )
+        return res.status(404).json({ error: 'Separado no encontrado' });
       const userId = req.user!.id;
       const activeCaja = await cajaService.getActiveSession(userId);
 

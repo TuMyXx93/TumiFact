@@ -1,8 +1,8 @@
+import { desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db';
+import type { NewProveedor, ProveedorItem } from '../../db/schema/proveedores';
 import { proveedores } from '../../db/schema/proveedores';
-import type { ProveedorItem, NewProveedor } from '../../db/schema/proveedores';
 import { tiposIdentificacion } from '../../db/schema/tipos_identificacion';
-import { eq, ilike, or, desc } from 'drizzle-orm';
 
 export class ProveedoresRepository {
   async findAll(): Promise<ProveedorItem[]> {
@@ -48,7 +48,7 @@ export class ProveedoresRepository {
         notas: proveedores.notas,
         activo: proveedores.activo,
         created_at: proveedores.created_at,
-        updated_at: proveedores.updated_at
+        updated_at: proveedores.updated_at,
       })
       .from(proveedores)
       .leftJoin(tiposIdentificacion, eq(proveedores.tipo_identificacion_id, tiposIdentificacion.id))

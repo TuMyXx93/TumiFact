@@ -1,6 +1,15 @@
-import { pgTable, bigserial, integer, varchar, text, jsonb, timestamp, customType } from 'drizzle-orm/pg-core';
-import { usuarios } from './usuarios';
+import {
+  bigserial,
+  customType,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { sesionesCaja } from './sesiones_caja';
+import { usuarios } from './usuarios';
 
 const inet = customType<{ data: string }>({
   dataType() {
@@ -21,7 +30,7 @@ export const auditLog = pgTable('audit_log', {
   user_agent: text('user_agent'),
   resultado: varchar('resultado', { length: 20 }).default('ok').notNull(), // 'ok', 'error', 'rechazado'
   mensaje_error: text('mensaje_error'),
-  created_at: timestamp('created_at').defaultNow().notNull()
+  created_at: timestamp('created_at').defaultNow().notNull(),
 });
 
 export type AuditLogItem = typeof auditLog.$inferSelect;

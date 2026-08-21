@@ -1,7 +1,16 @@
-import { pgTable, serial, integer, varchar, numeric, jsonb, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  numeric,
+  pgTable,
+  serial,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { clientes } from './clientes';
-import { usuarios } from './usuarios';
 import { sesionesCaja } from './sesiones_caja';
+import { usuarios } from './usuarios';
 
 export const facturas = pgTable('facturas', {
   id: serial('id').primaryKey(),
@@ -18,7 +27,7 @@ export const facturas = pgTable('facturas', {
   tipo: varchar('tipo', { length: 20 }).default('contado').notNull(), // 'contado', 'separado_final'
   estado: varchar('estado', { length: 20 }).default('completada').notNull(), // 'completada', 'devuelta', 'parcialmente_devuelta', 'anulada'
   created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export type FacturaItem = typeof facturas.$inferSelect;

@@ -90,7 +90,15 @@ export interface SesionCaja {
 export interface CategoriaProducto {
   id: number;
   nombre: string;
-  tipo: 'perecedero' | 'vestimenta' | 'calzado' | 'tecnologia' | 'artesania' | 'bisuteria' | 'generico' | string;
+  tipo:
+    | 'perecedero'
+    | 'vestimenta'
+    | 'calzado'
+    | 'tecnologia'
+    | 'artesania'
+    | 'bisuteria'
+    | 'generico'
+    | string;
   descripcion?: string | null;
   campos_extra?: Array<{ key: string; label: string; type: string; options?: string[] }>;
   aplica_inventario: boolean;

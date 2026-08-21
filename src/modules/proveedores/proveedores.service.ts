@@ -1,7 +1,7 @@
-import { ProveedoresRepository } from './proveedores.repository';
-import type { CreateProveedorInput, UpdateProveedorInput } from './proveedores.dto';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateProveedorInput, UpdateProveedorInput } from './proveedores.dto';
+import { ProveedoresRepository } from './proveedores.repository';
 
 export class ProveedoresService {
   constructor(private repo: ProveedoresRepository = new ProveedoresRepository()) {}
@@ -32,7 +32,7 @@ export class ProveedoresService {
       plazo_pago_dias: input.plazo_pago_dias || 30,
       moneda: input.moneda || 'COP',
       notas: input.notas || null,
-      activo: true
+      activo: true,
     });
 
     await recordAudit({
@@ -41,7 +41,7 @@ export class ProveedoresService {
       entidad: 'proveedores',
       entidadId: created.id,
       datosNuevos: input,
-      req
+      req,
     });
 
     return created;
@@ -60,7 +60,7 @@ export class ProveedoresService {
       entidadId: id,
       datosPrevios: existing,
       datosNuevos: input,
-      req
+      req,
     });
 
     return updated;
@@ -74,7 +74,7 @@ export class ProveedoresService {
         accion: 'PROVEEDOR_ELIMINADO',
         entidad: 'proveedores',
         entidadId: id,
-        req
+        req,
       });
     }
     return ok;

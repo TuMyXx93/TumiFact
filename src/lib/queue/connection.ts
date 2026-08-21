@@ -15,7 +15,7 @@ export const queueConnection = new IORedis(REDIS_URL, {
   retryStrategy(times) {
     if (process.env.NODE_ENV === 'test') return null;
     return Math.min(times * 100, 3000);
-  }
+  },
 });
 
 queueConnection.on('error', (err) => {

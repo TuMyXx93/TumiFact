@@ -1,14 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Lock, 
-  Unlock, 
-  RefreshCw, 
-  AlertCircle, 
-  CheckCircle2, 
-  ShieldAlert
-} from 'lucide-react';
+import { AlertCircle, CheckCircle2, Lock, RefreshCw, ShieldAlert, Unlock } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
-import { formatNumber, formatDate, formatTime } from '../../lib/format';
+import { formatDate, formatNumber, formatTime } from '../../lib/format';
 
 const DENOMINACIONES = [
   { label: '$100.000', valor: 100000 },
@@ -30,7 +24,9 @@ export default function CajaManager() {
   const [closeModal, setCloseModal] = useState(false);
   const [montoApertura, setMontoApertura] = useState('');
   const [notas, setNotas] = useState('');
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null
+  );
 
   const [conteoBilletes, setConteoBilletes] = useState<Record<number, number>>({
     100000: 0,
@@ -39,7 +35,7 @@ export default function CajaManager() {
     10000: 0,
     5000: 0,
     2000: 0,
-    1: 0
+    1: 0,
   });
 
   const fetchStatus = async () => {
@@ -47,7 +43,8 @@ export default function CajaManager() {
       setLoading(true);
       let currentRole = 'empleado';
       if (typeof window !== 'undefined') {
-        const storedUser = localStorage.getItem('tumifact_user') || sessionStorage.getItem('tumifact_user');
+        const storedUser =
+          localStorage.getItem('tumifact_user') || sessionStorage.getItem('tumifact_user');
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
@@ -87,7 +84,7 @@ export default function CajaManager() {
 
   const totalContadoCiego = useMemo(() => {
     return Object.entries(conteoBilletes).reduce((acc, [val, cant]) => {
-      return acc + (Number(val) * Number(cant || 0));
+      return acc + Number(val) * Number(cant || 0);
     }, 0);
   }, [conteoBilletes]);
 
@@ -99,13 +96,16 @@ export default function CajaManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           monto_apertura: parseFloat(montoApertura) || 0,
-          notas
-        })
+          notas,
+        }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setStatusMsg({ type: 'success', text: 'Caja abierta exitosamente. Sesión vinculada al dispositivo.' });
+        setStatusMsg({
+          type: 'success',
+          text: 'Caja abierta exitosamente. Sesión vinculada al dispositivo.',
+        });
         setOpenModal(false);
         setMontoApertura('');
         setNotas('');
@@ -126,15 +126,15 @@ export default function CajaManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           monto_cierre_declarado: totalContadoCiego,
-          notas: `Cierre ciego por denominaciones: ${notas}`.trim()
-        })
+          notas: `Cierre ciego por denominaciones: ${notas}`.trim(),
+        }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setStatusMsg({ 
-          type: 'success', 
-          text: `¡Arqueo finalizado! Veredicto: ${Number(data.reporte?.diferencia_caja) === 0 ? 'CUADRADO EXACTO' : 'DESCUADRE DE $' + formatNumber(data.reporte?.diferencia_caja)}.` 
+        setStatusMsg({
+          type: 'success',
+          text: `¡Arqueo finalizado! Veredicto: ${Number(data.reporte?.diferencia_caja) === 0 ? 'CUADRADO EXACTO' : 'DESCUADRE DE $' + formatNumber(data.reporte?.diferencia_caja)}.`,
         });
         setCloseModal(false);
         setNotas('');
@@ -148,12 +148,18 @@ export default function CajaManager() {
   };
 
   if (loading) {
-    return <div className="p-12 text-center text-slate-400 font-mono text-xs">Verificando estado del módulo cashier-svc...</div>;
+    return (
+      <div className="p-12 text-center text-slate-400 font-mono text-xs">
+        Verificando estado del módulo cashier-svc...
+      </div>
+    );
   }
 
   const isAbierta = !!session && session.estado === 'abierta';
-  const totalEsperado = isAbierta 
-    ? (Number(session.monto_apertura || 0) + Number(session.ventas_efectivo || 0) - Number(session.total_devoluciones || 0))
+  const totalEsperado = isAbierta
+    ? Number(session.monto_apertura || 0) +
+      Number(session.ventas_efectivo || 0) -
+      Number(session.total_devoluciones || 0)
     : 0;
 
   return (
@@ -167,10 +173,17 @@ export default function CajaManager() {
           }`}
         >
           <div className="flex items-center gap-2">
-            {statusMsg.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+            {statusMsg.type === 'success' ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
             <span>{statusMsg.text}</span>
           </div>
-          <button onClick={() => setStatusMsg(null)} className="text-xs uppercase font-mono hover:opacity-75">
+          <button
+            onClick={() => setStatusMsg(null)}
+            className="text-xs uppercase font-mono hover:opacity-75"
+          >
             Cerrar
           </button>
         </div>
@@ -220,7 +233,8 @@ export default function CajaManager() {
                   Supervisión de Cajas en Tiempo Real
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Visualización centralizada de todas las cajas abiertas por los empleados de la tienda.
+                  Visualización centralizada de todas las cajas abiertas por los empleados de la
+                  tienda.
                 </p>
               </div>
               <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-xl">
@@ -255,11 +269,15 @@ export default function CajaManager() {
                     <div className="space-y-1 text-xs text-slate-300">
                       <div className="flex justify-between">
                         <span className="text-slate-400">Base Apertura:</span>
-                        <span className="font-mono font-bold">${formatNumber(Number(caja.monto_apertura))}</span>
+                        <span className="font-mono font-bold">
+                          ${formatNumber(Number(caja.monto_apertura))}
+                        </span>
                       </div>
                       <div className="flex justify-between text-emerald-400 font-bold">
                         <span>Total Facturado:</span>
-                        <span className="font-mono text-sm">${formatNumber(Number(caja.total_ventas))}</span>
+                        <span className="font-mono text-sm">
+                          ${formatNumber(Number(caja.total_ventas))}
+                        </span>
                       </div>
                       <div className="flex justify-between text-slate-400 text-[11px]">
                         <span>Comprobantes:</span>
@@ -270,15 +288,21 @@ export default function CajaManager() {
                     <div className="grid grid-cols-3 gap-1 pt-2 border-t border-slate-700 text-[10px] text-center">
                       <div className="p-1 rounded bg-slate-900/60">
                         <span className="text-slate-400 block text-[9px]">Efectivo</span>
-                        <span className="font-bold text-emerald-300 font-mono">${formatNumber(Number(caja.ventas_efectivo))}</span>
+                        <span className="font-bold text-emerald-300 font-mono">
+                          ${formatNumber(Number(caja.ventas_efectivo))}
+                        </span>
                       </div>
                       <div className="p-1 rounded bg-slate-900/60">
                         <span className="text-slate-400 block text-[9px]">Transf.</span>
-                        <span className="font-bold text-blue-300 font-mono">${formatNumber(Number(caja.ventas_transferencia))}</span>
+                        <span className="font-bold text-blue-300 font-mono">
+                          ${formatNumber(Number(caja.ventas_transferencia))}
+                        </span>
                       </div>
                       <div className="p-1 rounded bg-slate-900/60">
                         <span className="text-slate-400 block text-[9px]">Tarjeta</span>
-                        <span className="font-bold text-purple-300 font-mono">${formatNumber(Number(caja.ventas_tarjeta))}</span>
+                        <span className="font-bold text-purple-300 font-mono">
+                          ${formatNumber(Number(caja.ventas_tarjeta))}
+                        </span>
                       </div>
                     </div>
 
@@ -302,7 +326,9 @@ export default function CajaManager() {
                 <div className="flex items-center gap-2.5">
                   <span
                     className={`h-3 w-3 rounded-full ${
-                      isAbierta ? 'bg-emerald-400 animate-pulse shadow-lg shadow-emerald-500/50' : 'bg-rose-500'
+                      isAbierta
+                        ? 'bg-emerald-400 animate-pulse shadow-lg shadow-emerald-500/50'
+                        : 'bg-rose-500'
                     }`}
                   />
                   <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -350,25 +376,37 @@ export default function CajaManager() {
             {isAbierta && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-800">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-slate-400">Base Apertura</span>
+                  <span className="text-[10px] font-mono uppercase text-slate-400">
+                    Base Apertura
+                  </span>
                   <p className="text-lg sm:text-xl font-bold font-mono text-white">
                     ${formatNumber(session.monto_apertura || 0)}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-emerald-400">Ventas Efectivo</span>
+                  <span className="text-[10px] font-mono uppercase text-emerald-400">
+                    Ventas Efectivo
+                  </span>
                   <p className="text-lg sm:text-xl font-bold font-mono text-emerald-400">
                     +${formatNumber(session.ventas_efectivo || 0)}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-cyan-400">Transferencias / Card</span>
+                  <span className="text-[10px] font-mono uppercase text-cyan-400">
+                    Transferencias / Card
+                  </span>
                   <p className="text-lg sm:text-xl font-bold font-mono text-cyan-400">
-                    ${formatNumber((Number(session.ventas_transferencia || 0) + Number(session.ventas_tarjeta || 0)))}
+                    $
+                    {formatNumber(
+                      Number(session.ventas_transferencia || 0) +
+                        Number(session.ventas_tarjeta || 0)
+                    )}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono uppercase text-blue-400">Total Esperado en Gaveta</span>
+                  <span className="text-[10px] font-mono uppercase text-blue-400">
+                    Total Esperado en Gaveta
+                  </span>
                   <p className="text-lg sm:text-xl font-black font-mono text-blue-400">
                     ${formatNumber(totalEsperado)}
                   </p>
@@ -383,14 +421,31 @@ export default function CajaManager() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             {[
-              { num: '01', title: 'Apertura', desc: 'Base en gaveta, sesión congelada por cajero.' },
+              {
+                num: '01',
+                title: 'Apertura',
+                desc: 'Base en gaveta, sesión congelada por cajero.',
+              },
               { num: '02', title: 'Operación', desc: 'Ventas, retiros y vales auditados.' },
               { num: '03', title: 'Corte X', desc: 'Cierre parcial sin congelar gaveta.' },
-              { num: '04', title: 'Cierre Ciego', desc: 'Conteo por denominación sin ver esperado.' },
-              { num: '05', title: 'Arqueo & Z', desc: 'Cálculo de descuadre y aprobación gerencial.' },
+              {
+                num: '04',
+                title: 'Cierre Ciego',
+                desc: 'Conteo por denominación sin ver esperado.',
+              },
+              {
+                num: '05',
+                title: 'Arqueo & Z',
+                desc: 'Cálculo de descuadre y aprobación gerencial.',
+              },
             ].map((fase) => (
-              <div key={fase.num} className="bg-slate-900/50 p-4 rounded-xl space-y-1.5 border border-slate-800">
-                <span className="text-xl font-black font-['Space_Grotesk'] text-blue-400">{fase.num}</span>
+              <div
+                key={fase.num}
+                className="bg-slate-900/50 p-4 rounded-xl space-y-1.5 border border-slate-800"
+              >
+                <span className="text-xl font-black font-['Space_Grotesk'] text-blue-400">
+                  {fase.num}
+                </span>
                 <h4 className="font-bold text-white text-xs">{fase.title}</h4>
                 <p className="text-[11px] text-slate-400 leading-tight">{fase.desc}</p>
               </div>
@@ -407,11 +462,18 @@ export default function CajaManager() {
                 <Unlock className="h-5 w-5 text-emerald-400" />
                 Fase 1: Apertura de Turno
               </h3>
-              <button onClick={() => setOpenModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setOpenModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
             <form onSubmit={handleAbrirCaja} className="space-y-4 text-xs">
               <div>
-                <label className="font-semibold text-slate-300 uppercase block mb-1">Monto Base Inicial ($) *</label>
+                <label className="font-semibold text-slate-300 uppercase block mb-1">
+                  Monto Base Inicial ($) *
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -423,7 +485,9 @@ export default function CajaManager() {
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-300 uppercase block mb-1">Notas de Apertura</label>
+                <label className="font-semibold text-slate-300 uppercase block mb-1">
+                  Notas de Apertura
+                </label>
                 <textarea
                   rows={2}
                   placeholder="Turno mañana / Base entregada por supervisor"
@@ -465,7 +529,12 @@ export default function CajaManager() {
                   Ingrese las cantidades físicas contadas en gaveta por denominación.
                 </p>
               </div>
-              <button onClick={() => setCloseModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setCloseModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleCerrarCaja} className="space-y-4 text-xs">
@@ -475,7 +544,10 @@ export default function CajaManager() {
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   {DENOMINACIONES.map((den) => (
-                    <div key={den.valor} className="flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700">
+                    <div
+                      key={den.valor}
+                      className="flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700"
+                    >
                       <span className="font-mono text-slate-300 font-semibold">{den.label}</span>
                       <input
                         type="number"
@@ -485,7 +557,7 @@ export default function CajaManager() {
                         onChange={(e) =>
                           setConteoBilletes({
                             ...conteoBilletes,
-                            [den.valor]: Number(e.target.value) || 0
+                            [den.valor]: Number(e.target.value) || 0,
                           })
                         }
                         className="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-right text-white font-mono focus:outline-none focus:border-blue-500"
@@ -496,14 +568,18 @@ export default function CajaManager() {
               </div>
 
               <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between">
-                <span className="font-bold uppercase tracking-wider text-blue-400">Total Físico Declarado:</span>
+                <span className="font-bold uppercase tracking-wider text-blue-400">
+                  Total Físico Declarado:
+                </span>
                 <span className="text-xl font-black font-mono text-white">
                   ${formatNumber(totalContadoCiego)}
                 </span>
               </div>
 
               <div>
-                <label className="font-semibold text-slate-300 uppercase block mb-1">Notas de Cierre</label>
+                <label className="font-semibold text-slate-300 uppercase block mb-1">
+                  Notas de Cierre
+                </label>
                 <textarea
                   rows={2}
                   placeholder="Observaciones de descuadres o billetes retenidos"

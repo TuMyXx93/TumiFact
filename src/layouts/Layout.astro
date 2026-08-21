@@ -6,15 +6,17 @@ interface Props {
   description?: string;
 }
 
-const { 
+const {
   title = 'TumiFact v2.0 — Sistema de Facturación & POS',
-  description = 'Sistema de Facturación y Punto de Venta POS 2026'
+  description = 'Sistema de Facturación y Punto de Venta POS 2026',
 } = Astro.props;
 
 const publicApiBaseUrl = (import.meta.env.PUBLIC_API_BASE_URL || '').trim();
 const publicApiPort = (import.meta.env.PUBLIC_API_PORT || '').trim();
 const publicApiPorts = (import.meta.env.PUBLIC_API_PORTS || '').trim();
-const publicApiAutoDiscovery = (import.meta.env.PUBLIC_API_AUTO_DISCOVERY || 'true').trim().toLowerCase();
+const publicApiAutoDiscovery = (import.meta.env.PUBLIC_API_AUTO_DISCOVERY || 'true')
+  .trim()
+  .toLowerCase();
 const publicApiPortScanRange = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3000-3999').trim();
 
 const currentPath = Astro.url.pathname;
@@ -36,7 +38,7 @@ const baseNavItems = [
 ];
 
 const isAdminOrGerente = user?.rol_nombre === 'admin' || user?.rol_nombre === 'gerente';
-const navItems = baseNavItems.filter(item => !item.requiresAdmin || isAdminOrGerente);
+const navItems = baseNavItems.filter((item) => !item.requiresAdmin || isAdminOrGerente);
 ---
 
 <!DOCTYPE html>

@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { EmpleadosService } from './empleados.service';
+import { requireRole, verifyAuth } from '../../shared/middleware/auth';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateEmpleadoDTO, UpdateEmpleadoDTO } from './empleados.dto';
-import { verifyAuth, requireRole } from '../../shared/middleware/auth';
+import { EmpleadosService } from './empleados.service';
 
 export const empleadosRouter = Router();
 const service = new EmpleadosService();
@@ -18,14 +18,19 @@ empleadosRouter.get('/', verifyAuth, requireRole('gerente', 'admin'), async (req
 });
 
 // GET /api/empleados/metricas — Métricas y KPIs de rendimiento de colaboradores (Gerente / Admin)
-empleadosRouter.get('/metricas', verifyAuth, requireRole('gerente', 'admin'), async (req, res, next) => {
-  try {
-    const metricas = await service.getMetricas();
-    res.json(metricas);
-  } catch (error) {
-    next(error);
+empleadosRouter.get(
+  '/metricas',
+  verifyAuth,
+  requireRole('gerente', 'admin'),
+  async (req, res, next) => {
+    try {
+      const metricas = await service.getMetricas();
+      res.json(metricas);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // GET /api/empleados/auditoria — Logs de auditoría de actividad de empleados (Solo Admin)
 empleadosRouter.get('/auditoria', verifyAuth, requireRole('admin'), async (req, res, next) => {
@@ -53,47 +58,64 @@ empleadosRouter.get('/:id', verifyAuth, requireRole('gerente', 'admin'), async (
 });
 
 // POST /api/empleados — Registrar nuevo colaborador (Solo Admin)
-empleadosRouter.post('/', verifyAuth, requireRole('admin'), validateDTO(CreateEmpleadoDTO), async (req, res, next) => {
-  try {
-    const newEmp = await service.create(req.body, req);
-    res.status(201).json({
-      message: 'Empleado creado exitosamente',
-      empleado: newEmp
-    });
-  } catch (error) {
-    next(error);
+empleadosRouter.post(
+  '/',
+  verifyAuth,
+  requireRole('admin'),
+  validateDTO(CreateEmpleadoDTO),
+  async (req, res, next) => {
+    try {
+      const newEmp = await service.create(req.body, req);
+      res.status(201).json({
+        message: 'Empleado creado exitosamente',
+        empleado: newEmp,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // PUT /api/empleados/:id — Actualizar datos de colaborador (Solo Admin)
-empleadosRouter.put('/:id', verifyAuth, requireRole('admin'), validateDTO(UpdateEmpleadoDTO), async (req, res, next) => {
-  try {
-    const id = parseInt(String(req.params.id), 10);
-    const updated = await service.update(id, req.body, req);
-    if (!updated) return res.status(404).json({ error: 'Empleado no encontrado' });
-    res.json({
-      message: 'Empleado actualizado exitosamente',
-      empleado: updated
-    });
-  } catch (error) {
-    next(error);
+empleadosRouter.put(
+  '/:id',
+  verifyAuth,
+  requireRole('admin'),
+  validateDTO(UpdateEmpleadoDTO),
+  async (req, res, next) => {
+    try {
+      const id = parseInt(String(req.params.id), 10);
+      const updated = await service.update(id, req.body, req);
+      if (!updated) return res.status(404).json({ error: 'Empleado no encontrado' });
+      res.json({
+        message: 'Empleado actualizado exitosamente',
+        empleado: updated,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // PATCH /api/empleados/:id/toggle-status — Activar/desactivar colaborador (Solo Admin)
-empleadosRouter.patch('/:id/toggle-status', verifyAuth, requireRole('admin'), async (req, res, next) => {
-  try {
-    const id = parseInt(String(req.params.id), 10);
-    const result = await service.toggleActive(id, req);
-    if (!result) return res.status(404).json({ error: 'Empleado no encontrado' });
-    res.json({
-      message: result.activo ? 'Empleado activado' : 'Empleado desactivado',
-      ...result
-    });
-  } catch (error) {
-    next(error);
+empleadosRouter.patch(
+  '/:id/toggle-status',
+  verifyAuth,
+  requireRole('admin'),
+  async (req, res, next) => {
+    try {
+      const id = parseInt(String(req.params.id), 10);
+      const result = await service.toggleActive(id, req);
+      if (!result) return res.status(404).json({ error: 'Empleado no encontrado' });
+      res.json({
+        message: result.activo ? 'Empleado activado' : 'Empleado desactivado',
+        ...result,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // DELETE /api/empleados/:id — Eliminar colaborador (Solo Admin)
 empleadosRouter.delete('/:id', verifyAuth, requireRole('admin'), async (req, res, next) => {

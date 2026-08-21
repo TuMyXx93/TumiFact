@@ -13,15 +13,15 @@ const PUBLIC_PREFIXES = [
   '/api/health',
   '/_astro',
   '/favicon.svg',
-  '/static'
+  '/static',
 ];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname } = context.url;
 
   // Verificar si la ruta es pública
-  const isPublic = PUBLIC_PREFIXES.some(prefix => 
-    pathname === prefix || pathname.startsWith(prefix + '/')
+  const isPublic = PUBLIC_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + '/')
   );
 
   // Leer token desde cookies o header Authorization
@@ -49,7 +49,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         apellido: typeof payload.apellido === 'string' ? payload.apellido : undefined,
         email: payload.email,
         rol_id: payload.rol_id,
-        rol_nombre: typeof payload.rol_nombre === 'string' ? payload.rol_nombre : undefined
+        rol_nombre: typeof payload.rol_nombre === 'string' ? payload.rol_nombre : undefined,
       };
       context.locals.user = validatedUser;
     } catch (_err) {
@@ -67,10 +67,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (!validatedUser && !isPublic) {
     // Si es un request de API que no es login/health, responder 401 JSON
     if (pathname.startsWith('/api/')) {
-      return new Response(JSON.stringify({ error: 'No autorizado. Se requiere inicio de sesión.' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({ error: 'No autorizado. Se requiere inicio de sesión.' }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
     return context.redirect('/login');
   }

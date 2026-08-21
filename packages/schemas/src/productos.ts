@@ -14,7 +14,7 @@ export const CreateProductoDTO = z.object({
   cantidad_mayorista: z.coerce.number().int().min(1).optional().default(10),
   stock_actual: z.coerce.number().min(0).optional().default(0),
   stock_minimo: z.coerce.number().min(0).optional().default(5),
-  atributos: z.record(z.string(), z.any()).optional().default({})
+  atributos: z.record(z.string(), z.any()).optional().default({}),
 });
 
 export const UpdateProductoDTO = CreateProductoDTO.partial();

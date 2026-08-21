@@ -1,7 +1,7 @@
-import { ProductosRepository } from './productos.repository';
-import type { CreateProductoInput, UpdateProductoInput } from './productos.dto';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateProductoInput, UpdateProductoInput } from './productos.dto';
+import { ProductosRepository } from './productos.repository';
 
 export class ProductosService {
   constructor(private repo: ProductosRepository = new ProductosRepository()) {}
@@ -16,7 +16,7 @@ export class ProductosService {
       precio_detal: parseFloat(p.precio_detal || '0'),
       precio_mayorista: parseFloat(p.precio_mayorista || '0'),
       stock_actual: parseFloat(p.stock_actual || '0'),
-      stock_minimo: parseFloat(p.stock_minimo || '0')
+      stock_minimo: parseFloat(p.stock_minimo || '0'),
     }));
   }
 
@@ -30,7 +30,7 @@ export class ProductosService {
       precio_detal: parseFloat(p.precio_detal || '0'),
       precio_mayorista: parseFloat(p.precio_mayorista || '0'),
       stock_actual: parseFloat(p.stock_actual || '0'),
-      stock_minimo: parseFloat(p.stock_minimo || '0')
+      stock_minimo: parseFloat(p.stock_minimo || '0'),
     }));
   }
 
@@ -45,7 +45,7 @@ export class ProductosService {
       precio_detal: parseFloat(p.precio_detal || '0'),
       precio_mayorista: parseFloat(p.precio_mayorista || '0'),
       stock_actual: parseFloat(p.stock_actual || '0'),
-      stock_minimo: parseFloat(p.stock_minimo || '0')
+      stock_minimo: parseFloat(p.stock_minimo || '0'),
     };
   }
 
@@ -72,7 +72,7 @@ export class ProductosService {
       stock_actual: (input.stock_actual || 0).toString(),
       stock_minimo: (input.stock_minimo || 5).toString(),
       atributos: input.atributos || {},
-      activo: true
+      activo: true,
     });
 
     await recordAudit({
@@ -81,7 +81,7 @@ export class ProductosService {
       entidad: 'productos',
       entidadId: created.id,
       datosNuevos: input,
-      req
+      req,
     });
 
     return created;
@@ -98,11 +98,14 @@ export class ProductosService {
     if (input.categoria_id !== undefined) dataToUpdate.categoria_id = input.categoria_id;
     if (input.proveedor_id !== undefined) dataToUpdate.proveedor_id = input.proveedor_id;
     if (input.precio_kg !== undefined) dataToUpdate.precio_kg = input.precio_kg.toString();
-    if (input.precio_unidad !== undefined) dataToUpdate.precio_unidad = input.precio_unidad.toString();
+    if (input.precio_unidad !== undefined)
+      dataToUpdate.precio_unidad = input.precio_unidad.toString();
     if (input.precio_libra !== undefined) dataToUpdate.precio_libra = input.precio_libra.toString();
     if (input.precio_detal !== undefined) dataToUpdate.precio_detal = input.precio_detal.toString();
-    if (input.precio_mayorista !== undefined) dataToUpdate.precio_mayorista = input.precio_mayorista.toString();
-    if (input.cantidad_mayorista !== undefined) dataToUpdate.cantidad_mayorista = input.cantidad_mayorista;
+    if (input.precio_mayorista !== undefined)
+      dataToUpdate.precio_mayorista = input.precio_mayorista.toString();
+    if (input.cantidad_mayorista !== undefined)
+      dataToUpdate.cantidad_mayorista = input.cantidad_mayorista;
     if (input.stock_actual !== undefined) dataToUpdate.stock_actual = input.stock_actual.toString();
     if (input.stock_minimo !== undefined) dataToUpdate.stock_minimo = input.stock_minimo.toString();
     if (input.atributos !== undefined) dataToUpdate.atributos = input.atributos;
@@ -116,7 +119,7 @@ export class ProductosService {
       entidadId: id,
       datosPrevios: existing,
       datosNuevos: input,
-      req
+      req,
     });
 
     return updated;
@@ -130,7 +133,7 @@ export class ProductosService {
         accion: 'PRODUCTO_ELIMINADO',
         entidad: 'productos',
         entidadId: id,
-        req
+        req,
       });
     }
     return ok;

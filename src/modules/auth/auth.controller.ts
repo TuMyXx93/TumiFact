@@ -1,17 +1,22 @@
 import { Router } from 'express';
-import { AuthService } from './auth.service';
-import { validateDTO } from '../../shared/middleware/validate';
-import { LoginDTO, RegisterUserDTO } from './auth.dto';
-import { verifyAuth, requireRole } from '../../shared/middleware/auth';
-import { pool } from '../../db';
 import rateLimit from 'express-rate-limit';
-import { refreshRateLimiter } from '../../shared/middleware/rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import { redisSendCommand } from '../../config/redis';
+import { pool } from '../../db';
+import { requireRole, verifyAuth } from '../../shared/middleware/auth';
+import { refreshRateLimiter } from '../../shared/middleware/rate-limit';
+import { validateDTO } from '../../shared/middleware/validate';
+import { LoginDTO, RegisterUserDTO } from './auth.dto';
+import { AuthService } from './auth.service';
 
 export const authRouter = Router();
 const service = new AuthService();
-const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, maxAge: 15 * 60 * 1000 };
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge: 15 * 60 * 1000,
+};
 const refreshCookieOptions = { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 };
 
 // Rate limiter estricto para intentos de login (10 intentos por minuto por IP)
@@ -22,21 +27,21 @@ const loginLimiter = rateLimit({
   message: { error: 'Demasiados intentos de inicio de sesión. Por favor intente más tarde.' },
   standardHeaders: true,
   legacyHeaders: false,
-  store: new RedisStore({ prefix: 'tumifact:rl:login:', sendCommand: redisSendCommand })
+  store: new RedisStore({ prefix: 'tumifact:rl:login:', sendCommand: redisSendCommand }),
 });
 
 // POST /api/auth/login — Inicio de sesión con correo O número de identificación
 authRouter.post('/login', loginLimiter, validateDTO(LoginDTO), async (req, res, next) => {
   try {
     const result = await service.login(req.body, req);
-    
+
     // Configurar cookie HTTP-only
     res.cookie('tumifact_token', result.token, cookieOptions);
     res.cookie('tumifact_refresh', result.refreshToken, refreshCookieOptions);
 
     const response = {
       message: 'Inicio de sesión exitoso',
-      user: result.user
+      user: result.user,
     } as { message: string; user: typeof result.user; token?: string };
 
     // Browser clients use the HttpOnly cookie. Explicit API clients may opt in
@@ -66,7 +71,9 @@ authRouter.post('/refresh', refreshRateLimiter, async (req, res, next) => {
     res.cookie('tumifact_token', result.accessToken, cookieOptions);
     res.cookie('tumifact_refresh', result.refreshToken, refreshCookieOptions);
     res.json({ message: 'Sesión renovada correctamente', user: result.user });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 authRouter.post('/logout-all', verifyAuth, async (req, res, next) => {
@@ -75,7 +82,9 @@ authRouter.post('/logout-all', verifyAuth, async (req, res, next) => {
     res.clearCookie('tumifact_token');
     res.clearCookie('tumifact_refresh');
     res.json({ message: 'Todas las sesiones fueron revocadas' });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 // GET /api/auth/me — Perfil del usuario autenticado
@@ -90,9 +99,13 @@ authRouter.get('/me', verifyAuth, async (req, res, next) => {
 });
 
 // GET /api/auth/empleados-estado — Monitoreo en tiempo real de todos los empleados y sus turnos (Admin / Gerente)
-authRouter.get('/empleados-estado', verifyAuth, requireRole('admin', 'gerente'), async (req, res, next) => {
-  try {
-    const result = await pool.query(`
+authRouter.get(
+  '/empleados-estado',
+  verifyAuth,
+  requireRole('admin', 'gerente'),
+  async (req, res, next) => {
+    try {
+      const result = await pool.query(`
       SELECT 
         u.id, 
         u.nombre, 
@@ -122,8 +135,9 @@ authRouter.get('/empleados-estado', verifyAuth, requireRole('admin', 'gerente'),
       ORDER BY sc.id IS NOT NULL DESC, u.ultimo_login DESC NULLS LAST
     `);
 
-    res.json(result.rows || []);
-  } catch (error) {
-    next(error);
+      res.json(result.rows || []);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);

@@ -1,5 +1,5 @@
-import { pool } from '../../db';
 import type { Request } from 'express';
+import { pool } from '../../db';
 
 export interface RecordAuditParams {
   usuarioId?: number | null;
@@ -29,7 +29,8 @@ export function recordAudit(params: RecordAuditParams): Promise<void> {
 
       if (params.req) {
         const forwarded = params.req.headers['x-forwarded-for'] as string;
-        const rawIp = forwarded?.split(',')[0]?.trim() || params.req.socket?.remoteAddress || '127.0.0.1';
+        const rawIp =
+          forwarded?.split(',')[0]?.trim() || params.req.socket?.remoteAddress || '127.0.0.1';
         ip = rawIp === '::1' || rawIp.startsWith('::ffff:') ? '127.0.0.1' : rawIp;
         userAgent = (params.req.headers['user-agent'] || 'Unknown').slice(0, 500);
       }
@@ -50,7 +51,7 @@ export function recordAudit(params: RecordAuditParams): Promise<void> {
           ip,
           userAgent,
           params.resultado || 'ok',
-          params.mensajeError || null
+          params.mensajeError || null,
         ]
       );
     } catch (err) {

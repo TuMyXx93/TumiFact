@@ -1,5 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Package, AlertTriangle, ArrowDown, ArrowUp, RefreshCw, Plus, Search, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  CheckCircle2,
+  Package,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
 
 interface Movimiento {
@@ -32,16 +43,18 @@ export default function InventarioManager() {
     producto_id: '',
     tipo: 'entrada_compra',
     cantidad: '',
-    notas: ''
+    notas: '',
   });
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null
+  );
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [movRes, critRes] = await Promise.all([
         apiFetch('/api/inventario/movimientos'),
-        apiFetch('/api/inventario/stock-critico')
+        apiFetch('/api/inventario/stock-critico'),
       ]);
 
       if (movRes.ok) setMovimientos(await movRes.json());
@@ -67,8 +80,8 @@ export default function InventarioManager() {
           producto_id: parseInt(formData.producto_id, 10),
           tipo: formData.tipo,
           cantidad: parseFloat(formData.cantidad),
-          notas: formData.notas
-        })
+          notas: formData.notas,
+        }),
       });
 
       const data = await res.json();
@@ -96,7 +109,10 @@ export default function InventarioManager() {
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
             {criticos.map((p) => (
-              <span key={p.id} className="bg-amber-500/20 text-amber-300 text-xs px-3 py-1 rounded-lg font-medium">
+              <span
+                key={p.id}
+                className="bg-amber-500/20 text-amber-300 text-xs px-3 py-1 rounded-lg font-medium"
+              >
                 {p.nombre} — Stock: <strong>{p.stock_actual}</strong> (Mín: {p.stock_minimo})
               </span>
             ))}
@@ -112,7 +128,11 @@ export default function InventarioManager() {
               : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
           }`}
         >
-          {statusMsg.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          {statusMsg.type === 'success' ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
           {statusMsg.text}
         </div>
       )}
@@ -150,36 +170,56 @@ export default function InventarioManager() {
             <tbody className="divide-y divide-slate-800/80 text-slate-300">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">Cargando kardex...</td>
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                    Cargando kardex...
+                  </td>
                 </tr>
               ) : movimientos.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">No hay movimientos registrados.</td>
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                    No hay movimientos registrados.
+                  </td>
                 </tr>
               ) : (
                 movimientos.map((m) => {
-                  const isPositive = ['entrada_compra', 'ajuste_positivo', 'devolucion_reingreso', 'cancelacion_separado'].includes(m.tipo);
+                  const isPositive = [
+                    'entrada_compra',
+                    'ajuste_positivo',
+                    'devolucion_reingreso',
+                    'cancelacion_separado',
+                  ].includes(m.tipo);
                   return (
                     <tr key={m.id} className="hover:bg-slate-800/30 transition-colors">
                       <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
                         {new Date(m.created_at).toLocaleString()}
                       </td>
                       <td className="py-3 px-4 font-semibold text-white">
-                        {m.producto_nombre} <span className="text-slate-500 text-[11px]">({m.producto_codigo})</span>
+                        {m.producto_nombre}{' '}
+                        <span className="text-slate-500 text-[11px]">({m.producto_codigo})</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                          isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                            isPositive
+                              ? 'bg-emerald-500/10 text-emerald-400'
+                              : 'bg-rose-500/10 text-rose-400'
+                          }`}
+                        >
                           {m.tipo.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className={`py-3 px-4 text-center font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <td
+                        className={`py-3 px-4 text-center font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}
+                      >
                         {isPositive ? `+${m.cantidad}` : `-${m.cantidad}`}
                       </td>
                       <td className="py-3 px-4 text-center text-slate-400">{m.stock_anterior}</td>
-                      <td className="py-3 px-4 text-center font-bold text-white">{m.stock_nuevo}</td>
-                      <td className="py-3 px-4 text-slate-400 italic text-[11px] truncate max-w-xs">{m.notas || '—'}</td>
+                      <td className="py-3 px-4 text-center font-bold text-white">
+                        {m.stock_nuevo}
+                      </td>
+                      <td className="py-3 px-4 text-slate-400 italic text-[11px] truncate max-w-xs">
+                        {m.notas || '—'}
+                      </td>
                     </tr>
                   );
                 })
@@ -194,13 +234,22 @@ export default function InventarioManager() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h3 className="text-lg font-bold text-white font-['Outfit']">Registrar Movimiento de Stock</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+              <h3 className="text-lg font-bold text-white font-['Outfit']">
+                Registrar Movimiento de Stock
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleRegisterMovimiento} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">ID de Producto *</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase">
+                  ID de Producto *
+                </label>
                 <input
                   type="number"
                   required
@@ -212,7 +261,9 @@ export default function InventarioManager() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">Tipo de Movimiento</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase">
+                  Tipo de Movimiento
+                </label>
                 <select
                   value={formData.tipo}
                   onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
@@ -241,7 +292,9 @@ export default function InventarioManager() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">Notas / Justificación</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase">
+                  Notas / Justificación
+                </label>
                 <input
                   type="text"
                   placeholder="ej. Recepción de lote #4829"

@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { v4 as uuidv4, validate as validateUuid } from 'uuid';
 
 export function ensureIdempotencyKey(req: Request, res: Response, next: NextFunction) {

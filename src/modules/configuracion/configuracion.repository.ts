@@ -1,7 +1,7 @@
-import { db } from '../../db';
-import { configuracionImpresion } from '../../db/schema/configuracion';
-import type { ConfiguracionItem, NewConfiguracion } from '../../db/schema/configuracion';
 import { eq } from 'drizzle-orm';
+import { db } from '../../db';
+import type { ConfiguracionItem, NewConfiguracion } from '../../db/schema/configuracion';
+import { configuracionImpresion } from '../../db/schema/configuracion';
 
 export class ConfiguracionRepository {
   async findFirst(): Promise<ConfiguracionItem | null> {

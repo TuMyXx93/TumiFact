@@ -95,6 +95,9 @@ jobs:
           JWT_SECRET: test-ci-jwt-secret-32-bytes-minimum-123456
           NODE_ENV: test
 
+      - name: Lint & Format Check (Biome)
+        run: pnpm exec biome check src/ packages/ --diagnostic-level=error --max-diagnostics=50 || true
+
       - name: Upload Coverage Report Artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

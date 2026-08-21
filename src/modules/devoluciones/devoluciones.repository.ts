@@ -1,10 +1,10 @@
+import { desc, eq } from 'drizzle-orm';
 import { db } from '../../db';
-import { devoluciones, detalleDevolucion } from '../../db/schema/devoluciones';
 import type { DevolucionItem, NewDevolucion } from '../../db/schema/devoluciones';
+import { detalleDevolucion, devoluciones } from '../../db/schema/devoluciones';
 import { facturas } from '../../db/schema/facturas';
-import { usuarios } from '../../db/schema/usuarios';
 import { productos } from '../../db/schema/productos';
-import { eq, desc } from 'drizzle-orm';
+import { usuarios } from '../../db/schema/usuarios';
 
 export class DevolucionesRepository {
   async findAll() {
@@ -19,7 +19,7 @@ export class DevolucionesRepository {
         monto_devuelto: devoluciones.monto_devuelto,
         forma_devolucion: devoluciones.forma_devolucion,
         estado: devoluciones.estado,
-        created_at: devoluciones.created_at
+        created_at: devoluciones.created_at,
       })
       .from(devoluciones)
       .leftJoin(usuarios, eq(devoluciones.usuario_solicitante_id, usuarios.id))
@@ -40,7 +40,7 @@ export class DevolucionesRepository {
         monto_devuelto: devoluciones.monto_devuelto,
         forma_devolucion: devoluciones.forma_devolucion,
         estado: devoluciones.estado,
-        created_at: devoluciones.created_at
+        created_at: devoluciones.created_at,
       })
       .from(devoluciones)
       .leftJoin(usuarios, eq(devoluciones.usuario_solicitante_id, usuarios.id))
@@ -60,7 +60,7 @@ export class DevolucionesRepository {
         subtotal_devuelto: detalleDevolucion.subtotal_devuelto,
         motivo_item: detalleDevolucion.motivo_item,
         condicion: detalleDevolucion.condicion,
-        reingresa_inventario: detalleDevolucion.reingresa_inventario
+        reingresa_inventario: detalleDevolucion.reingresa_inventario,
       })
       .from(detalleDevolucion)
       .leftJoin(productos, eq(detalleDevolucion.producto_id, productos.id))
@@ -68,12 +68,16 @@ export class DevolucionesRepository {
 
     return {
       ...rows[0],
-      items
+      items,
     };
   }
 
   async findByIdempotencyKey(key: string): Promise<DevolucionItem | null> {
-    const rows = await db.select().from(devoluciones).where(eq(devoluciones.idempotency_key, key)).limit(1);
+    const rows = await db
+      .select()
+      .from(devoluciones)
+      .where(eq(devoluciones.idempotency_key, key))
+      .limit(1);
     return rows[0] || null;
   }
 }

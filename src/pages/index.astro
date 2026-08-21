@@ -1,6 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import LiveMonitoringIsland from '../components/dashboard/LiveMonitoringIsland';
+import Layout from '../layouts/Layout.astro';
 import { db } from '../lib/db.js';
 
 // KPIs via SSR directo desde PostgreSQL
@@ -15,7 +15,7 @@ let kpis = {
   ventasTransferencia: 0,
   ventasTarjeta: 0,
   cajaAbierta: false,
-  cajaMonto: 0
+  cajaMonto: 0,
 };
 
 const currentUser = Astro.locals.user as any;
@@ -25,24 +25,33 @@ try {
   const hoy = new Date().toISOString().split('T')[0];
 
   const cajaQuery = currentUserId
-    ? db.query(`SELECT * FROM sesiones_caja WHERE usuario_id = $1 AND estado = 'abierta' ORDER BY abierta_at DESC LIMIT 1`, [currentUserId])
+    ? db.query(
+        `SELECT * FROM sesiones_caja WHERE usuario_id = $1 AND estado = 'abierta' ORDER BY abierta_at DESC LIMIT 1`,
+        [currentUserId]
+      )
     : Promise.resolve({ rows: [] } as any);
 
-  const [ventasHoy, sepActivos, totClientes, totProductos, criticos, caja] = await Promise.allSettled([
-    db.query(`
+  const [ventasHoy, sepActivos, totClientes, totProductos, criticos, caja] =
+    await Promise.allSettled([
+      db.query(
+        `
       SELECT COALESCE(SUM(total), 0) AS total_ventas,
              COUNT(*) AS total_facturas,
              COALESCE(SUM(CASE WHEN forma_pago='efectivo' THEN total ELSE 0 END), 0) AS efectivo,
              COALESCE(SUM(CASE WHEN forma_pago='transferencia' THEN total ELSE 0 END), 0) AS transferencia,
              COALESCE(SUM(CASE WHEN forma_pago='tarjeta' THEN total ELSE 0 END), 0) AS tarjeta
       FROM facturas WHERE DATE(fecha) = $1
-    `, [hoy]),
-    db.query(`SELECT COUNT(*) AS total FROM separados WHERE estado = 'activo'`),
-    db.query(`SELECT COUNT(*) AS total FROM clientes WHERE activo = true`),
-    db.query(`SELECT COUNT(*) AS total FROM productos WHERE activo = true`),
-    db.query(`SELECT COUNT(*) AS total FROM productos WHERE activo = true AND stock_actual <= stock_minimo`),
-    cajaQuery
-  ]);
+    `,
+        [hoy]
+      ),
+      db.query(`SELECT COUNT(*) AS total FROM separados WHERE estado = 'activo'`),
+      db.query(`SELECT COUNT(*) AS total FROM clientes WHERE activo = true`),
+      db.query(`SELECT COUNT(*) AS total FROM productos WHERE activo = true`),
+      db.query(
+        `SELECT COUNT(*) AS total FROM productos WHERE activo = true AND stock_actual <= stock_minimo`
+      ),
+      cajaQuery,
+    ]);
 
   if (ventasHoy.status === 'fulfilled') {
     const r = ventasHoy.value.rows[0];
@@ -52,10 +61,14 @@ try {
     kpis.ventasTransferencia = parseFloat(r?.transferencia || 0);
     kpis.ventasTarjeta = parseFloat(r?.tarjeta || 0);
   }
-  if (sepActivos.status === 'fulfilled') kpis.separadosActivos = parseInt(sepActivos.value.rows[0]?.total || 0, 10);
-  if (totClientes.status === 'fulfilled') kpis.clientesTotal = parseInt(totClientes.value.rows[0]?.total || 0, 10);
-  if (totProductos.status === 'fulfilled') kpis.productosTotal = parseInt(totProductos.value.rows[0]?.total || 0, 10);
-  if (criticos.status === 'fulfilled') kpis.stockCritico = parseInt(criticos.value.rows[0]?.total || 0, 10);
+  if (sepActivos.status === 'fulfilled')
+    kpis.separadosActivos = parseInt(sepActivos.value.rows[0]?.total || 0, 10);
+  if (totClientes.status === 'fulfilled')
+    kpis.clientesTotal = parseInt(totClientes.value.rows[0]?.total || 0, 10);
+  if (totProductos.status === 'fulfilled')
+    kpis.productosTotal = parseInt(totProductos.value.rows[0]?.total || 0, 10);
+  if (criticos.status === 'fulfilled')
+    kpis.stockCritico = parseInt(criticos.value.rows[0]?.total || 0, 10);
   if (caja.status === 'fulfilled' && caja.value.rows.length > 0) {
     kpis.cajaAbierta = true;
     kpis.cajaMonto = parseFloat(caja.value.rows[0].monto_apertura || 0);
@@ -65,12 +78,12 @@ try {
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('es-CO').format(Math.round(n));
-const today = new Date().toLocaleDateString('es-CO', { 
+const today = new Date().toLocaleDateString('es-CO', {
   timeZone: 'America/Bogota',
-  weekday: 'long', 
-  year: 'numeric', 
-  month: 'long', 
-  day: 'numeric' 
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
 });
 ---
 

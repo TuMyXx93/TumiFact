@@ -1,6 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import EmpleadoManager from '../components/empleados/EmpleadoManager';
+import Layout from '../layouts/Layout.astro';
 import db from '../lib/db.js';
 
 const currentUser = Astro.locals.user as any;
@@ -45,14 +45,14 @@ try {
       ORDER BY e.id ASC
     `),
     db.query('SELECT * FROM roles ORDER BY id ASC'),
-    db.query('SELECT * FROM tipos_identificacion ORDER BY id ASC')
+    db.query('SELECT * FROM tipos_identificacion ORDER BY id ASC'),
   ]);
 
-  empleados = empRes.rows.map(e => ({
+  empleados = empRes.rows.map((e) => ({
     ...e,
     salario: parseFloat(e.salario || '0'),
     descuento_max_porcentaje: parseFloat(e.descuento_max_porcentaje || '0'),
-    descuento_max_monto: parseFloat(e.descuento_max_monto || '0')
+    descuento_max_monto: parseFloat(e.descuento_max_monto || '0'),
   }));
   roles = rolesRes.rows || [];
   tiposDoc = tiposRes.rows || [];

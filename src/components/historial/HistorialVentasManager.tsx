@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Search, Printer, Eye, X, Filter, DollarSign, FileText, CheckCircle2 } from 'lucide-react';
+import {
+  Calendar,
+  CheckCircle2,
+  DollarSign,
+  Eye,
+  FileText,
+  Filter,
+  Printer,
+  Search,
+  X,
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
-import { formatNumber, formatDate } from '../../lib/format';
+import { formatDate, formatNumber } from '../../lib/format';
 
 interface Venta {
   id: number;
@@ -216,9 +226,7 @@ export default function HistorialVentasManager() {
                     <td className="px-6 py-4 font-mono font-bold text-blue-400 text-xs">
                       #{venta.id}
                     </td>
-                    <td className="px-6 py-4 text-xs text-slate-300">
-                      {formatDate(venta.fecha)}
-                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-300">{formatDate(venta.fecha)}</td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-white text-xs">
                         {venta.cliente_nombre} {venta.cliente_apellido || ''}
@@ -235,8 +243,8 @@ export default function HistorialVentasManager() {
                           venta.forma_pago === 'efectivo'
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : venta.forma_pago === 'transferencia'
-                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                            : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                              : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                         }`}
                       >
                         {venta.forma_pago}
@@ -284,7 +292,8 @@ export default function HistorialVentasManager() {
                   Factura de Venta #{selectedVenta.id}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Cliente: {selectedVenta.cliente_nombre} {selectedVenta.cliente_apellido || ''} · {formatDate(selectedVenta.fecha)}
+                  Cliente: {selectedVenta.cliente_nombre} {selectedVenta.cliente_apellido || ''} ·{' '}
+                  {formatDate(selectedVenta.fecha)}
                 </p>
               </div>
               <button
@@ -335,8 +344,18 @@ export default function HistorialVentasManager() {
 
                 <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/60 flex items-center justify-between">
                   <div className="text-xs text-slate-400 space-y-0.5">
-                    <div>Forma de Pago: <span className="text-white font-bold capitalize">{selectedVenta.forma_pago}</span></div>
-                    {selectedVenta.usuario_nombre && <div>Cajero: <span className="text-slate-300">{selectedVenta.usuario_nombre}</span></div>}
+                    <div>
+                      Forma de Pago:{' '}
+                      <span className="text-white font-bold capitalize">
+                        {selectedVenta.forma_pago}
+                      </span>
+                    </div>
+                    {selectedVenta.usuario_nombre && (
+                      <div>
+                        Cajero:{' '}
+                        <span className="text-slate-300">{selectedVenta.usuario_nombre}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <span className="text-xs text-slate-400 block">Total Facturado:</span>

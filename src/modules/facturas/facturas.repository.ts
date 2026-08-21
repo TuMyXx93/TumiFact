@@ -1,13 +1,13 @@
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { db } from '../../db';
-import { facturas } from '../../db/schema/facturas';
-import type { FacturaItem, NewFactura } from '../../db/schema/facturas';
-import { detalleFactura } from '../../db/schema/detalle_factura';
-import type { DetalleFacturaItem, NewDetalleFactura } from '../../db/schema/detalle_factura';
 import { clientes } from '../../db/schema/clientes';
+import type { DetalleFacturaItem, NewDetalleFactura } from '../../db/schema/detalle_factura';
+import { detalleFactura } from '../../db/schema/detalle_factura';
+import type { FacturaItem, NewFactura } from '../../db/schema/facturas';
+import { facturas } from '../../db/schema/facturas';
+import { movimientosInventario } from '../../db/schema/inventario';
 import { productos } from '../../db/schema/productos';
 import { usuarios } from '../../db/schema/usuarios';
-import { movimientosInventario } from '../../db/schema/inventario';
-import { eq, desc, gte, lte, and, sql } from 'drizzle-orm';
 
 export class FacturasRepository {
   async createWithDetails(
@@ -45,16 +45,23 @@ export class FacturasRepository {
           cantidad: item.cantidad.toString(),
           precio_unitario: item.precio_unitario.toString(),
           unidad_medida: item.unidad_medida,
-          subtotal: item.subtotal.toString()
+          subtotal: item.subtotal.toString(),
         });
 
         // Decrementar stock en productos
-        const prodRows = await tx.select().from(productos).where(eq(productos.id, item.producto_id)).limit(1);
+        const prodRows = await tx
+          .select()
+          .from(productos)
+          .where(eq(productos.id, item.producto_id))
+          .limit(1);
         if (prodRows[0]) {
           const currentStock = parseFloat(prodRows[0].stock_actual);
           const newStock = Math.max(0, currentStock - item.cantidad);
 
-          await tx.update(productos).set({ stock_actual: newStock.toString(), updated_at: new Date() }).where(eq(productos.id, item.producto_id));
+          await tx
+            .update(productos)
+            .set({ stock_actual: newStock.toString(), updated_at: new Date() })
+            .where(eq(productos.id, item.producto_id));
 
           // Registrar movimiento de inventario
           await tx.insert(movimientosInventario).values({
@@ -67,7 +74,7 @@ export class FacturasRepository {
             stock_nuevo: newStock.toString(),
             referencia_tipo: 'factura',
             referencia_id: newFactura.id,
-            notas: `Venta POS en Factura #${newFactura.id}`
+            notas: `Venta POS en Factura #${newFactura.id}`,
           });
         }
       }
@@ -83,7 +90,7 @@ export class FacturasRepository {
             total_compras: sql`CAST(${clientes.total_compras} AS NUMERIC) + ${facturaTotal}`,
             numero_facturas: sql`${clientes.numero_facturas} + 1`,
             ultima_compra: new Date(),
-            updated_at: new Date()
+            updated_at: new Date(),
           })
           .where(eq(clientes.id, facturaData.cliente_id));
       }
@@ -119,7 +126,7 @@ export class FacturasRepository {
         cliente_apellido: clientes.apellido,
         cliente_identificacion: clientes.numero_identificacion,
         direccion: clientes.direccion_texto,
-        telefono: clientes.telefono
+        telefono: clientes.telefono,
       })
       .from(facturas)
       .leftJoin(clientes, eq(facturas.cliente_id, clientes.id))
@@ -144,7 +151,7 @@ export class FacturasRepository {
         cantidad: detalleFactura.cantidad,
         precio_unitario: detalleFactura.precio_unitario,
         unidad_medida: detalleFactura.unidad_medida,
-        subtotal: detalleFactura.subtotal
+        subtotal: detalleFactura.subtotal,
       })
       .from(detalleFactura)
       .leftJoin(productos, eq(detalleFactura.producto_id, productos.id))
@@ -174,7 +181,7 @@ export class FacturasRepository {
       conditions.push(eq(facturas.estado, estado));
     }
 
-    let query = db
+    const query = db
       .select({
         id: facturas.id,
         cliente_id: facturas.cliente_id,
@@ -188,7 +195,7 @@ export class FacturasRepository {
         tipo: facturas.tipo,
         estado: facturas.estado,
         cliente_nombre: clientes.nombre,
-        cliente_apellido: clientes.apellido
+        cliente_apellido: clientes.apellido,
       })
       .from(facturas)
       .leftJoin(clientes, eq(facturas.cliente_id, clientes.id))

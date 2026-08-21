@@ -10,7 +10,7 @@ export const DetalleFacturaDTO = z.object({
   descuento_id: z.coerce.number().int().optional().nullable(),
   descuento_inline_tipo: z.enum(['porcentaje', 'monto_fijo']).optional().nullable(),
   descuento_inline_valor: z.coerce.number().min(0).optional().default(0),
-  descuento_aplicado: z.coerce.number().min(0).optional().default(0)
+  descuento_aplicado: z.coerce.number().min(0).optional().default(0),
 });
 
 export const CreateFacturaDTO = z.object({
@@ -23,9 +23,12 @@ export const CreateFacturaDTO = z.object({
     .optional()
     .default([]),
   total: z.coerce.number().optional(),
-  forma_pago: z.enum(['efectivo', 'transferencia', 'tarjeta', 'mixto']).optional().default('efectivo'),
+  forma_pago: z
+    .enum(['efectivo', 'transferencia', 'tarjeta', 'mixto'])
+    .optional()
+    .default('efectivo'),
   tipo: z.enum(['contado', 'separado_final']).optional().default('contado'),
-  productos: z.array(DetalleFacturaDTO).min(1, 'productos debe ser un array no vacío')
+  productos: z.array(DetalleFacturaDTO).min(1, 'productos debe ser un array no vacío'),
 });
 
 export type CreateFacturaInput = z.infer<typeof CreateFacturaDTO>;

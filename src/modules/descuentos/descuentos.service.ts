@@ -1,7 +1,7 @@
-import { DescuentosRepository } from './descuentos.repository';
-import type { CreateDescuentoInput, UpdateDescuentoInput } from './descuentos.dto';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateDescuentoInput, UpdateDescuentoInput } from './descuentos.dto';
+import { DescuentosRepository } from './descuentos.repository';
 
 export class DescuentosService {
   constructor(private repo: DescuentosRepository = new DescuentosRepository()) {}
@@ -10,7 +10,7 @@ export class DescuentosService {
     const list = await this.repo.findAll();
     return list.map((d) => ({
       ...d,
-      valor: parseFloat(d.valor)
+      valor: parseFloat(d.valor),
     }));
   }
 
@@ -19,7 +19,7 @@ export class DescuentosService {
     if (!d) return null;
     return {
       ...d,
-      valor: parseFloat(d.valor)
+      valor: parseFloat(d.valor),
     };
   }
 
@@ -33,7 +33,7 @@ export class DescuentosService {
       requiere_aprobacion: input.requiere_aprobacion || false,
       vigencia_desde: input.vigencia_desde || null,
       vigencia_hasta: input.vigencia_hasta || null,
-      activo: true
+      activo: true,
     });
 
     await recordAudit({
@@ -42,7 +42,7 @@ export class DescuentosService {
       entidad: 'descuentos',
       entidadId: created.id,
       datosNuevos: input,
-      req
+      req,
     });
 
     return created;
@@ -55,7 +55,8 @@ export class DescuentosService {
     if (input.tipo !== undefined) dataToUpdate.tipo = input.tipo;
     if (input.valor !== undefined) dataToUpdate.valor = input.valor.toString();
     if (input.aplica_a !== undefined) dataToUpdate.aplica_a = input.aplica_a;
-    if (input.requiere_aprobacion !== undefined) dataToUpdate.requiere_aprobacion = input.requiere_aprobacion;
+    if (input.requiere_aprobacion !== undefined)
+      dataToUpdate.requiere_aprobacion = input.requiere_aprobacion;
     if (input.vigencia_desde !== undefined) dataToUpdate.vigencia_desde = input.vigencia_desde;
     if (input.vigencia_hasta !== undefined) dataToUpdate.vigencia_hasta = input.vigencia_hasta;
 
@@ -67,7 +68,7 @@ export class DescuentosService {
       entidad: 'descuentos',
       entidadId: id,
       datosNuevos: input,
-      req
+      req,
     });
 
     return updated;
@@ -81,7 +82,7 @@ export class DescuentosService {
         accion: 'DESCUENTO_ELIMINADO',
         entidad: 'descuentos',
         entidadId: id,
-        req
+        req,
       });
     }
     return ok;

@@ -8,7 +8,11 @@
     "jsxImportSource": "react",
     "strict": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tumifact/schemas": ["./packages/schemas/src"],
+      "@tumifact/schemas/*": ["./packages/schemas/src/*"],
+      "@tumifact/types": ["./packages/types/src"],
+      "@tumifact/types/*": ["./packages/types/src/*"]
     }
   },
   "include": ["src/**/*", ".astro/types.d.ts"],

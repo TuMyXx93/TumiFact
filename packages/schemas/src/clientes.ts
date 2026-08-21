@@ -11,7 +11,7 @@ export const CreateClienteDTO = z.object({
   direccion_id: z.coerce.number().int().optional().nullable(),
   direccion_texto: z.string().optional().nullable(),
   tipo_cliente: z.enum(['detal', 'mayorista', 'vip']).optional().default('detal'),
-  notas: z.string().optional().nullable()
+  notas: z.string().optional().nullable(),
 });
 
 export const UpdateClienteDTO = CreateClienteDTO.partial();

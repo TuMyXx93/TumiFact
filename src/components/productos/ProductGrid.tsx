@@ -1,24 +1,25 @@
-import React, { useState, useMemo } from 'react';
-import type { Producto } from '../../types';
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Trash2, 
-  Edit2, 
-  Tag, 
-  Shirt, 
-  Laptop, 
-  Footprints, 
-  Apple, 
-  Sparkles, 
-  Gem,
+import {
+  AlertCircle,
+  Apple,
   Boxes,
   CheckCircle2,
-  AlertCircle
+  Edit2,
+  Footprints,
+  Gem,
+  Laptop,
+  Package,
+  Plus,
+  Search,
+  Shirt,
+  Sparkles,
+  Tag,
+  Trash2,
 } from 'lucide-react';
+import type React from 'react';
+import { useMemo, useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
 import { formatNumber } from '../../lib/format';
+import type { Producto } from '../../types';
 
 interface Categoria {
   id: number;
@@ -33,14 +34,20 @@ interface ProductGridProps {
   initialCategorias?: Categoria[];
 }
 
-export default function ProductGrid({ initialProductos = [], initialCategorias = [] }: ProductGridProps) {
+export default function ProductGrid({
+  initialProductos = [],
+  initialCategorias = [],
+}: ProductGridProps) {
   const [productos, setProductos] = useState<any[]>(initialProductos);
   const [categorias] = useState<Categoria[]>(initialCategorias);
   const [selectedCategoriaId, setSelectedCategoriaId] = useState<number | 'all'>('all');
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProducto, setEditingProducto] = useState<any | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     codigo: '',
@@ -55,27 +62,35 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
     precio_kg: '',
     precio_unidad: '',
     precio_libra: '',
-    atributos: {} as Record<string, any>
+    atributos: {} as Record<string, any>,
   });
 
   const getCategoryIcon = (tipo?: string) => {
     switch (tipo) {
-      case 'vestimenta': return <Shirt className="h-4 w-4 text-rose-400" />;
-      case 'tecnologia': return <Laptop className="h-4 w-4 text-cyan-400" />;
-      case 'calzado': return <Footprints className="h-4 w-4 text-amber-400" />;
-      case 'perecedero': return <Apple className="h-4 w-4 text-emerald-400" />;
-      case 'artesania': return <Sparkles className="h-4 w-4 text-purple-400" />;
-      case 'bisuteria': return <Gem className="h-4 w-4 text-pink-400" />;
-      default: return <Package className="h-4 w-4 text-blue-400" />;
+      case 'vestimenta':
+        return <Shirt className="h-4 w-4 text-rose-400" />;
+      case 'tecnologia':
+        return <Laptop className="h-4 w-4 text-cyan-400" />;
+      case 'calzado':
+        return <Footprints className="h-4 w-4 text-amber-400" />;
+      case 'perecedero':
+        return <Apple className="h-4 w-4 text-emerald-400" />;
+      case 'artesania':
+        return <Sparkles className="h-4 w-4 text-purple-400" />;
+      case 'bisuteria':
+        return <Gem className="h-4 w-4 text-pink-400" />;
+      default:
+        return <Package className="h-4 w-4 text-blue-400" />;
     }
   };
 
   const filteredProductos = useMemo(() => {
     return productos.filter((p) => {
-      const matchesSearch = 
+      const matchesSearch =
         p.nombre.toLowerCase().includes(search.toLowerCase()) ||
         p.codigo.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = selectedCategoriaId === 'all' || p.categoria_id === selectedCategoriaId;
+      const matchesCategory =
+        selectedCategoriaId === 'all' || p.categoria_id === selectedCategoriaId;
       return matchesSearch && matchesCategory;
     });
   }, [productos, search, selectedCategoriaId]);
@@ -91,7 +106,11 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
       nombre: prod.nombre,
       descripcion: prod.descripcion || '',
       categoria_id: prod.categoria_id || categorias[0]?.id || 1,
-      precio_detal: prod.precio_detal ? String(prod.precio_detal) : (prod.precio_unidad ? String(prod.precio_unidad) : ''),
+      precio_detal: prod.precio_detal
+        ? String(prod.precio_detal)
+        : prod.precio_unidad
+          ? String(prod.precio_unidad)
+          : '',
       precio_mayorista: prod.precio_mayorista ? String(prod.precio_mayorista) : '',
       cantidad_mayorista: prod.cantidad_mayorista ? String(prod.cantidad_mayorista) : '12',
       stock_actual: prod.stock_actual ? String(prod.stock_actual) : '0',
@@ -99,7 +118,7 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
       precio_kg: prod.precio_kg ? String(prod.precio_kg) : '',
       precio_unidad: prod.precio_unidad ? String(prod.precio_unidad) : '',
       precio_libra: prod.precio_libra ? String(prod.precio_libra) : '',
-      atributos: typeof prod.atributos === 'object' ? prod.atributos : {}
+      atributos: typeof prod.atributos === 'object' ? prod.atributos : {},
     });
     setIsModalOpen(true);
   };
@@ -119,7 +138,7 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
       precio_kg: '',
       precio_unidad: '',
       precio_libra: '',
-      atributos: {}
+      atributos: {},
     });
     setIsModalOpen(true);
   };
@@ -130,11 +149,16 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
     try {
       const res = await apiFetch(`/api/productos/${id}`, { method: 'DELETE' });
       let data: any = {};
-      try { data = await res.json(); } catch (_) {}
+      try {
+        data = await res.json();
+      } catch (_) {}
 
       if (res.ok) {
         setProductos(productos.filter((p) => p.id !== id));
-        setStatusMessage({ type: 'success', text: data.message || 'Producto eliminado exitosamente' });
+        setStatusMessage({
+          type: 'success',
+          text: data.message || 'Producto eliminado exitosamente',
+        });
       } else {
         setStatusMessage({ type: 'error', text: data.error || 'Error al eliminar' });
       }
@@ -150,7 +174,11 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
       return;
     }
 
-    const pDetal = Number(formData.precio_detal) || Number(formData.precio_unidad) || Number(formData.precio_kg) || 0;
+    const pDetal =
+      Number(formData.precio_detal) ||
+      Number(formData.precio_unidad) ||
+      Number(formData.precio_kg) ||
+      0;
     const pMayor = Number(formData.precio_mayorista) || pDetal;
 
     // Normalizar atributos según la categoría actual
@@ -187,8 +215,8 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
       stock_minimo: Number(formData.stock_minimo) || 5,
       precio_unidad: pDetal,
       precio_kg: Number(formData.precio_kg) || pDetal,
-      precio_libra: Number(formData.precio_libra) || (pDetal / 2),
-      atributos: cleanedAtributos
+      precio_libra: Number(formData.precio_libra) || pDetal / 2,
+      atributos: cleanedAtributos,
     };
 
     try {
@@ -198,7 +226,7 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
       const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -209,15 +237,21 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
           ...payload,
           id: editingProducto ? editingProducto.id : data.id,
           categoria_nombre: catInfo?.nombre || 'General',
-          categoria_tipo: catInfo?.tipo || 'generico'
+          categoria_tipo: catInfo?.tipo || 'generico',
         };
 
         if (editingProducto) {
           setProductos(productos.map((p) => (p.id === editingProducto.id ? enriched : p)));
-          setStatusMessage({ type: 'success', text: `Producto "${payload.nombre}" actualizado con éxito` });
+          setStatusMessage({
+            type: 'success',
+            text: `Producto "${payload.nombre}" actualizado con éxito`,
+          });
         } else {
           setProductos([enriched, ...productos]);
-          setStatusMessage({ type: 'success', text: `Producto "${payload.nombre}" añadido al catálogo` });
+          setStatusMessage({
+            type: 'success',
+            text: `Producto "${payload.nombre}" añadido al catálogo`,
+          });
         }
         setIsModalOpen(false);
       } else {
@@ -246,10 +280,17 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
           }`}
         >
           <div className="flex items-center gap-2">
-            {statusMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+            {statusMessage.type === 'success' ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
             <span>{statusMessage.text}</span>
           </div>
-          <button onClick={() => setStatusMessage(null)} className="text-xs uppercase font-mono hover:opacity-75">
+          <button
+            onClick={() => setStatusMessage(null)}
+            className="text-xs uppercase font-mono hover:opacity-75"
+          >
             Cerrar
           </button>
         </div>
@@ -330,8 +371,11 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
                 </tr>
               ) : (
                 filteredProductos.map((item) => {
-                  const attrs = typeof item.atributos === 'object' && item.atributos ? item.atributos : {};
-                  const attrEntries = Object.entries(attrs).filter(([_, v]) => v !== undefined && v !== '');
+                  const attrs =
+                    typeof item.atributos === 'object' && item.atributos ? item.atributos : {};
+                  const attrEntries = Object.entries(attrs).filter(
+                    ([_, v]) => v !== undefined && v !== ''
+                  );
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
@@ -353,7 +397,10 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
                         {attrEntries.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {attrEntries.map(([k, v]) => (
-                              <span key={k} className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300">
+                              <span
+                                key={k}
+                                className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-300"
+                              >
                                 {k}: <strong className="text-white">{String(v)}</strong>
                               </span>
                             ))}
@@ -363,7 +410,10 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-emerald-400 font-bold font-mono">
-                        ${formatNumber(item.precio_detal || item.precio_unidad || item.precio_kg || 0)}
+                        $
+                        {formatNumber(
+                          item.precio_detal || item.precio_unidad || item.precio_kg || 0
+                        )}
                       </td>
                       <td className="px-5 py-3.5 text-cyan-400 font-mono">
                         {item.precio_mayorista ? (
@@ -421,7 +471,9 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-lg font-bold text-white font-['Space_Grotesk'] flex items-center gap-2">
                 <Package className="h-5 w-5 text-blue-400" />
-                {editingProducto ? `Editar Producto: ${editingProducto.nombre}` : 'Registrar Producto en Catálogo'}
+                {editingProducto
+                  ? `Editar Producto: ${editingProducto.nombre}`
+                  : 'Registrar Producto en Catálogo'}
               </h3>
               <button
                 onClick={() => {
@@ -460,7 +512,9 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase">Código SKU / EAN *</label>
+                  <label className="font-semibold text-slate-300 uppercase">
+                    Código SKU / EAN *
+                  </label>
                   <input
                     type="text"
                     required
@@ -471,7 +525,9 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase">Nombre del Producto *</label>
+                  <label className="font-semibold text-slate-300 uppercase">
+                    Nombre del Producto *
+                  </label>
                   <input
                     type="text"
                     required
@@ -484,7 +540,9 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
               </div>
 
               <div>
-                <label className="font-semibold text-slate-300 uppercase">Descripción Breve (Opcional)</label>
+                <label className="font-semibold text-slate-300 uppercase">
+                  Descripción Breve (Opcional)
+                </label>
                 <input
                   type="text"
                   placeholder="ej. Disco de estado sólido Kingston 512GB NVMe M.2"
@@ -496,7 +554,9 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-800">
                 <div>
-                  <label className="font-semibold text-emerald-400 uppercase">Precio Detal (Venta) *</label>
+                  <label className="font-semibold text-emerald-400 uppercase">
+                    Precio Detal (Venta) *
+                  </label>
                   <input
                     type="number"
                     required
@@ -521,13 +581,17 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase">Mínimo Mayorista (Uds)</label>
+                  <label className="font-semibold text-slate-300 uppercase">
+                    Mínimo Mayorista (Uds)
+                  </label>
                   <input
                     type="number"
                     min="1"
                     placeholder="12"
                     value={formData.cantidad_mayorista}
-                    onChange={(e) => setFormData({ ...formData, cantidad_mayorista: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cantidad_mayorista: e.target.value })
+                    }
                     className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -545,7 +609,9 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase">Stock Mínimo (Alerta)</label>
+                  <label className="font-semibold text-slate-300 uppercase">
+                    Stock Mínimo (Alerta)
+                  </label>
                   <input
                     type="number"
                     min="0"
@@ -556,53 +622,62 @@ export default function ProductGrid({ initialProductos = [], initialCategorias =
                 </div>
               </div>
 
-              {currentSelectedCategory?.campos_extra && currentSelectedCategory.campos_extra.length > 0 && (
-                <div className="space-y-3 p-4 rounded-xl bg-slate-800/30 border border-slate-800">
-                  <p className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Tag className="h-3.5 w-3.5 text-blue-400" />
-                    Atributos Específicos ({currentSelectedCategory.nombre})
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {currentSelectedCategory.campos_extra.map((campo) => (
-                      <div key={campo.key}>
-                        <label className="text-slate-400 uppercase font-semibold">{campo.label}</label>
-                        {campo.type === 'select' && campo.options ? (
-                          <select
-                            value={formData.atributos[campo.key] || ''}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                atributos: { ...formData.atributos, [campo.key]: e.target.value }
-                              })
-                            }
-                            className="w-full mt-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500"
-                          >
-                            <option value="">Seleccione...</option>
-                            {campo.options.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type={campo.type === 'number' ? 'number' : campo.type === 'date' ? 'date' : 'text'}
-                            placeholder={`ej. ${campo.label}`}
-                            value={formData.atributos[campo.key] || ''}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                atributos: { ...formData.atributos, [campo.key]: e.target.value }
-                              })
-                            }
-                            className="w-full mt-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500"
-                          />
-                        )}
-                      </div>
-                    ))}
+              {currentSelectedCategory?.campos_extra &&
+                currentSelectedCategory.campos_extra.length > 0 && (
+                  <div className="space-y-3 p-4 rounded-xl bg-slate-800/30 border border-slate-800">
+                    <p className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Tag className="h-3.5 w-3.5 text-blue-400" />
+                      Atributos Específicos ({currentSelectedCategory.nombre})
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {currentSelectedCategory.campos_extra.map((campo) => (
+                        <div key={campo.key}>
+                          <label className="text-slate-400 uppercase font-semibold">
+                            {campo.label}
+                          </label>
+                          {campo.type === 'select' && campo.options ? (
+                            <select
+                              value={formData.atributos[campo.key] || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  atributos: { ...formData.atributos, [campo.key]: e.target.value },
+                                })
+                              }
+                              className="w-full mt-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                            >
+                              <option value="">Seleccione...</option>
+                              {campo.options.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type={
+                                campo.type === 'number'
+                                  ? 'number'
+                                  : campo.type === 'date'
+                                    ? 'date'
+                                    : 'text'
+                              }
+                              placeholder={`ej. ${campo.label}`}
+                              value={formData.atributos[campo.key] || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  atributos: { ...formData.atributos, [campo.key]: e.target.value },
+                                })
+                              }
+                              className="w-full mt-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
                 <button

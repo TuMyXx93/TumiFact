@@ -1,16 +1,16 @@
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../../db';
-import { separados, separadosProductos } from '../../db/schema/separados';
-import type { SeparadoItem, NewSeparado } from '../../db/schema/separados';
-import { abonosSeparado } from '../../db/schema/abonos_separado';
 import type { AbonoSeparadoItem, NewAbonoSeparado } from '../../db/schema/abonos_separado';
+import { abonosSeparado } from '../../db/schema/abonos_separado';
 import { clientes } from '../../db/schema/clientes';
-import { usuarios } from '../../db/schema/usuarios';
 import { productos } from '../../db/schema/productos';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import type { NewSeparado, SeparadoItem } from '../../db/schema/separados';
+import { separados, separadosProductos } from '../../db/schema/separados';
+import { usuarios } from '../../db/schema/usuarios';
 
 export class SeparadosRepository {
   async findAll(estado?: string, usuarioId?: number) {
-    let query = db
+    const query = db
       .select({
         id: separados.id,
         idempotency_key: separados.idempotency_key,
@@ -32,15 +32,22 @@ export class SeparadosRepository {
         dias_plazo: separados.dias_plazo,
         estado: separados.estado,
         factura_id: separados.factura_id,
-        created_at: separados.created_at
+        created_at: separados.created_at,
       })
       .from(separados)
       .leftJoin(clientes, eq(separados.cliente_id, clientes.id))
       .leftJoin(usuarios, eq(separados.usuario_apertura_id, usuarios.id));
 
-    if (estado && usuarioId) return await query.where(and(eq(separados.estado, estado), eq(separados.usuario_apertura_id, usuarioId))).orderBy(desc(separados.created_at));
-    if (estado) return await query.where(eq(separados.estado, estado)).orderBy(desc(separados.created_at));
-    if (usuarioId) return await query.where(eq(separados.usuario_apertura_id, usuarioId)).orderBy(desc(separados.created_at));
+    if (estado && usuarioId)
+      return await query
+        .where(and(eq(separados.estado, estado), eq(separados.usuario_apertura_id, usuarioId)))
+        .orderBy(desc(separados.created_at));
+    if (estado)
+      return await query.where(eq(separados.estado, estado)).orderBy(desc(separados.created_at));
+    if (usuarioId)
+      return await query
+        .where(eq(separados.usuario_apertura_id, usuarioId))
+        .orderBy(desc(separados.created_at));
 
     return await query.orderBy(desc(separados.created_at));
   }
@@ -69,7 +76,7 @@ export class SeparadosRepository {
         dias_plazo: separados.dias_plazo,
         estado: separados.estado,
         factura_id: separados.factura_id,
-        created_at: separados.created_at
+        created_at: separados.created_at,
       })
       .from(separados)
       .leftJoin(clientes, eq(separados.cliente_id, clientes.id))
@@ -90,7 +97,7 @@ export class SeparadosRepository {
         precio_unitario: separadosProductos.precio_unitario,
         unidad_medida: separadosProductos.unidad_medida,
         subtotal: separadosProductos.subtotal,
-        descuento_aplicado: separadosProductos.descuento_aplicado
+        descuento_aplicado: separadosProductos.descuento_aplicado,
       })
       .from(separadosProductos)
       .leftJoin(productos, eq(separadosProductos.producto_id, productos.id))
@@ -110,7 +117,7 @@ export class SeparadosRepository {
         referencia_pago: abonosSeparado.referencia_pago,
         notas: abonosSeparado.notas,
         es_abono_final: abonosSeparado.es_abono_final,
-        created_at: abonosSeparado.created_at
+        created_at: abonosSeparado.created_at,
       })
       .from(abonosSeparado)
       .leftJoin(usuarios, eq(abonosSeparado.usuario_id, usuarios.id))
@@ -120,17 +127,25 @@ export class SeparadosRepository {
     return {
       ...rows[0],
       productos: prods,
-      abonos
+      abonos,
     };
   }
 
   async findByIdempotencyKey(key: string): Promise<SeparadoItem | null> {
-    const rows = await db.select().from(separados).where(eq(separados.idempotency_key, key)).limit(1);
+    const rows = await db
+      .select()
+      .from(separados)
+      .where(eq(separados.idempotency_key, key))
+      .limit(1);
     return rows[0] || null;
   }
 
   async findAbonoByIdempotencyKey(key: string): Promise<AbonoSeparadoItem | null> {
-    const rows = await db.select().from(abonosSeparado).where(eq(abonosSeparado.idempotency_key, key)).limit(1);
+    const rows = await db
+      .select()
+      .from(abonosSeparado)
+      .where(eq(abonosSeparado.idempotency_key, key))
+      .limit(1);
     return rows[0] || null;
   }
 }

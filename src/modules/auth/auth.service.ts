@@ -1,17 +1,16 @@
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import argon2 from 'argon2';
+import { and, eq, isNull, or } from 'drizzle-orm';
+import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../config/security';
 import { db } from '../../db';
-import { usuarios } from '../../db/schema/usuarios';
-import { roles } from '../../db/schema/roles';
-import { empleados } from '../../db/schema/empleados';
-import { eq, or } from 'drizzle-orm';
-import type { LoginInput, RegisterUserInput } from './auth.dto';
-import { recordAudit } from '../../shared/utils/audit';
-import type { Request } from 'express';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { authSessions } from '../../db/schema/auth_sessions';
-import { and, isNull } from 'drizzle-orm';
+import { empleados } from '../../db/schema/empleados';
+import { roles } from '../../db/schema/roles';
+import { usuarios } from '../../db/schema/usuarios';
+import { recordAudit } from '../../shared/utils/audit';
+import type { LoginInput, RegisterUserInput } from './auth.dto';
 
 const JWT_EXPIRES_IN = '15m';
 const REFRESH_DAYS = 7;
@@ -54,7 +53,7 @@ export class AuthService {
         permisos: roles.permisos,
         activo: usuarios.activo,
         intentos_fallidos: usuarios.intentos_fallidos,
-        bloqueado_hasta: usuarios.bloqueado_hasta
+        bloqueado_hasta: usuarios.bloqueado_hasta,
       })
       .from(usuarios)
       .leftJoin(roles, eq(usuarios.rol_id, roles.id))
@@ -77,7 +76,7 @@ export class AuthService {
         entidad: 'usuarios',
         resultado: 'error',
         mensajeError: `Credencial no encontrada: ${cred}`,
-        req
+        req,
       });
       const error: any = new Error('Credenciales incorrectas');
       error.statusCode = 401;
@@ -91,7 +90,7 @@ export class AuthService {
         entidad: 'usuarios',
         resultado: 'rechazado',
         mensajeError: 'Usuario inactivo',
-        req
+        req,
       });
       const error: any = new Error('La cuenta se encuentra inactiva. Contacte al administrador.');
       error.statusCode = 403;
@@ -100,8 +99,12 @@ export class AuthService {
 
     // Verificar bloqueo por intentos fallidos
     if (user.bloqueado_hasta && new Date(user.bloqueado_hasta) > new Date()) {
-      const remainingMinutes = Math.ceil((new Date(user.bloqueado_hasta).getTime() - Date.now()) / 60000);
-      const error: any = new Error(`Cuenta bloqueada temporalmente por seguridad. Intente de nuevo en ${remainingMinutes} minutos.`);
+      const remainingMinutes = Math.ceil(
+        (new Date(user.bloqueado_hasta).getTime() - Date.now()) / 60000
+      );
+      const error: any = new Error(
+        `Cuenta bloqueada temporalmente por seguridad. Intente de nuevo en ${remainingMinutes} minutos.`
+      );
       error.statusCode = 429;
       throw error;
     }
@@ -131,7 +134,7 @@ export class AuthService {
         .update(usuarios)
         .set({
           intentos_fallidos: newAttempts,
-          bloqueado_hasta: blockTime
+          bloqueado_hasta: blockTime,
         })
         .where(eq(usuarios.id, user.id));
 
@@ -142,7 +145,7 @@ export class AuthService {
         entidadId: user.id,
         resultado: 'error',
         mensajeError: `Intento fallido ${newAttempts}/5`,
-        req
+        req,
       });
 
       const error: any = new Error(
@@ -160,12 +163,16 @@ export class AuthService {
       .set({
         intentos_fallidos: 0,
         bloqueado_hasta: null,
-        ultimo_login: new Date()
+        ultimo_login: new Date(),
       })
       .where(eq(usuarios.id, user.id));
 
     // Obtener detalles de empleado si existen
-    const empRows = await db.select().from(empleados).where(eq(empleados.usuario_id, user.id)).limit(1);
+    const empRows = await db
+      .select()
+      .from(empleados)
+      .where(eq(empleados.usuario_id, user.id))
+      .limit(1);
     const empData = empRows[0];
 
     // Generar JWT
@@ -176,7 +183,7 @@ export class AuthService {
       email: user.email,
       numero_identificacion: user.numero_identificacion,
       rol_id: user.rol_id,
-      rol_nombre: user.rol_nombre
+      rol_nombre: user.rol_nombre,
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -188,7 +195,7 @@ export class AuthService {
       entidad: 'usuarios',
       entidadId: user.id,
       resultado: 'ok',
-      req
+      req,
     });
 
     return {
@@ -205,12 +212,16 @@ export class AuthService {
         permisos: user.permisos,
         cargo: empData?.cargo || 'Colaborador',
         descuento_max_porcentaje: empData ? parseFloat(empData.descuento_max_porcentaje) : 10,
-        descuento_max_monto: empData ? parseFloat(empData.descuento_max_monto) : 50000
-      }
+        descuento_max_monto: empData ? parseFloat(empData.descuento_max_monto) : 50000,
+      },
     };
   }
 
-  async createRefreshSession(userId: number, req?: Request, familyId: `${string}-${string}-${string}-${string}-${string}` = randomUUID()) {
+  async createRefreshSession(
+    userId: number,
+    req?: Request,
+    familyId: `${string}-${string}-${string}-${string}-${string}` = randomUUID()
+  ) {
     const refreshToken = randomBytes(48).toString('base64url');
     const expiresAt = new Date(Date.now() + REFRESH_DAYS * 24 * 60 * 60 * 1000);
     await db.insert(authSessions).values({
@@ -219,7 +230,7 @@ export class AuthService {
       family_id: familyId,
       expires_at: expiresAt,
       ip_address: req?.ip || null,
-      user_agent: req?.get('user-agent')?.slice(0, 512) || null
+      user_agent: req?.get('user-agent')?.slice(0, 512) || null,
     });
     return refreshToken;
   }
@@ -231,7 +242,11 @@ export class AuthService {
       throw error;
     }
     const tokenHash = hashRefreshToken(refreshToken);
-    const rows = await db.select().from(authSessions).where(eq(authSessions.token_hash, tokenHash)).limit(1);
+    const rows = await db
+      .select()
+      .from(authSessions)
+      .where(eq(authSessions.token_hash, tokenHash))
+      .limit(1);
     const session = rows[0];
     if (!session) {
       const error: any = new Error('Refresh token inválido, expirado o revocado');
@@ -240,7 +255,11 @@ export class AuthService {
       throw error;
     }
     if (session.revoked_at || session.expires_at <= new Date()) {
-      if (session.revoked_at) await db.update(authSessions).set({ revoked_at: new Date() }).where(eq(authSessions.family_id, session.family_id));
+      if (session.revoked_at)
+        await db
+          .update(authSessions)
+          .set({ revoked_at: new Date() })
+          .where(eq(authSessions.family_id, session.family_id));
       const error: any = new Error('Refresh token inválido, expirado o revocado');
       error.statusCode = 401;
       error.code = 'AUTH_REFRESH_REJECTED';
@@ -252,21 +271,51 @@ export class AuthService {
       error.statusCode = 401;
       throw error;
     }
-    const accessToken = jwt.sign({ id: user.id, email: user.email, rol_nombre: user.rol_nombre }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    const replacement = await this.createRefreshSession(session.usuario_id, req, session.family_id as `${string}-${string}-${string}-${string}-${string}`);
+    const accessToken = jwt.sign(
+      { id: user.id, email: user.email, rol_nombre: user.rol_nombre },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+    const replacement = await this.createRefreshSession(
+      session.usuario_id,
+      req,
+      session.family_id as `${string}-${string}-${string}-${string}-${string}`
+    );
     const replacementHash = hashRefreshToken(replacement);
-    const replacementRow = await db.select({ id: authSessions.id }).from(authSessions).where(eq(authSessions.token_hash, replacementHash)).limit(1);
-    await db.update(authSessions).set({ revoked_at: new Date(), replaced_by: replacementRow[0]?.id || null, last_used_at: new Date() }).where(eq(authSessions.id, session.id));
+    const replacementRow = await db
+      .select({ id: authSessions.id })
+      .from(authSessions)
+      .where(eq(authSessions.token_hash, replacementHash))
+      .limit(1);
+    await db
+      .update(authSessions)
+      .set({
+        revoked_at: new Date(),
+        replaced_by: replacementRow[0]?.id || null,
+        last_used_at: new Date(),
+      })
+      .where(eq(authSessions.id, session.id));
     return { accessToken, refreshToken: replacement, user };
   }
 
   async revokeRefreshToken(refreshToken?: string) {
     if (!refreshToken) return;
-    await db.update(authSessions).set({ revoked_at: new Date() }).where(and(eq(authSessions.token_hash, hashRefreshToken(refreshToken)), isNull(authSessions.revoked_at)));
+    await db
+      .update(authSessions)
+      .set({ revoked_at: new Date() })
+      .where(
+        and(
+          eq(authSessions.token_hash, hashRefreshToken(refreshToken)),
+          isNull(authSessions.revoked_at)
+        )
+      );
   }
 
   async revokeAllSessions(userId: number) {
-    await db.update(authSessions).set({ revoked_at: new Date() }).where(and(eq(authSessions.usuario_id, userId), isNull(authSessions.revoked_at)));
+    await db
+      .update(authSessions)
+      .set({ revoked_at: new Date() })
+      .where(and(eq(authSessions.usuario_id, userId), isNull(authSessions.revoked_at)));
   }
 
   /**
@@ -283,7 +332,7 @@ export class AuthService {
       type: argon2.argon2id,
       memoryCost: 65536,
       timeCost: 3,
-      parallelism: 4
+      parallelism: 4,
     });
 
     return await db.transaction(async (tx) => {
@@ -298,7 +347,7 @@ export class AuthService {
           telefono: input.telefono || null,
           password_hash,
           rol_id: input.rol_id,
-          activo: true
+          activo: true,
         })
         .returning();
 
@@ -311,7 +360,7 @@ export class AuthService {
         departamento: input.departamento || null,
         salario: input.salario?.toString() || '0',
         descuento_max_porcentaje: (input.descuento_max_porcentaje || 10).toString(),
-        descuento_max_monto: (input.descuento_max_monto || 50000).toString()
+        descuento_max_monto: (input.descuento_max_monto || 50000).toString(),
       });
 
       await recordAudit({
@@ -319,8 +368,12 @@ export class AuthService {
         accion: 'USUARIO_CREADO',
         entidad: 'usuarios',
         entidadId: newUser.id,
-        datosNuevos: { email: newUser.email, nombre: `${newUser.nombre} ${newUser.apellido}`, rol_id: newUser.rol_id },
-        req
+        datosNuevos: {
+          email: newUser.email,
+          nombre: `${newUser.nombre} ${newUser.apellido}`,
+          rol_id: newUser.rol_id,
+        },
+        req,
       });
 
       return {
@@ -329,7 +382,7 @@ export class AuthService {
         apellido: newUser.apellido,
         email: newUser.email,
         numero_identificacion: newUser.numero_identificacion,
-        rol_id: newUser.rol_id
+        rol_id: newUser.rol_id,
       };
     });
   }
@@ -350,7 +403,7 @@ export class AuthService {
         cargo: empleados.cargo,
         departamento: empleados.departamento,
         descuento_max_porcentaje: empleados.descuento_max_porcentaje,
-        descuento_max_monto: empleados.descuento_max_monto
+        descuento_max_monto: empleados.descuento_max_monto,
       })
       .from(usuarios)
       .leftJoin(roles, eq(usuarios.rol_id, roles.id))
@@ -372,8 +425,10 @@ export class AuthService {
       rol_nombre: user.rol_nombre,
       permisos: user.permisos,
       cargo: user.cargo || 'Colaborador',
-      descuento_max_porcentaje: user.descuento_max_porcentaje ? parseFloat(user.descuento_max_porcentaje) : 10,
-      descuento_max_monto: user.descuento_max_monto ? parseFloat(user.descuento_max_monto) : 50000
+      descuento_max_porcentaje: user.descuento_max_porcentaje
+        ? parseFloat(user.descuento_max_porcentaje)
+        : 10,
+      descuento_max_monto: user.descuento_max_monto ? parseFloat(user.descuento_max_monto) : 50000,
     };
   }
 }

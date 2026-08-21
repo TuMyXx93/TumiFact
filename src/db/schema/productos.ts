@@ -1,4 +1,14 @@
-import { pgTable, serial, varchar, text, numeric, integer, boolean, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  numeric,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { categoriasProducto } from './categorias';
 import { proveedores } from './proveedores';
 
@@ -20,7 +30,7 @@ export const productos = pgTable('productos', {
   atributos: jsonb('atributos').default({}).notNull(), // { talla, color, serial, garantia_dias, fecha_vencimiento, ... }
   activo: boolean('activo').default(true).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export type ProductoItem = typeof productos.$inferSelect;

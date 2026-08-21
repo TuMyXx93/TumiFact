@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { FacturasService } from './facturas.service';
-import { validateDTO } from '../../shared/middleware/validate';
-import { CreateFacturaDTO } from './facturas.dto';
 import { verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
+import { validateDTO } from '../../shared/middleware/validate';
 import { CajaService } from '../caja/caja.service';
+import { CreateFacturaDTO } from './facturas.dto';
+import { FacturasService } from './facturas.service';
 
 export const facturasRouter = Router();
 const service = new FacturasService();
@@ -34,7 +34,8 @@ facturasRouter.get('/:id/imprimir', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getFacturaWithDetails(parseInt(String(req.params.id), 10));
     if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
-    if (req.user!.rol_nombre === 'cajero' && data.factura.usuario_id !== req.user!.id) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
+    if (req.user!.rol_nombre === 'cajero' && data.factura.usuario_id !== req.user!.id)
+      return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
     res.json(data);
   } catch (error) {
     next(error);
@@ -46,7 +47,8 @@ facturasRouter.get('/:id/detalles', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getFacturaDetailsOnly(parseInt(String(req.params.id), 10));
     if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
-    if (req.user!.rol_nombre === 'cajero' && data.factura.usuario_id !== req.user!.id) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
+    if (req.user!.rol_nombre === 'cajero' && data.factura.usuario_id !== req.user!.id)
+      return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
     res.json(data);
   } catch (error) {
     next(error);
@@ -60,7 +62,9 @@ ventasRouter.get('/', verifyAuth, async (req, res, next) => {
   try {
     const desde = req.query.desde ? String(req.query.desde) : undefined;
     const hasta = req.query.hasta ? String(req.query.hasta) : undefined;
-    const usuarioId = req.query.usuario_id ? parseInt(req.query.usuario_id as string, 10) : undefined;
+    const usuarioId = req.query.usuario_id
+      ? parseInt(req.query.usuario_id as string, 10)
+      : undefined;
     const estado = req.query.estado ? String(req.query.estado) : undefined;
 
     const scopedUserId = req.user!.rol_nombre === 'cajero' ? req.user!.id : usuarioId;

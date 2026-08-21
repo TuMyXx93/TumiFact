@@ -1,15 +1,15 @@
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import PDFDocument from 'pdfkit';
 import { db } from '../../db';
-import { facturas } from '../../db/schema/facturas';
-import { clientes } from '../../db/schema/clientes';
-import { usuarios } from '../../db/schema/usuarios';
-import { productos } from '../../db/schema/productos';
 import { categoriasProducto } from '../../db/schema/categorias';
-import { separados } from '../../db/schema/separados';
+import { clientes } from '../../db/schema/clientes';
 import { configuracionImpresion } from '../../db/schema/configuracion';
+import { facturas } from '../../db/schema/facturas';
+import { productos } from '../../db/schema/productos';
+import { separados } from '../../db/schema/separados';
 import { sesionesCaja } from '../../db/schema/sesiones_caja';
-import { eq, desc, gte, lte, and, sql } from 'drizzle-orm';
-import { formatNumber, formatDate } from '../../lib/format';
+import { usuarios } from '../../db/schema/usuarios';
+import { formatDate, formatNumber } from '../../lib/format';
 
 export interface FiltrosReporteVentas {
   desde?: string;
@@ -22,12 +22,14 @@ export interface FiltrosReporteVentas {
 export class ReportesService {
   private async getConfig() {
     const configRows = await db.select().from(configuracionImpresion).limit(1);
-    return configRows[0] || {
-      nombre_negocio: 'TumiFact Store',
-      nit: '900.123.456-7',
-      direccion: 'Bogotá, Colombia',
-      telefono: '+57 300 123 4567'
-    };
+    return (
+      configRows[0] || {
+        nombre_negocio: 'TumiFact Store',
+        nit: '900.123.456-7',
+        direccion: 'Bogotá, Colombia',
+        telefono: '+57 300 123 4567',
+      }
+    );
   }
 
   async getVentasData(filtros: FiltrosReporteVentas) {
@@ -49,7 +51,7 @@ export class ReportesService {
       conditions.push(eq(facturas.estado, filtros.estado));
     }
 
-    let query = db
+    const query = db
       .select({
         id: facturas.id,
         fecha: facturas.fecha,
@@ -61,7 +63,7 @@ export class ReportesService {
         estado: facturas.estado,
         cliente_nombre: clientes.nombre,
         cliente_apellido: clientes.apellido,
-        cajero_nombre: usuarios.nombre
+        cajero_nombre: usuarios.nombre,
       })
       .from(facturas)
       .leftJoin(clientes, eq(facturas.cliente_id, clientes.id))
@@ -78,7 +80,18 @@ export class ReportesService {
   async generateVentasCSV(filtros: FiltrosReporteVentas): Promise<string> {
     const data = await this.getVentasData(filtros);
 
-    const headers = ['ID Factura', 'Fecha', 'Cliente', 'Cajero', 'Forma de Pago', 'Subtotal', 'Descuento', 'Total', 'Tipo', 'Estado'];
+    const headers = [
+      'ID Factura',
+      'Fecha',
+      'Cliente',
+      'Cajero',
+      'Forma de Pago',
+      'Subtotal',
+      'Descuento',
+      'Total',
+      'Tipo',
+      'Estado',
+    ];
     const rows = data.map((f) => [
       f.id,
       f.fecha ? new Date(f.fecha).toISOString() : '',
@@ -89,7 +102,7 @@ export class ReportesService {
       f.descuento_total,
       f.total,
       f.tipo,
-      f.estado
+      f.estado,
     ]);
 
     return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -117,25 +130,36 @@ export class ReportesService {
 
       // Header
       doc.fontSize(18).font('Helvetica-Bold').text(config.nombre_negocio, { align: 'center' });
-      doc.fontSize(10).font('Helvetica').text(`NIT: ${config.nit || 'N/A'} | Tel: ${config.telefono || ''}`, { align: 'center' });
+      doc
+        .fontSize(10)
+        .font('Helvetica')
+        .text(`NIT: ${config.nit || 'N/A'} | Tel: ${config.telefono || ''}`, { align: 'center' });
       doc.text(config.direccion || '', { align: 'center' });
       doc.moveDown();
 
-      doc.fontSize(14).font('Helvetica-Bold').text('REPORTE CONSOLIDADO DE VENTAS', { align: 'center' });
-      doc.fontSize(9).font('Helvetica').text(
-        `Período: ${filtros.desde || 'Inicio'} hasta ${filtros.hasta || 'Hoy'} | Generado: ${new Date().toLocaleString('es-CO')}`,
-        { align: 'center' }
-      );
+      doc
+        .fontSize(14)
+        .font('Helvetica-Bold')
+        .text('REPORTE CONSOLIDADO DE VENTAS', { align: 'center' });
+      doc
+        .fontSize(9)
+        .font('Helvetica')
+        .text(
+          `Período: ${filtros.desde || 'Inicio'} hasta ${filtros.hasta || 'Hoy'} | Generado: ${new Date().toLocaleString('es-CO')}`,
+          { align: 'center' }
+        );
       doc.moveDown();
 
       // Resumen KPI Cards en PDF
       doc.fontSize(10).font('Helvetica-Bold');
-      doc.text(`Total Facturas: ${data.length} | Total Descuentos: $${formatNumber(totalDescuentos)} | TOTAL RECAUDADO: $${formatNumber(totalRecaudado)}`);
+      doc.text(
+        `Total Facturas: ${data.length} | Total Descuentos: $${formatNumber(totalDescuentos)} | TOTAL RECAUDADO: $${formatNumber(totalRecaudado)}`
+      );
       doc.moveDown(0.5);
 
       // Tabla de ventas
       doc.font('Helvetica-Bold').fontSize(8);
-      let y = doc.y;
+      const y = doc.y;
       doc.text('#', 36, y, { width: 30 });
       doc.text('Fecha', 70, y, { width: 80 });
       doc.text('Cliente', 155, y, { width: 130 });
@@ -144,7 +168,10 @@ export class ReportesService {
       doc.text('Total ($)', 435, y, { width: 80, align: 'right' });
       doc.text('Estado', 520, y, { width: 45 });
 
-      doc.moveTo(36, y + 12).lineTo(560, y + 12).stroke();
+      doc
+        .moveTo(36, y + 12)
+        .lineTo(560, y + 12)
+        .stroke();
       doc.font('Helvetica').fontSize(8);
 
       let currentY = y + 16;
@@ -154,13 +181,17 @@ export class ReportesService {
           currentY = 36;
         }
 
-        const clienteFull = ((item.cliente_nombre || '') + ' ' + (item.cliente_apellido || '')).trim() || 'General';
+        const clienteFull =
+          ((item.cliente_nombre || '') + ' ' + (item.cliente_apellido || '')).trim() || 'General';
         doc.text(String(item.id), 36, currentY, { width: 30 });
         doc.text(new Date(item.fecha).toLocaleDateString('es-CO'), 70, currentY, { width: 80 });
         doc.text(clienteFull.substring(0, 22), 155, currentY, { width: 130 });
         doc.text((item.cajero_nombre || 'Admin').substring(0, 12), 290, currentY, { width: 75 });
         doc.text(item.forma_pago.toUpperCase(), 370, currentY, { width: 60 });
-        doc.text(`$${formatNumber(parseFloat(item.total))}`, 435, currentY, { width: 80, align: 'right' });
+        doc.text(`$${formatNumber(parseFloat(item.total))}`, 435, currentY, {
+          width: 80,
+          align: 'right',
+        });
         doc.text(item.estado, 520, currentY, { width: 45 });
 
         currentY += 14;
@@ -181,14 +212,24 @@ export class ReportesService {
         precio_detal: productos.precio_detal,
         precio_mayorista: productos.precio_mayorista,
         stock_actual: productos.stock_actual,
-        stock_minimo: productos.stock_minimo
+        stock_minimo: productos.stock_minimo,
       })
       .from(productos)
       .leftJoin(categoriasProducto, eq(productos.categoria_id, categoriasProducto.id))
       .where(eq(productos.activo, true))
       .orderBy(productos.nombre);
 
-    const headers = ['ID', 'Código', 'Nombre Producto', 'Categoría', 'Precio Detal', 'Precio Mayorista', 'Stock Actual', 'Stock Mínimo', 'Estado Stock'];
+    const headers = [
+      'ID',
+      'Código',
+      'Nombre Producto',
+      'Categoría',
+      'Precio Detal',
+      'Precio Mayorista',
+      'Stock Actual',
+      'Stock Mínimo',
+      'Estado Stock',
+    ];
     const rows = list.map((p) => {
       const stock = parseFloat(p.stock_actual);
       const min = parseFloat(p.stock_minimo);
@@ -202,7 +243,7 @@ export class ReportesService {
         p.precio_mayorista,
         p.stock_actual,
         p.stock_minimo,
-        estado
+        estado,
       ];
     });
 
@@ -211,7 +252,7 @@ export class ReportesService {
 
   // Generar CSV de Separados (Layaways)
   async generateSeparadosCSV(estado?: string): Promise<string> {
-    let query = db
+    const query = db
       .select({
         id: separados.id,
         cliente: clientes.nombre,
@@ -222,14 +263,27 @@ export class ReportesService {
         fecha_inicio: separados.fecha_inicio,
         fecha_limite: separados.fecha_limite,
         dias_plazo: separados.dias_plazo,
-        estado: separados.estado
+        estado: separados.estado,
       })
       .from(separados)
       .leftJoin(clientes, eq(separados.cliente_id, clientes.id));
 
-    const list = estado ? await query.where(eq(separados.estado, estado)).orderBy(desc(separados.created_at)) : await query.orderBy(desc(separados.created_at));
+    const list = estado
+      ? await query.where(eq(separados.estado, estado)).orderBy(desc(separados.created_at))
+      : await query.orderBy(desc(separados.created_at));
 
-    const headers = ['ID Separado', 'Cliente', 'Descripción', 'Valor Total', 'Total Abonado', 'Saldo Pendiente', 'Fecha Inicio', 'Fecha Límite', 'Días Plazo', 'Estado'];
+    const headers = [
+      'ID Separado',
+      'Cliente',
+      'Descripción',
+      'Valor Total',
+      'Total Abonado',
+      'Saldo Pendiente',
+      'Fecha Inicio',
+      'Fecha Límite',
+      'Días Plazo',
+      'Estado',
+    ];
     const rows = list.map((s) => [
       s.id,
       `"${s.cliente || 'Cliente General'}"`,
@@ -240,7 +294,7 @@ export class ReportesService {
       s.fecha_inicio,
       s.fecha_limite,
       s.dias_plazo,
-      s.estado
+      s.estado,
     ]);
 
     return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');

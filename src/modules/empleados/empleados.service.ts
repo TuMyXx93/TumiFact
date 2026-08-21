@@ -1,12 +1,12 @@
-import { EmpleadosRepository } from './empleados.repository';
-import type { CreateEmpleadoInput, UpdateEmpleadoInput } from './empleados.dto';
-import { db, pool } from '../../db';
-import { usuarios } from '../../db/schema/usuarios';
-import { empleados } from '../../db/schema/empleados';
-import { eq } from 'drizzle-orm';
 import argon2 from 'argon2';
-import { recordAudit } from '../../shared/utils/audit';
+import { eq } from 'drizzle-orm';
 import type { Request } from 'express';
+import { db, pool } from '../../db';
+import { empleados } from '../../db/schema/empleados';
+import { usuarios } from '../../db/schema/usuarios';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateEmpleadoInput, UpdateEmpleadoInput } from './empleados.dto';
+import { EmpleadosRepository } from './empleados.repository';
 
 export class EmpleadosService {
   constructor(private repo: EmpleadosRepository = new EmpleadosRepository()) {}
@@ -17,7 +17,7 @@ export class EmpleadosService {
       ...e,
       salario: parseFloat(e.salario || '0'),
       descuento_max_porcentaje: parseFloat(e.descuento_max_porcentaje || '0'),
-      descuento_max_monto: parseFloat(e.descuento_max_monto || '0')
+      descuento_max_monto: parseFloat(e.descuento_max_monto || '0'),
     }));
   }
 
@@ -28,7 +28,7 @@ export class EmpleadosService {
       ...e,
       salario: parseFloat(e.salario || '0'),
       descuento_max_porcentaje: parseFloat(e.descuento_max_porcentaje || '0'),
-      descuento_max_monto: parseFloat(e.descuento_max_monto || '0')
+      descuento_max_monto: parseFloat(e.descuento_max_monto || '0'),
     };
   }
 
@@ -37,7 +37,7 @@ export class EmpleadosService {
       type: argon2.argon2id,
       memoryCost: 65536,
       timeCost: 3,
-      parallelism: 4
+      parallelism: 4,
     });
 
     const result = await db.transaction(async (tx) => {
@@ -52,7 +52,7 @@ export class EmpleadosService {
           telefono: input.telefono || null,
           password_hash,
           rol_id: input.rol_id,
-          activo: true
+          activo: true,
         })
         .returning();
 
@@ -67,7 +67,7 @@ export class EmpleadosService {
           salario: input.salario?.toString() || '0',
           turno: input.turno || 'completo',
           descuento_max_porcentaje: (input.descuento_max_porcentaje || 10).toString(),
-          descuento_max_monto: (input.descuento_max_monto || 50000).toString()
+          descuento_max_monto: (input.descuento_max_monto || 50000).toString(),
         })
         .returning();
 
@@ -80,13 +80,16 @@ export class EmpleadosService {
       accion: 'EMPLEADO_CREADO',
       entidad: 'empleados',
       entidadId: result.id,
-      datosNuevos: { nombre: `${input.nombre} ${input.apellido}`, cargo: input.cargo, email: input.email },
-      req
+      datosNuevos: {
+        nombre: `${input.nombre} ${input.apellido}`,
+        cargo: input.cargo,
+        email: input.email,
+      },
+      req,
     }).catch(() => {}); // fire-and-forget
 
     return result;
   }
-
 
   async update(id: number, input: UpdateEmpleadoInput, req?: Request) {
     const existing = await this.repo.findById(id);
@@ -98,15 +101,17 @@ export class EmpleadosService {
       if (input.apellido) userUpdates.apellido = input.apellido;
       if (input.email) userUpdates.email = input.email;
       if (input.telefono !== undefined) userUpdates.telefono = input.telefono;
-      if (input.numero_identificacion) userUpdates.numero_identificacion = input.numero_identificacion;
-      if (input.tipo_identificacion_id) userUpdates.tipo_identificacion_id = input.tipo_identificacion_id;
+      if (input.numero_identificacion)
+        userUpdates.numero_identificacion = input.numero_identificacion;
+      if (input.tipo_identificacion_id)
+        userUpdates.tipo_identificacion_id = input.tipo_identificacion_id;
       if (input.rol_id) userUpdates.rol_id = input.rol_id;
       if (input.password) {
         userUpdates.password_hash = await argon2.hash(input.password, {
           type: argon2.argon2id,
           memoryCost: 65536,
           timeCost: 3,
-          parallelism: 4
+          parallelism: 4,
         });
       }
 
@@ -117,8 +122,10 @@ export class EmpleadosService {
       if (input.departamento !== undefined) empUpdates.departamento = input.departamento;
       if (input.salario !== undefined) empUpdates.salario = input.salario.toString();
       if (input.turno) empUpdates.turno = input.turno;
-      if (input.descuento_max_porcentaje !== undefined) empUpdates.descuento_max_porcentaje = input.descuento_max_porcentaje.toString();
-      if (input.descuento_max_monto !== undefined) empUpdates.descuento_max_monto = input.descuento_max_monto.toString();
+      if (input.descuento_max_porcentaje !== undefined)
+        empUpdates.descuento_max_porcentaje = input.descuento_max_porcentaje.toString();
+      if (input.descuento_max_monto !== undefined)
+        empUpdates.descuento_max_monto = input.descuento_max_monto.toString();
 
       await tx.update(empleados).set(empUpdates).where(eq(empleados.id, id));
     });
@@ -131,19 +138,21 @@ export class EmpleadosService {
       entidadId: id,
       datosPrevios: existing,
       datosNuevos: input,
-      req
+      req,
     }).catch(() => {});
 
     return await this.getById(id);
   }
-
 
   async toggleActive(id: number, req?: Request) {
     const existing = await this.repo.findById(id);
     if (!existing) return null;
 
     const newActiveState = !existing.activo;
-    await db.update(usuarios).set({ activo: newActiveState }).where(eq(usuarios.id, existing.usuario_id));
+    await db
+      .update(usuarios)
+      .set({ activo: newActiveState })
+      .where(eq(usuarios.id, existing.usuario_id));
 
     // Audit fuera de cualquier transacción
     recordAudit({
@@ -151,7 +160,7 @@ export class EmpleadosService {
       accion: newActiveState ? 'EMPLEADO_ACTIVADO' : 'EMPLEADO_DESACTIVADO',
       entidad: 'empleados',
       entidadId: id,
-      req
+      req,
     }).catch(() => {});
 
     return { id, activo: newActiveState };
@@ -182,12 +191,11 @@ export class EmpleadosService {
       entidad: 'empleados',
       entidadId: id,
       datosPrevios: existing,
-      req
+      req,
     }).catch(() => {});
 
     return { id, message: 'Empleado eliminado exitosamente' };
   }
-
 
   async getAuditLogs(userId?: number, limit = 50) {
     if (userId) {
@@ -254,13 +262,13 @@ export class EmpleadosService {
         JOIN sesiones_caja sc ON sc.usuario_id = u.id
         WHERE sc.estado = 'cerrada'
         GROUP BY u.id, u.nombre, u.apellido
-      `)
+      `),
     ]);
 
     return {
       resumen: totalesRes.rows[0] || {},
       ventasPorEmpleado: ventasPorEmpleadoRes.rows || [],
-      desempenoCaja: turnosRes.rows || []
+      desempenoCaja: turnosRes.rows || [],
     };
   }
 }

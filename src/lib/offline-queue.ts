@@ -32,15 +32,20 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function enqueueFactura(payload: any, headers: Record<string, string> = {}): Promise<string> {
+export async function enqueueFactura(
+  payload: any,
+  headers: Record<string, string> = {}
+): Promise<string> {
   const db = await openDB();
-  const offlineId = (globalThis as any).crypto?.randomUUID?.() || `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const offlineId =
+    (globalThis as any).crypto?.randomUUID?.() ||
+    `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const item: QueuedFactura = {
     offlineId,
     payload: { ...payload, offlineId },
     headers: { ...headers, 'Idempotency-Key': headers['Idempotency-Key'] || offlineId },
     createdAt: new Date().toISOString(),
-    retries: 0
+    retries: 0,
   };
 
   return new Promise((resolve, reject) => {
@@ -56,7 +61,7 @@ export async function getQueuedFacturas(): Promise<QueuedFactura[]> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_FACTURAS, 'readonly');
     const req = tx.objectStore(STORE_FACTURAS).getAll();
-    req.onsuccess = () => resolve(req.result as QueuedFactura[] || []);
+    req.onsuccess = () => resolve((req.result as QueuedFactura[]) || []);
     req.onerror = () => reject(req.error);
   });
 }
@@ -95,7 +100,7 @@ export async function replayQueuedFacturas(
       const res = await apiFetch('/api/facturas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...item.headers },
-        body: JSON.stringify(item.payload)
+        body: JSON.stringify(item.payload),
       });
 
       if (res.ok) {
@@ -109,7 +114,10 @@ export async function replayQueuedFacturas(
           // Mover a failed pero no reintentar indefinidamente — remover tras 1 intento 4xx
           await removeQueuedFactura(item.offlineId);
           // Opcional: guardar en otro store de fallidos para auditoría
-          console.error(`[OfflineQueue] Factura ${item.offlineId} rechazada 4xx, descartada`, item.lastError);
+          console.error(
+            `[OfflineQueue] Factura ${item.offlineId} rechazada 4xx, descartada`,
+            item.lastError
+          );
           failed++;
         } else {
           // 5xx o red → incrementar retries, dejar en cola

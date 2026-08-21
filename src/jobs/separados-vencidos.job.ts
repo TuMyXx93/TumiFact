@@ -16,12 +16,15 @@ export async function runSeparadosVencidos(): Promise<{ vencidos: number }> {
 
     const vencidos = rowCount || 0;
     if (vencidos > 0) {
-      logger.warn({ vencidos, ids: rows.map((r: any) => r.id) }, 'Separados marcados como vencidos');
+      logger.warn(
+        { vencidos, ids: rows.map((r: any) => r.id) },
+        'Separados marcados como vencidos'
+      );
       emitEvent(SOCKET_EVENTS.SEPARADO_COMPLETADO, {
         tipo: 'vencidos',
         count: vencidos,
         ids: rows.map((r: any) => r.id),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
       logger.info('Separados vencidos: 0');

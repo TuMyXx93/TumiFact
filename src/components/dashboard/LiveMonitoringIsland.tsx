@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Banknote, 
-  Activity, 
-  Clock, 
-  ShieldCheck, 
-  CheckCircle2, 
-  AlertCircle, 
-  RefreshCw,
-  ShoppingBag,
+import {
+  Activity,
+  AlertCircle,
+  Banknote,
+  CheckCircle2,
+  CircleDot,
+  Clock,
   CreditCard,
+  RefreshCw,
+  ShieldCheck,
+  ShoppingBag,
   Smartphone,
-  CircleDot
+  Users,
 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { type Socket, io as socketIOClient } from 'socket.io-client';
 import { apiFetch, resolveApiBaseUrl } from '../../lib/apiClient';
-import { formatNumber, formatTime, formatDate, APP_TIMEZONE } from '../../lib/format';
-import { io as socketIOClient, Socket } from 'socket.io-client';
+import { APP_TIMEZONE, formatDate, formatNumber, formatTime } from '../../lib/format';
 
 interface EmpleadoEstado {
   id: number;
@@ -63,7 +63,7 @@ export default function LiveMonitoringIsland() {
       setIsLoading(true);
       const [empRes, cajasRes] = await Promise.all([
         apiFetch('/api/auth/empleados-estado'),
-        apiFetch('/api/caja/activas')
+        apiFetch('/api/caja/activas'),
       ]);
 
       if (empRes.ok) {
@@ -91,15 +91,18 @@ export default function LiveMonitoringIsland() {
       try {
         const baseUrl = await resolveApiBaseUrl();
         const socketTarget = baseUrl || window.location.origin;
-        const storedToken = typeof window !== 'undefined' 
-          ? (localStorage.getItem('tumifact_token') || sessionStorage.getItem('tumifact_token') || '')
-          : '';
+        const storedToken =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('tumifact_token') ||
+              sessionStorage.getItem('tumifact_token') ||
+              ''
+            : '';
 
         socket = socketIOClient(socketTarget, {
           transports: ['websocket', 'polling'],
           auth: { token: storedToken },
           reconnectionAttempts: 15,
-          reconnectionDelay: 1000
+          reconnectionDelay: 1000,
         });
 
         socket.on('connect', () => {
@@ -138,7 +141,10 @@ export default function LiveMonitoringIsland() {
   }, []);
 
   const totalVentasEnVivo = cajasActivas.reduce((acc, c) => acc + Number(c.total_ventas || 0), 0);
-  const totalFacturasEnVivo = cajasActivas.reduce((acc, c) => acc + Number(c.total_facturas || 0), 0);
+  const totalFacturasEnVivo = cajasActivas.reduce(
+    (acc, c) => acc + Number(c.total_facturas || 0),
+    0
+  );
 
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-xl space-y-6">
@@ -150,11 +156,13 @@ export default function LiveMonitoringIsland() {
               <Activity className="h-5 w-5 text-emerald-400 animate-pulse" />
               Supervisión de Cajas & Empleados en Vivo
             </h2>
-            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-              socketConnected 
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-            }`}>
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                socketConnected
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+              }`}
+            >
               <CircleDot className="h-2.5 w-2.5 animate-ping" />
               {socketConnected ? 'LIVE STREAM' : 'POLLING ACTIVO'}
             </span>
@@ -210,8 +218,12 @@ export default function LiveMonitoringIsland() {
             <Banknote className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Recaudo en Cajas Abiertas</p>
-            <p className="text-lg font-black text-emerald-400 font-mono">${formatNumber(totalVentasEnVivo)}</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              Recaudo en Cajas Abiertas
+            </p>
+            <p className="text-lg font-black text-emerald-400 font-mono">
+              ${formatNumber(totalVentasEnVivo)}
+            </p>
           </div>
         </div>
 
@@ -220,8 +232,12 @@ export default function LiveMonitoringIsland() {
             <ShoppingBag className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Facturas Emitidas en Turno</p>
-            <p className="text-lg font-black text-white font-mono">{totalFacturasEnVivo} facturas</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              Facturas Emitidas en Turno
+            </p>
+            <p className="text-lg font-black text-white font-mono">
+              {totalFacturasEnVivo} facturas
+            </p>
           </div>
         </div>
 
@@ -230,7 +246,9 @@ export default function LiveMonitoringIsland() {
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cajeros con Turno Iniciado</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              Cajeros con Turno Iniciado
+            </p>
             <p className="text-lg font-black text-cyan-400 font-mono">
               {cajasActivas.length} / {empleados.length} personal
             </p>
@@ -244,9 +262,12 @@ export default function LiveMonitoringIsland() {
           {cajasActivas.length === 0 ? (
             <div className="text-center py-10 border border-dashed border-slate-800 rounded-2xl space-y-2">
               <AlertCircle className="h-8 w-8 mx-auto text-slate-500 opacity-50" />
-              <p className="text-sm font-semibold text-slate-300">No hay turnos de caja abiertos en este momento.</p>
+              <p className="text-sm font-semibold text-slate-300">
+                No hay turnos de caja abiertos en este momento.
+              </p>
               <p className="text-xs text-slate-500">
-                Cuando un cajero abra su turno desde el POS o Control de Caja, aparecerá aquí en tiempo real.
+                Cuando un cajero abra su turno desde el POS o Control de Caja, aparecerá aquí en
+                tiempo real.
               </p>
             </div>
           ) : (
@@ -271,11 +292,15 @@ export default function LiveMonitoringIsland() {
                   <div className="space-y-1.5 text-xs text-slate-300">
                     <div className="flex justify-between">
                       <span className="text-slate-400">Base Apertura:</span>
-                      <span className="font-mono font-bold">${formatNumber(Number(caja.monto_apertura))}</span>
+                      <span className="font-mono font-bold">
+                        ${formatNumber(Number(caja.monto_apertura))}
+                      </span>
                     </div>
                     <div className="flex justify-between text-emerald-400 font-bold">
                       <span>Ventas Acumuladas:</span>
-                      <span className="font-mono text-sm">${formatNumber(Number(caja.total_ventas))}</span>
+                      <span className="font-mono text-sm">
+                        ${formatNumber(Number(caja.total_ventas))}
+                      </span>
                     </div>
                     <div className="flex justify-between text-slate-400 text-[11px]">
                       <span>Comprobantes:</span>
@@ -287,15 +312,21 @@ export default function LiveMonitoringIsland() {
                   <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800 text-[10px] text-center">
                     <div className="p-1.5 rounded-lg bg-slate-800/80">
                       <span className="text-slate-400 block text-[9px]">Efectivo</span>
-                      <span className="font-bold text-emerald-300 font-mono">${formatNumber(Number(caja.ventas_efectivo))}</span>
+                      <span className="font-bold text-emerald-300 font-mono">
+                        ${formatNumber(Number(caja.ventas_efectivo))}
+                      </span>
                     </div>
                     <div className="p-1.5 rounded-lg bg-slate-800/80">
                       <span className="text-slate-400 block text-[9px]">Transf.</span>
-                      <span className="font-bold text-blue-300 font-mono">${formatNumber(Number(caja.ventas_transferencia))}</span>
+                      <span className="font-bold text-blue-300 font-mono">
+                        ${formatNumber(Number(caja.ventas_transferencia))}
+                      </span>
                     </div>
                     <div className="p-1.5 rounded-lg bg-slate-800/80">
                       <span className="text-slate-400 block text-[9px]">Tarjeta</span>
-                      <span className="font-bold text-purple-300 font-mono">${formatNumber(Number(caja.ventas_tarjeta))}</span>
+                      <span className="font-bold text-purple-300 font-mono">
+                        ${formatNumber(Number(caja.ventas_tarjeta))}
+                      </span>
                     </div>
                   </div>
 
@@ -333,24 +364,32 @@ export default function LiveMonitoringIsland() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`h-7 w-7 rounded-lg flex items-center justify-center font-bold text-xs ${
-                        tieneCaja ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'
-                      }`}>
+                      <div
+                        className={`h-7 w-7 rounded-lg flex items-center justify-center font-bold text-xs ${
+                          tieneCaja
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
                         {emp.nombre.charAt(0)}
                       </div>
                       <div>
                         <h4 className="font-bold text-white text-xs leading-none">
                           {emp.nombre} {emp.apellido}
                         </h4>
-                        <span className="text-[10px] text-slate-400 capitalize">{emp.rol_nombre}</span>
+                        <span className="text-[10px] text-slate-400 capitalize">
+                          {emp.rol_nombre}
+                        </span>
                       </div>
                     </div>
 
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                      tieneCaja 
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        tieneCaja
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
                       {tieneCaja ? 'Caja Abierta' : 'Sin Caja'}
                     </span>
                   </div>
@@ -359,7 +398,8 @@ export default function LiveMonitoringIsland() {
                     {tieneCaja ? (
                       <>
                         <p className="text-emerald-300 font-semibold">
-                          Turno #{emp.sesion_caja_activa_id} · Ventas: ${formatNumber(Number(emp.caja_total_ventas || 0))}
+                          Turno #{emp.sesion_caja_activa_id} · Ventas: $
+                          {formatNumber(Number(emp.caja_total_ventas || 0))}
                         </p>
                         <p className="text-[10px] text-slate-400">
                           {emp.caja_total_facturas || 0} facturas procesadas
@@ -367,7 +407,8 @@ export default function LiveMonitoringIsland() {
                       </>
                     ) : (
                       <p className="text-slate-400">
-                        Último acceso: {emp.ultimo_login ? formatTime(emp.ultimo_login) : 'Sin registro'}
+                        Último acceso:{' '}
+                        {emp.ultimo_login ? formatTime(emp.ultimo_login) : 'Sin registro'}
                       </p>
                     )}
                   </div>

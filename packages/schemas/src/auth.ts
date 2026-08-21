@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const LoginDTO = z.object({
   credential: z.string().min(1, 'El correo o número de identificación es requerido'),
-  password: z.string().min(1, 'La contraseña es requerida')
+  password: z.string().min(1, 'La contraseña es requerida'),
 });
 
 export const RegisterUserDTO = z.object({
@@ -18,7 +18,7 @@ export const RegisterUserDTO = z.object({
   departamento: z.string().optional(),
   salario: z.coerce.number().optional().default(0),
   descuento_max_porcentaje: z.coerce.number().min(0).max(100).optional().default(10),
-  descuento_max_monto: z.coerce.number().min(0).optional().default(50000)
+  descuento_max_monto: z.coerce.number().min(0).optional().default(50000),
 });
 
 export type LoginInput = z.infer<typeof LoginDTO>;

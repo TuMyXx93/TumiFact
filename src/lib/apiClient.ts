@@ -8,7 +8,9 @@ const FETCH_TIMEOUT_MS = 10_000;
 const ENV_API_BASE = (import.meta.env.PUBLIC_API_BASE_URL || '').trim();
 const ENV_API_PORT = (import.meta.env.PUBLIC_API_PORT || '').trim();
 const ENV_API_PORTS = (import.meta.env.PUBLIC_API_PORTS || '').trim();
-const ENV_API_AUTO_DISCOVERY = (import.meta.env.PUBLIC_API_AUTO_DISCOVERY || 'true').trim().toLowerCase();
+const ENV_API_AUTO_DISCOVERY = (import.meta.env.PUBLIC_API_AUTO_DISCOVERY || 'true')
+  .trim()
+  .toLowerCase();
 const ENV_API_PORT_SCAN_RANGE = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '3000-3999').trim();
 
 let cachedApiBase: string | null = null;
@@ -72,7 +74,7 @@ function getWindowContext() {
   return {
     protocol: window.location.protocol,
     hostname: window.location.hostname,
-    origin: window.location.origin
+    origin: window.location.origin,
   };
 }
 
@@ -80,7 +82,10 @@ function getCandidateBases(): string[] {
   const ctx = getWindowContext();
   if (!ctx) return [];
 
-  const queryBase = normalizeBase(new URLSearchParams(window.location.search).get('apiBase') || new URLSearchParams(window.location.search).get('api'));
+  const queryBase = normalizeBase(
+    new URLSearchParams(window.location.search).get('apiBase') ||
+      new URLSearchParams(window.location.search).get('api')
+  );
   const sessionBase = normalizeBase(sessionStorage.getItem(SESSION_HEALTHY_KEY));
   const localBase = normalizeBase(localStorage.getItem(LOCAL_OVERRIDE_KEY));
   const globalBase = normalizeBase(window.__TUMIFACT_API_BASE__);
@@ -91,7 +96,7 @@ function getCandidateBases(): string[] {
     globalBase,
     sessionBase,
     localBase,
-    normalizeBase(ctx.origin)
+    normalizeBase(ctx.origin),
   ];
 
   const portCandidates = [...parseCsvPorts(ENV_API_PORTS)];
@@ -118,7 +123,7 @@ async function probeBase(baseUrl: string): Promise<ProbeResult> {
     const response = await fetch(`${baseUrl}${HEALTH_PATH}`, {
       method: 'GET',
       cache: 'no-store',
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     if (!response.ok) return { ok: false };
@@ -248,7 +253,7 @@ export async function apiFetch(
     ...restInit,
     headers,
     credentials: restInit.credentials || 'include',
-    signal: controller.signal
+    signal: controller.signal,
   };
 
   try {
@@ -270,7 +275,7 @@ export async function apiFetch(
     try {
       const res = await fetch(`${fallbackBase}${cleanPath}`, {
         ...fetchInit,
-        signal: fallbackController.signal
+        signal: fallbackController.signal,
       });
       clearTimeout(fallbackTimeoutId);
       if (res.status === 401) handleUnauthorized();

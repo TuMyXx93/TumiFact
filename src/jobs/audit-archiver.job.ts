@@ -9,7 +9,10 @@ import { logger } from '../lib/logger';
 export async function runAuditArchiver(): Promise<{ archived: number }> {
   const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   try {
-    const { rows } = await pool.query(`SELECT count(*)::int as c FROM audit_log WHERE created_at < $1`, [cutoff]);
+    const { rows } = await pool.query(
+      `SELECT count(*)::int as c FROM audit_log WHERE created_at < $1`,
+      [cutoff]
+    );
     const count = rows[0]?.c || 0;
     if (count === 0) {
       logger.info({ cutoff: cutoff.toISOString() }, 'Audit archiver: nada que archivar');

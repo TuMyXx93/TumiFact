@@ -35,9 +35,9 @@ export async function runStockCritico(): Promise<{ criticos: StockCriticoItem[] 
           codigo: c.codigo,
           nombre: c.nombre,
           stock: c.stock_actual,
-          minimo: c.stock_minimo
+          minimo: c.stock_minimo,
         })),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
       logger.debug('Stock crítico: 0');

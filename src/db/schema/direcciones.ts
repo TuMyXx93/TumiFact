@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 export const direcciones = pgTable('direcciones', {
   id: serial('id').primaryKey(),
@@ -10,7 +10,7 @@ export const direcciones = pgTable('direcciones', {
   codigo_postal: varchar('codigo_postal', { length: 20 }),
   referencia: text('referencia'),
   created_at: timestamp('created_at').defaultNow(),
-  updated_at: timestamp('updated_at').defaultNow()
+  updated_at: timestamp('updated_at').defaultNow(),
 });
 
 export type DireccionItem = typeof direcciones.$inferSelect;

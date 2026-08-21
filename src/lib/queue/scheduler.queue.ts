@@ -1,6 +1,6 @@
 import { Queue, type QueueOptions } from 'bullmq';
-import { queueConnection } from './connection';
 import { logger } from '../logger';
+import { queueConnection } from './connection';
 
 export const schedulerQueue = new Queue('tumifact-scheduler', {
   connection: queueConnection as unknown as QueueOptions['connection'],
@@ -8,8 +8,8 @@ export const schedulerQueue = new Queue('tumifact-scheduler', {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
     removeOnComplete: 100,
-    removeOnFail: 50
-  }
+    removeOnFail: 50,
+  },
 });
 
 export async function initSchedulerQueue(): Promise<void> {

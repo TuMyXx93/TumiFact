@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
 
 export function requestLogging(req: Request, res: Response, next: NextFunction) {
@@ -12,7 +12,7 @@ export function requestLogging(req: Request, res: Response, next: NextFunction) 
         path: req.originalUrl,
         status: res.statusCode,
         durationMs: Date.now() - startedAt,
-        correlationId: req.correlationId
+        correlationId: req.correlationId,
       },
       `${req.method} ${req.originalUrl} → ${res.statusCode}`
     );

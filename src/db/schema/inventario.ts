@@ -1,12 +1,23 @@
-import { pgTable, bigserial, integer, varchar, text, numeric, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  bigserial,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { productos } from './productos';
-import { usuarios } from './usuarios';
 import { sesionesCaja } from './sesiones_caja';
+import { usuarios } from './usuarios';
 
 export const movimientosInventario = pgTable('movimientos_inventario', {
   id: bigserial('id', { mode: 'number' }).primaryKey(),
   idempotency_key: uuid('idempotency_key').unique(),
-  producto_id: integer('producto_id').references(() => productos.id).notNull(),
+  producto_id: integer('producto_id')
+    .references(() => productos.id)
+    .notNull(),
   usuario_id: integer('usuario_id').references(() => usuarios.id),
   sesion_caja_id: integer('sesion_caja_id').references(() => sesionesCaja.id),
   tipo: varchar('tipo', { length: 40 }).notNull(), // 'entrada_manual', 'salida_venta', 'devolucion_entrada', 'ajuste_positivo', 'ajuste_negativo', 'perdida', 'separado_reserva', 'separado_liberacion'
@@ -17,7 +28,7 @@ export const movimientosInventario = pgTable('movimientos_inventario', {
   referencia_tipo: varchar('referencia_tipo', { length: 30 }), // 'factura', 'separado', 'devolucion', 'manual'
   referencia_id: integer('referencia_id'),
   notas: text('notas'),
-  created_at: timestamp('created_at').defaultNow().notNull()
+  created_at: timestamp('created_at').defaultNow().notNull(),
 });
 
 export type MovimientoInventarioItem = typeof movimientosInventario.$inferSelect;

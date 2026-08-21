@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Palette, 
-  Store, 
-  Receipt, 
-  QrCode, 
-  ShieldCheck, 
-  Check, 
-  Sparkles, 
-  CheckCircle2, 
+import {
   AlertCircle,
+  Check,
+  CheckCircle2,
   FileText,
+  Palette,
+  QrCode,
+  Receipt,
+  RefreshCw,
+  ShieldCheck,
   Sliders,
-  RefreshCw
+  Sparkles,
+  Store,
 } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
 
 interface ConfigData {
@@ -57,7 +58,10 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
   );
   const [ticketWidth, setTicketWidth] = useState<number>(initialConfig.ancho_papel || 80);
   const [isSaving, setIsSaving] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Aplicar acento en runtime al elemento raíz
   useEffect(() => {
@@ -77,22 +81,28 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
         secondary: '#0891b2',
         accent: '#10b981',
         background: '#060913',
-        surface: '#0d1424'
-      }
+        surface: '#0d1424',
+      },
     };
 
     try {
       const res = await apiFetch('/api/configuracion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        setStatusMessage({ type: 'success', text: '¡Identidad de Marca Blanca y configuración guardadas con éxito!' });
+        setStatusMessage({
+          type: 'success',
+          text: '¡Identidad de Marca Blanca y configuración guardadas con éxito!',
+        });
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Error al guardar la configuración' });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || 'Error al guardar la configuración',
+        });
       }
     } catch (err) {
       setStatusMessage({ type: 'error', text: 'No se pudo conectar con el servidor' });
@@ -112,10 +122,17 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
           }`}
         >
           <div className="flex items-center gap-2">
-            {statusMessage.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+            {statusMessage.type === 'success' ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <AlertCircle className="h-5 w-5" />
+            )}
             <span>{statusMessage.text}</span>
           </div>
-          <button onClick={() => setStatusMessage(null)} className="text-xs uppercase font-mono hover:opacity-75">
+          <button
+            onClick={() => setStatusMessage(null)}
+            className="text-xs uppercase font-mono hover:opacity-75"
+          >
             Cerrar
           </button>
         </div>
@@ -127,7 +144,6 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
         {/* ========================================================= */}
         <div className="lg:col-span-7 space-y-6">
           <form onSubmit={handleSave} className="space-y-6">
-            
             {/* Paleta de Color de Acento */}
             <div className="blueprint-card p-6 rounded-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -163,9 +179,13 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                           className="h-4 w-4 rounded-full shadow-sm"
                           style={{ backgroundColor: preset.hex }}
                         />
-                        <span className="text-xs font-medium text-white truncate">{preset.name.split(' ')[0]}</span>
+                        <span className="text-xs font-medium text-white truncate">
+                          {preset.name.split(' ')[0]}
+                        </span>
                       </div>
-                      {selectedAccent === preset.hex && <Check className="h-3.5 w-3.5 text-blue-400" />}
+                      {selectedAccent === preset.hex && (
+                        <Check className="h-3.5 w-3.5 text-blue-400" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -183,7 +203,9 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase block mb-1">Nombre Comercial *</label>
+                  <label className="font-semibold text-slate-300 uppercase block mb-1">
+                    Nombre Comercial *
+                  </label>
                   <input
                     type="text"
                     required
@@ -193,7 +215,9 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase block mb-1">NIT / Cédula Fiscal *</label>
+                  <label className="font-semibold text-slate-300 uppercase block mb-1">
+                    NIT / Cédula Fiscal *
+                  </label>
                   <input
                     type="text"
                     required
@@ -203,7 +227,9 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase block mb-1">Dirección del Establecimiento</label>
+                  <label className="font-semibold text-slate-300 uppercase block mb-1">
+                    Dirección del Establecimiento
+                  </label>
                   <input
                     type="text"
                     value={config.direccion}
@@ -212,7 +238,9 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-300 uppercase block mb-1">Teléfono / WhatsApp</label>
+                  <label className="font-semibold text-slate-300 uppercase block mb-1">
+                    Teléfono / WhatsApp
+                  </label>
                   <input
                     type="text"
                     value={config.telefono}
@@ -287,8 +315,13 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                     </label>
                     <textarea
                       rows={2}
-                      value={config.politica_devolucion || 'Cambios y devoluciones dentro de los 30 días con el comprobante.'}
-                      onChange={(e) => setConfig({ ...config, politica_devolucion: e.target.value })}
+                      value={
+                        config.politica_devolucion ||
+                        'Cambios y devoluciones dentro de los 30 días con el comprobante.'
+                      }
+                      onChange={(e) =>
+                        setConfig({ ...config, politica_devolucion: e.target.value })
+                      }
                       className="w-full px-3.5 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 resize-none"
                     />
                   </div>
@@ -298,7 +331,10 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                     </label>
                     <textarea
                       rows={2}
-                      value={config.politica_separados || 'Plazo máximo de separado: 30 a 45 días. Abonos no reembolsables.'}
+                      value={
+                        config.politica_separados ||
+                        'Plazo máximo de separado: 30 a 45 días. Abonos no reembolsables.'
+                      }
                       onChange={(e) => setConfig({ ...config, politica_separados: e.target.value })}
                       className="w-full px-3.5 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 resize-none"
                     />
@@ -334,7 +370,7 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
           </div>
 
           {/* Ticket térmico estilo papel */}
-          <div 
+          <div
             className={`mx-auto bg-white text-slate-900 p-6 rounded-lg shadow-2xl font-mono text-[11px] leading-relaxed transition-all duration-300 border border-slate-300 ${
               ticketWidth === 58 ? 'max-w-[280px]' : 'max-w-[340px]'
             }`}
@@ -344,9 +380,15 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
               <h4 className="font-black text-sm uppercase tracking-tight text-slate-900 font-['Outfit']">
                 {config.nombre_negocio || 'TumiFact Store'}
               </h4>
-              <p className="text-[10px] font-bold text-slate-700">NIT: {config.nit || '900.123.456-7'}</p>
-              <p className="text-[10px] text-slate-600">{config.direccion || 'Calle 100 #15-20, Bogotá'}</p>
-              <p className="text-[10px] text-slate-600">Tel: {config.telefono || '+57 300 123 4567'}</p>
+              <p className="text-[10px] font-bold text-slate-700">
+                NIT: {config.nit || '900.123.456-7'}
+              </p>
+              <p className="text-[10px] text-slate-600">
+                {config.direccion || 'Calle 100 #15-20, Bogotá'}
+              </p>
+              <p className="text-[10px] text-slate-600">
+                Tel: {config.telefono || '+57 300 123 4567'}
+              </p>
             </div>
 
             {/* Metadatos de la Factura */}
@@ -357,7 +399,10 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
               </div>
               <div className="flex justify-between">
                 <span>FECHA:</span>
-                <span>{new Date().toLocaleDateString('es-CO')} {new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>
+                  {new Date().toLocaleDateString('es-CO')}{' '}
+                  {new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>CAJERO:</span>
@@ -419,7 +464,9 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
             <div className="text-center space-y-2 pt-1">
               <div className="mx-auto w-24 h-24 bg-slate-100 border border-slate-300 rounded p-1.5 flex flex-col items-center justify-center shadow-inner">
                 <QrCode className="h-16 w-16 text-slate-800" />
-                <span className="text-[8px] font-bold text-slate-600 font-mono tracking-tighter">PAGOS / DIAN QR</span>
+                <span className="text-[8px] font-bold text-slate-600 font-mono tracking-tighter">
+                  PAGOS / DIAN QR
+                </span>
               </div>
               <p className="text-[9px] font-bold text-slate-800 uppercase tracking-tight">
                 {config.mensaje_bienvenida || '¡Gracias por su compra!'}

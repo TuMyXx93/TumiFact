@@ -1,7 +1,7 @@
-import { ClientesRepository } from './clientes.repository';
-import type { CreateClienteInput, UpdateClienteInput } from './clientes.dto';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateClienteInput, UpdateClienteInput } from './clientes.dto';
+import { ClientesRepository } from './clientes.repository';
 
 export class ClientesService {
   constructor(private repo: ClientesRepository = new ClientesRepository()) {}
@@ -10,7 +10,7 @@ export class ClientesService {
     const list = await this.repo.findAll();
     return list.map((c) => ({
       ...c,
-      total_compras: parseFloat(c.total_compras || '0')
+      total_compras: parseFloat(c.total_compras || '0'),
     }));
   }
 
@@ -18,7 +18,7 @@ export class ClientesService {
     const list = await this.repo.search(query);
     return list.map((c) => ({
       ...c,
-      total_compras: parseFloat(c.total_compras || '0')
+      total_compras: parseFloat(c.total_compras || '0'),
     }));
   }
 
@@ -27,7 +27,7 @@ export class ClientesService {
     if (!c) return null;
     return {
       ...c,
-      total_compras: parseFloat(c.total_compras || '0')
+      total_compras: parseFloat(c.total_compras || '0'),
     };
   }
 
@@ -43,7 +43,7 @@ export class ClientesService {
       direccion_texto: input.direccion_texto || null,
       tipo_cliente: input.tipo_cliente || 'detal',
       notas: input.notas || null,
-      activo: true
+      activo: true,
     });
 
     await recordAudit({
@@ -52,7 +52,7 @@ export class ClientesService {
       entidad: 'clientes',
       entidadId: created.id,
       datosNuevos: input,
-      req
+      req,
     });
 
     return created;
@@ -71,7 +71,7 @@ export class ClientesService {
       entidadId: id,
       datosPrevios: existing,
       datosNuevos: input,
-      req
+      req,
     });
 
     return updated;
@@ -85,7 +85,7 @@ export class ClientesService {
         accion: 'CLIENTE_ELIMINADO',
         entidad: 'clientes',
         entidadId: id,
-        req
+        req,
       });
     }
     return ok;

@@ -1,13 +1,13 @@
-import http from 'http';
-import dotenv from 'dotenv';
 import closeWithGrace from 'close-with-grace';
+import dotenv from 'dotenv';
+import http from 'http';
 import app from './app';
+import { closeRedis, initRedis } from './config/redis';
 import { pool } from './db';
-import { initSocketIO } from './server/socket';
-import { initRedis, closeRedis } from './config/redis';
+import { closeSchedulerWorker, initSchedulerWorker } from './jobs';
 import { logger } from './lib/logger';
-import { initSchedulerQueue, closeSchedulerQueue } from './lib/queue/scheduler.queue';
-import { initSchedulerWorker, closeSchedulerWorker } from './jobs';
+import { closeSchedulerQueue, initSchedulerQueue } from './lib/queue/scheduler.queue';
+import { initSocketIO } from './server/socket';
 
 dotenv.config();
 
@@ -30,7 +30,10 @@ async function startServer(): Promise<void> {
     await pool.query('SELECT NOW()');
     await initRedis();
     logger.info(
-      { database: process.env.DB_DATABASE || 'tumifact_db', host: process.env.DB_HOST || 'localhost' },
+      {
+        database: process.env.DB_DATABASE || 'tumifact_db',
+        host: process.env.DB_HOST || 'localhost',
+      },
       '✓ Conexión exitosa a PostgreSQL + Redis'
     );
 
@@ -42,9 +45,14 @@ async function startServer(): Promise<void> {
       try {
         await initSchedulerQueue();
         await initSchedulerWorker();
-        logger.info('Scheduler BullMQ iniciado (audit-archiver, separados-vencidos, stock-critico)');
+        logger.info(
+          'Scheduler BullMQ iniciado (audit-archiver, separados-vencidos, stock-critico)'
+        );
       } catch (err) {
-        logger.error({ err: (err as Error).message }, 'Error iniciando scheduler — continuando sin jobs');
+        logger.error(
+          { err: (err as Error).message },
+          'Error iniciando scheduler — continuando sin jobs'
+        );
       }
     }
 
@@ -71,13 +79,21 @@ async function startServer(): Promise<void> {
     });
 
     // Graceful shutdown con close-with-grace (10s) — Fase 4.1
-    closeWithGrace({ delay: Number(process.env.SHUTDOWN_DELAY_MS) || 10000 }, async ({ signal, err }) => {
-      if (err) logger.error({ err }, 'Shutdown por error');
-      logger.info({ signal }, '⏳ Graceful shutdown iniciado...');
-      if (httpServer) await new Promise<void>((resolve) => httpServer!.close(() => resolve()));
-      await Promise.allSettled([closeSchedulerWorker(), closeSchedulerQueue(), closeRedis(), pool.end()]);
-      logger.info('✅ Shutdown completo');
-    });
+    closeWithGrace(
+      { delay: Number(process.env.SHUTDOWN_DELAY_MS) || 10000 },
+      async ({ signal, err }) => {
+        if (err) logger.error({ err }, 'Shutdown por error');
+        logger.info({ signal }, '⏳ Graceful shutdown iniciado...');
+        if (httpServer) await new Promise<void>((resolve) => httpServer!.close(() => resolve()));
+        await Promise.allSettled([
+          closeSchedulerWorker(),
+          closeSchedulerQueue(),
+          closeRedis(),
+          pool.end(),
+        ]);
+        logger.info('✅ Shutdown completo');
+      }
+    );
   } catch (err) {
     logger.error({ err: (err as Error).message }, 'Error al conectar a la base de datos');
     process.exit(1);

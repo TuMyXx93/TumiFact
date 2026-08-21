@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { DevolucionesService } from './devoluciones.service';
-import { validateDTO } from '../../shared/middleware/validate';
-import { CreateDevolucionDTO } from './devoluciones.dto';
-import { verifyAuth, requireRole } from '../../shared/middleware/auth';
+import { requireRole, verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
+import { validateDTO } from '../../shared/middleware/validate';
 import { CajaService } from '../caja/caja.service';
+import { CreateDevolucionDTO } from './devoluciones.dto';
+import { DevolucionesService } from './devoluciones.service';
 
 export const devolucionesRouter = Router();
 const service = new DevolucionesService();
@@ -47,7 +47,7 @@ devolucionesRouter.post(
       const result = await service.create(req.body, userId, activeCaja?.id, req);
       res.status(201).json({
         message: 'Devolución procesada exitosamente',
-        devolucion: result
+        devolucion: result,
       });
     } catch (error) {
       next(error);

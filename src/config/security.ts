@@ -10,12 +10,14 @@ if (process.env.NODE_ENV === 'production' && !configuredJwtSecret) {
 // Development/test-only ephemeral secret: it is never valid across restarts.
 export const JWT_SECRET = configuredJwtSecret || randomBytes(32).toString('hex');
 
-const configuredOrigins = process.env.CORS_ORIGIN
-  ?.split(',')
+const configuredOrigins = process.env.CORS_ORIGIN?.split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-if (process.env.NODE_ENV === 'production' && (!configuredOrigins || configuredOrigins.length === 0)) {
+if (
+  process.env.NODE_ENV === 'production' &&
+  (!configuredOrigins || configuredOrigins.length === 0)
+) {
   throw new Error('CORS_ORIGIN es obligatorio en producción');
 }
 

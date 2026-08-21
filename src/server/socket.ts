@@ -1,7 +1,7 @@
-import { Server as SocketIOServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
-import { CORS_ORIGINS, JWT_SECRET } from '../config/security';
 import { jwtVerify } from 'jose';
+import { Server as SocketIOServer } from 'socket.io';
+import { CORS_ORIGINS, JWT_SECRET } from '../config/security';
 
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
@@ -21,7 +21,7 @@ export const SOCKET_EVENTS = {
   STOCK_CRITICO: 'inventario:stock_critico',
   STOCK_ACTUALIZADO: 'inventario:actualizado',
   // Devoluciones
-  DEVOLUCION_CREADA: 'devolucion:creada'
+  DEVOLUCION_CREADA: 'devolucion:creada',
 } as const;
 
 export function initSocketIO(httpServer: HttpServer): SocketIOServer {
@@ -29,8 +29,8 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
     cors: {
       origin: CORS_ORIGINS,
       credentials: true,
-      methods: ['GET', 'POST']
-    }
+      methods: ['GET', 'POST'],
+    },
   });
 
   // Fase 2: Auth en handshake — evita que cualquier ws:// escuche totales de caja
@@ -39,7 +39,9 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
       const token =
         (socket.handshake.auth as any)?.token ||
         (socket.handshake.headers.cookie?.match(/(?:^|;\s*)tumifact_token=([^;]+)/)?.[1]
-          ? decodeURIComponent(socket.handshake.headers.cookie.match(/(?:^|;\s*)tumifact_token=([^;]+)/)![1])
+          ? decodeURIComponent(
+              socket.handshake.headers.cookie.match(/(?:^|;\s*)tumifact_token=([^;]+)/)![1]
+            )
           : null) ||
         (socket.handshake.headers.authorization?.startsWith('Bearer ')
           ? socket.handshake.headers.authorization.substring(7)

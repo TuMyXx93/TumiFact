@@ -1,30 +1,29 @@
-import dotenv from 'dotenv';
-import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+import type { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import path from 'path';
-import { pool } from './db';
-
-import { authRouter } from './modules/auth/auth.controller';
-import { productosRouter } from './modules/productos/productos.controller';
-import { clientesRouter } from './modules/clientes/clientes.controller';
-import { facturasRouter, ventasRouter } from './modules/facturas/facturas.controller';
-import { configuracionRouter } from './modules/configuracion/configuracion.controller';
-import { cajaRouter } from './modules/caja/caja.controller';
-import { empleadosRouter } from './modules/empleados/empleados.controller';
-import { categoriasRouter } from './modules/categorias/categorias.controller';
-import { proveedoresRouter } from './modules/proveedores/proveedores.controller';
-import { inventarioRouter } from './modules/inventario/inventario.controller';
-import { descuentosRouter } from './modules/descuentos/descuentos.controller';
-import { separadosRouter } from './modules/separados/separados.controller';
-import { devolucionesRouter } from './modules/devoluciones/devoluciones.controller';
-import { reportesRouter } from './modules/reportes/reportes.controller';
 import { isAllowedOrigin } from './config/security';
-import { correlationId } from './shared/middleware/correlation';
-import { requestLogging } from './shared/middleware/request-logging';
 import { openApiDocument } from './contracts/openapi';
+import { pool } from './db';
+import { authRouter } from './modules/auth/auth.controller';
+import { cajaRouter } from './modules/caja/caja.controller';
+import { categoriasRouter } from './modules/categorias/categorias.controller';
+import { clientesRouter } from './modules/clientes/clientes.controller';
+import { configuracionRouter } from './modules/configuracion/configuracion.controller';
+import { descuentosRouter } from './modules/descuentos/descuentos.controller';
+import { devolucionesRouter } from './modules/devoluciones/devoluciones.controller';
+import { empleadosRouter } from './modules/empleados/empleados.controller';
+import { facturasRouter, ventasRouter } from './modules/facturas/facturas.controller';
+import { inventarioRouter } from './modules/inventario/inventario.controller';
+import { productosRouter } from './modules/productos/productos.controller';
+import { proveedoresRouter } from './modules/proveedores/proveedores.controller';
+import { reportesRouter } from './modules/reportes/reportes.controller';
+import { separadosRouter } from './modules/separados/separados.controller';
+import { correlationId } from './shared/middleware/correlation';
 import { csrfOriginGuard } from './shared/middleware/csrf';
 import { apiRateLimiter } from './shared/middleware/rate-limit';
+import { requestLogging } from './shared/middleware/request-logging';
 
 dotenv.config();
 
@@ -86,7 +85,7 @@ app.get('/', (req: Request, res: Response) => {
     architecture: 'DDD (Domain-Driven Design) + Hexagonal',
     status: 'online',
     correlationId: req.correlationId,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -95,7 +94,7 @@ app.get('/api/health/db', async (req: Request, res: Response) => {
   try {
     await Promise.race([
       pool.query('SELECT 1 AS ok'),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('DB health timeout')), 1500))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB health timeout')), 1500)),
     ]);
 
     res.status(200).json({
@@ -103,7 +102,7 @@ app.get('/api/health/db', async (req: Request, res: Response) => {
       connected: true,
       latencyMs: Date.now() - startedAt,
       correlationId: req.correlationId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
     res.status(503).json({
@@ -112,7 +111,7 @@ app.get('/api/health/db', async (req: Request, res: Response) => {
       latencyMs: Date.now() - startedAt,
       timestamp: new Date().toISOString(),
       correlationId: req.correlationId,
-      error: error?.message || 'DB unavailable'
+      error: error?.message || 'DB unavailable',
     });
   }
 });
@@ -164,7 +163,9 @@ app.use('/reportes', reportesRouter);
 app.use('/api/reportes', reportesRouter);
 
 app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: 'Ruta no encontrada', code: 'NOT_FOUND', correlationId: req.correlationId });
+  res
+    .status(404)
+    .json({ error: 'Ruta no encontrada', code: 'NOT_FOUND', correlationId: req.correlationId });
 });
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -172,7 +173,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   res.status(err.statusCode || 500).json({
     error: err.message || 'Error interno del servidor',
     code: err.code || 'INTERNAL_ERROR',
-    correlationId: req.correlationId
+    correlationId: req.correlationId,
   });
 });
 

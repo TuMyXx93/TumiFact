@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { ProveedoresService } from './proveedores.service';
+import { requireRole, verifyAuth } from '../../shared/middleware/auth';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateProveedorDTO, UpdateProveedorDTO } from './proveedores.dto';
-import { verifyAuth, requireRole } from '../../shared/middleware/auth';
+import { ProveedoresService } from './proveedores.service';
 
 export const proveedoresRouter = Router();
 const service = new ProveedoresService();
@@ -35,32 +35,44 @@ proveedoresRouter.get('/:id', verifyAuth, async (req, res, next) => {
 });
 
 // POST /api/proveedores — Crear proveedor (Gerente / Admin)
-proveedoresRouter.post('/', verifyAuth, requireRole('gerente', 'admin'), validateDTO(CreateProveedorDTO), async (req, res, next) => {
-  try {
-    const created = await service.create(req.body, req);
-    res.status(201).json({
-      message: 'Proveedor registrado exitosamente',
-      proveedor: created
-    });
-  } catch (error) {
-    next(error);
+proveedoresRouter.post(
+  '/',
+  verifyAuth,
+  requireRole('gerente', 'admin'),
+  validateDTO(CreateProveedorDTO),
+  async (req, res, next) => {
+    try {
+      const created = await service.create(req.body, req);
+      res.status(201).json({
+        message: 'Proveedor registrado exitosamente',
+        proveedor: created,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // PUT /api/proveedores/:id — Actualizar proveedor (Gerente / Admin)
-proveedoresRouter.put('/:id', verifyAuth, requireRole('gerente', 'admin'), validateDTO(UpdateProveedorDTO), async (req, res, next) => {
-  try {
-    const id = parseInt(String(req.params.id), 10);
-    const updated = await service.update(id, req.body, req);
-    if (!updated) return res.status(404).json({ error: 'Proveedor no encontrado' });
-    res.json({
-      message: 'Proveedor actualizado exitosamente',
-      proveedor: updated
-    });
-  } catch (error) {
-    next(error);
+proveedoresRouter.put(
+  '/:id',
+  verifyAuth,
+  requireRole('gerente', 'admin'),
+  validateDTO(UpdateProveedorDTO),
+  async (req, res, next) => {
+    try {
+      const id = parseInt(String(req.params.id), 10);
+      const updated = await service.update(id, req.body, req);
+      if (!updated) return res.status(404).json({ error: 'Proveedor no encontrado' });
+      res.json({
+        message: 'Proveedor actualizado exitosamente',
+        proveedor: updated,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // DELETE /api/proveedores/:id — Desactivar proveedor (Admin)
 proveedoresRouter.delete('/:id', verifyAuth, requireRole('admin'), async (req, res, next) => {

@@ -1,5 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { BookmarkCheck, Plus, Search, DollarSign, Calendar, AlertCircle, CheckCircle2, User, Printer } from 'lucide-react';
+import {
+  AlertCircle,
+  BookmarkCheck,
+  Calendar,
+  CheckCircle2,
+  DollarSign,
+  Plus,
+  Printer,
+  Search,
+  User,
+} from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
 import { formatNumber } from '../../lib/format';
 
@@ -28,12 +39,15 @@ export default function SeparadosManager() {
   const [abonoModal, setAbonoModal] = useState<Separado | null>(null);
   const [abonoMonto, setAbonoMonto] = useState('');
   const [formaPago, setFormaPago] = useState('efectivo');
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null
+  );
 
   const fetchSeparados = async () => {
     try {
       setLoading(true);
-      const url = filterEstado === 'todos' ? '/api/separados' : `/api/separados?estado=${filterEstado}`;
+      const url =
+        filterEstado === 'todos' ? '/api/separados' : `/api/separados?estado=${filterEstado}`;
       const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -68,15 +82,17 @@ export default function SeparadosManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           monto: parseFloat(abonoMonto),
-          forma_pago: formaPago
-        })
+          forma_pago: formaPago,
+        }),
       });
 
       const data = await res.json();
       if (res.ok) {
         setStatusMsg({
           type: 'success',
-          text: data.completado ? '¡Separado pagado totalmente!' : `Abono de $${formatNumber(parseFloat(abonoMonto))} registrado exitosamente.`
+          text: data.completado
+            ? '¡Separado pagado totalmente!'
+            : `Abono de $${formatNumber(parseFloat(abonoMonto))} registrado exitosamente.`,
         });
         setAbonoModal(null);
         setAbonoMonto('');
@@ -135,14 +151,20 @@ export default function SeparadosManager() {
               : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
           }`}
         >
-          {statusMsg.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          {statusMsg.type === 'success' ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
           {statusMsg.text}
         </div>
       )}
 
       {/* Grid de Separados */}
       {loading ? (
-        <div className="p-12 text-center text-slate-400 text-sm">Cargando sistema de separados...</div>
+        <div className="p-12 text-center text-slate-400 text-sm">
+          Cargando sistema de separados...
+        </div>
       ) : filtered.length === 0 ? (
         <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-sm">
           No se encontraron separados con el criterio seleccionado.
@@ -168,8 +190,8 @@ export default function SeparadosManager() {
                         s.estado === 'completado'
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : s.estado === 'vencido'
-                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                          : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                       }`}
                     >
                       {s.estado}
@@ -177,10 +199,14 @@ export default function SeparadosManager() {
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-white text-base leading-tight">{s.descripcion}</h4>
+                    <h4 className="font-bold text-white text-base leading-tight">
+                      {s.descripcion}
+                    </h4>
                     <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
                       <User className="h-3.5 w-3.5 text-slate-500" />
-                      <span>{s.cliente_nombre} {s.cliente_apellido || ''}</span>
+                      <span>
+                        {s.cliente_nombre} {s.cliente_apellido || ''}
+                      </span>
                     </p>
                   </div>
 
@@ -200,12 +226,18 @@ export default function SeparadosManager() {
 
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80 text-xs">
                     <div>
-                      <span className="text-slate-500 text-[10px] uppercase font-semibold">Valor Total</span>
+                      <span className="text-slate-500 text-[10px] uppercase font-semibold">
+                        Valor Total
+                      </span>
                       <p className="font-bold text-white">${formatNumber(total)}</p>
                     </div>
                     <div>
-                      <span className="text-slate-500 text-[10px] uppercase font-semibold">Saldo Pendiente</span>
-                      <p className={`font-bold ${saldo > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      <span className="text-slate-500 text-[10px] uppercase font-semibold">
+                        Saldo Pendiente
+                      </span>
+                      <p
+                        className={`font-bold ${saldo > 0 ? 'text-amber-400' : 'text-emerald-400'}`}
+                      >
                         ${formatNumber(saldo)}
                       </p>
                     </div>
@@ -251,7 +283,9 @@ export default function SeparadosManager() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-white font-['Outfit']">Registrar Abono</h3>
-                <p className="text-xs text-slate-400">Separado #SEP-{abonoModal.id} — {abonoModal.descripcion}</p>
+                <p className="text-xs text-slate-400">
+                  Separado #SEP-{abonoModal.id} — {abonoModal.descripcion}
+                </p>
               </div>
               <button
                 onClick={() => setAbonoModal(null)}
@@ -264,21 +298,29 @@ export default function SeparadosManager() {
             <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/60 space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-400">Total Separado:</span>
-                <span className="text-white font-bold">${formatNumber(parseFloat(String(abonoModal.valor_total)))}</span>
+                <span className="text-white font-bold">
+                  ${formatNumber(parseFloat(String(abonoModal.valor_total)))}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Total Abonado:</span>
-                <span className="text-emerald-400 font-bold">${formatNumber(parseFloat(String(abonoModal.total_abonado)))}</span>
+                <span className="text-emerald-400 font-bold">
+                  ${formatNumber(parseFloat(String(abonoModal.total_abonado)))}
+                </span>
               </div>
               <div className="flex justify-between pt-1 border-t border-slate-700">
                 <span className="text-slate-300 font-semibold">Saldo Pendiente:</span>
-                <span className="text-amber-400 font-bold text-sm">${formatNumber(parseFloat(String(abonoModal.saldo_pendiente)))}</span>
+                <span className="text-amber-400 font-bold text-sm">
+                  ${formatNumber(parseFloat(String(abonoModal.saldo_pendiente)))}
+                </span>
               </div>
             </div>
 
             <form onSubmit={handleRegistrarAbono} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">Monto a Abonar ($ COP) *</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase">
+                  Monto a Abonar ($ COP) *
+                </label>
                 <input
                   type="number"
                   required
@@ -292,7 +334,9 @@ export default function SeparadosManager() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase">Forma de Pago</label>
+                <label className="text-xs font-semibold text-slate-300 uppercase">
+                  Forma de Pago
+                </label>
                 <select
                   value={formaPago}
                   onChange={(e) => setFormaPago(e.target.value)}

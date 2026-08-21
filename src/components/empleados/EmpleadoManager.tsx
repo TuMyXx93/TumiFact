@@ -1,31 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  UserPlus, 
-  Search, 
-  CheckCircle2, 
-  AlertCircle, 
-  Phone, 
-  Edit2, 
-  Trash2, 
-  Mail, 
-  Shield, 
-  DollarSign, 
-  Percent, 
-  Activity, 
-  Clock, 
-  FileText, 
-  Lock, 
-  RefreshCw, 
-  TrendingUp, 
+import {
+  Activity,
+  AlertCircle,
   BarChart3,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Edit2,
+  FileText,
+  KeyRound,
+  Lock,
+  Mail,
+  Percent,
+  Phone,
+  RefreshCw,
+  Search,
+  Shield,
+  Trash2,
+  TrendingUp,
   UserCheck,
+  UserPlus,
+  Users,
   UserX,
-  KeyRound
 } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { type Socket, io as socketIOClient } from 'socket.io-client';
 import { apiFetch, resolveApiBaseUrl } from '../../lib/apiClient';
-import { formatNumber, formatDate, formatTime } from '../../lib/format';
-import { io as socketIOClient, Socket } from 'socket.io-client';
+import { formatDate, formatNumber, formatTime } from '../../lib/format';
 
 export interface Empleado {
   id: number;
@@ -120,7 +121,7 @@ function evaluatePasswordStrength(password: string) {
       hasUpper: false,
       hasLower: false,
       hasNumber: false,
-      hasSpecial: false
+      hasSpecial: false,
     };
   }
 
@@ -138,21 +139,61 @@ function evaluatePasswordStrength(password: string) {
   if (hasSpecial) score += 1;
 
   if (score <= 2) {
-    return { score, label: 'Débil', color: 'text-rose-400', barColor: 'bg-rose-500', hasLength, hasUpper, hasLower, hasNumber, hasSpecial };
+    return {
+      score,
+      label: 'Débil',
+      color: 'text-rose-400',
+      barColor: 'bg-rose-500',
+      hasLength,
+      hasUpper,
+      hasLower,
+      hasNumber,
+      hasSpecial,
+    };
   }
   if (score === 3) {
-    return { score, label: 'Media', color: 'text-amber-400', barColor: 'bg-amber-500', hasLength, hasUpper, hasLower, hasNumber, hasSpecial };
+    return {
+      score,
+      label: 'Media',
+      color: 'text-amber-400',
+      barColor: 'bg-amber-500',
+      hasLength,
+      hasUpper,
+      hasLower,
+      hasNumber,
+      hasSpecial,
+    };
   }
   if (score === 4) {
-    return { score, label: 'Fuerte', color: 'text-emerald-400', barColor: 'bg-emerald-500', hasLength, hasUpper, hasLower, hasNumber, hasSpecial };
+    return {
+      score,
+      label: 'Fuerte',
+      color: 'text-emerald-400',
+      barColor: 'bg-emerald-500',
+      hasLength,
+      hasUpper,
+      hasLower,
+      hasNumber,
+      hasSpecial,
+    };
   }
-  return { score, label: 'Muy Segura', color: 'text-emerald-300', barColor: 'bg-emerald-400', hasLength, hasUpper, hasLower, hasNumber, hasSpecial };
+  return {
+    score,
+    label: 'Muy Segura',
+    color: 'text-emerald-300',
+    barColor: 'bg-emerald-400',
+    hasLength,
+    hasUpper,
+    hasLower,
+    hasNumber,
+    hasSpecial,
+  };
 }
 
 export default function EmpleadoManager({
   initialEmpleados = [],
   initialRoles = [],
-  initialTiposDoc = []
+  initialTiposDoc = [],
 }: EmpleadoManagerProps) {
   const [activeTab, setActiveTab] = useState<'directorio' | 'metricas' | 'auditoria'>('directorio');
   const [empleados, setEmpleados] = useState<Empleado[]>(initialEmpleados);
@@ -161,7 +202,10 @@ export default function EmpleadoManager({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState('');
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Estados de métricas y auditoría
   const [metricas, setMetricas] = useState<MetricasResponse | null>(null);
@@ -186,7 +230,7 @@ export default function EmpleadoManager({
     salario: 1600000,
     turno: 'completo',
     descuento_max_porcentaje: 10,
-    descuento_max_monto: 50000
+    descuento_max_monto: 50000,
   });
 
   const passwordStrength = evaluatePasswordStrength(formData.password);
@@ -220,7 +264,9 @@ export default function EmpleadoManager({
 
   const fetchAuditoria = async (userId?: string) => {
     try {
-      const url = userId ? `/api/empleados/auditoria?usuario_id=${userId}` : '/api/empleados/auditoria';
+      const url = userId
+        ? `/api/empleados/auditoria?usuario_id=${userId}`
+        : '/api/empleados/auditoria';
       const res = await apiFetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -247,16 +293,20 @@ export default function EmpleadoManager({
     (async () => {
       try {
         const baseUrl = await resolveApiBaseUrl();
-        const socketTarget = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
-        const storedToken = typeof window !== 'undefined'
-          ? (localStorage.getItem('tumifact_token') || sessionStorage.getItem('tumifact_token') || '')
-          : '';
+        const socketTarget =
+          baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+        const storedToken =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('tumifact_token') ||
+              sessionStorage.getItem('tumifact_token') ||
+              ''
+            : '';
 
         socket = socketIOClient(socketTarget, {
           transports: ['websocket', 'polling'],
           auth: { token: storedToken },
           reconnectionAttempts: 10,
-          reconnectionDelay: 2000
+          reconnectionDelay: 2000,
         });
 
         const handleRealtimeEvent = () => {
@@ -302,7 +352,7 @@ export default function EmpleadoManager({
       salario: 1600000,
       turno: 'completo',
       descuento_max_porcentaje: 10,
-      descuento_max_monto: 50000
+      descuento_max_monto: 50000,
     });
     setIsModalOpen(true);
   };
@@ -324,7 +374,7 @@ export default function EmpleadoManager({
       salario: emp.salario || 0,
       turno: emp.turno || 'completo',
       descuento_max_porcentaje: emp.descuento_max_porcentaje || 10,
-      descuento_max_monto: emp.descuento_max_monto || 50000
+      descuento_max_monto: emp.descuento_max_monto || 50000,
     });
     setIsModalOpen(true);
   };
@@ -332,7 +382,7 @@ export default function EmpleadoManager({
   const handleToggleStatus = async (id: number) => {
     try {
       const res = await apiFetch(`/api/empleados/${id}/toggle-status`, {
-        method: 'PATCH'
+        method: 'PATCH',
       });
       if (res.ok) {
         setStatusMessage({ type: 'success', text: 'Estado de acceso actualizado exitosamente' });
@@ -347,11 +397,14 @@ export default function EmpleadoManager({
   };
 
   const handleDeleteEmpleado = async (id: number, nombre: string) => {
-    if (!confirm(`¿Estás seguro de eliminar a ${nombre}? Esta acción eliminará su cuenta y accesos.`)) return;
+    if (
+      !confirm(`¿Estás seguro de eliminar a ${nombre}? Esta acción eliminará su cuenta y accesos.`)
+    )
+      return;
 
     try {
       const res = await apiFetch(`/api/empleados/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
       if (res.ok) {
         setStatusMessage({ type: 'success', text: `Colaborador ${nombre} eliminado exitosamente` });
@@ -372,17 +425,26 @@ export default function EmpleadoManager({
     // Validación de contraseñas
     if (!editingEmp) {
       if (!formData.password || formData.password.length < 6) {
-        setStatusMessage({ type: 'error', text: 'La contraseña inicial debe tener al menos 6 caracteres' });
+        setStatusMessage({
+          type: 'error',
+          text: 'La contraseña inicial debe tener al menos 6 caracteres',
+        });
         return;
       }
       if (formData.password !== confirmPassword) {
-        setStatusMessage({ type: 'error', text: 'Las contraseñas no coinciden. Por favor verifica ambos campos.' });
+        setStatusMessage({
+          type: 'error',
+          text: 'Las contraseñas no coinciden. Por favor verifica ambos campos.',
+        });
         return;
       }
     } else {
       if (formData.password) {
         if (formData.password.length < 6) {
-          setStatusMessage({ type: 'error', text: 'La nueva contraseña debe tener al menos 6 caracteres' });
+          setStatusMessage({
+            type: 'error',
+            text: 'La nueva contraseña debe tener al menos 6 caracteres',
+          });
           return;
         }
         if (formData.password !== confirmPassword) {
@@ -404,7 +466,7 @@ export default function EmpleadoManager({
         const res = await apiFetch(`/api/empleados/${editingEmp.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
         });
 
         const data = await res.json();
@@ -421,7 +483,7 @@ export default function EmpleadoManager({
         const res = await apiFetch('/api/empleados', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(formData),
         });
 
         const data = await res.json();
@@ -448,7 +510,13 @@ export default function EmpleadoManager({
     const email = (emp.email || '').toLowerCase();
     const cargo = (emp.cargo || '').toLowerCase();
     const rol = (emp.rol_nombre || '').toLowerCase();
-    return fullName.includes(term) || doc.includes(term) || email.includes(term) || cargo.includes(term) || rol.includes(term);
+    return (
+      fullName.includes(term) ||
+      doc.includes(term) ||
+      email.includes(term) ||
+      cargo.includes(term) ||
+      rol.includes(term)
+    );
   });
 
   return (
@@ -576,15 +644,17 @@ export default function EmpleadoManager({
                       <h3 className="font-bold text-white text-sm font-['Outfit'] flex items-center gap-2">
                         {emp.nombre} {emp.apellido}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">{emp.cargo || 'Sin cargo asignado'}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {emp.cargo || 'Sin cargo asignado'}
+                      </p>
                     </div>
                     <span
                       className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${
                         emp.rol_nombre === 'admin'
                           ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                           : emp.rol_nombre === 'gerente'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                          : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                       }`}
                     >
                       {emp.rol_nombre}
@@ -600,7 +670,9 @@ export default function EmpleadoManager({
                     {emp.numero_identificacion && (
                       <div className="flex items-center gap-2 text-slate-400">
                         <FileText className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                        <span className="font-mono">{emp.tipo_identificacion || 'DOC'}: {emp.numero_identificacion}</span>
+                        <span className="font-mono">
+                          {emp.tipo_identificacion || 'DOC'}: {emp.numero_identificacion}
+                        </span>
                       </div>
                     )}
                     {emp.telefono && (
@@ -615,11 +687,15 @@ export default function EmpleadoManager({
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80 text-[11px]">
                     <div className="bg-slate-800/50 p-2 rounded-xl border border-slate-800">
                       <span className="text-slate-500 block">Salario Base</span>
-                      <span className="font-bold text-white font-mono">${formatNumber(emp.salario)}</span>
+                      <span className="font-bold text-white font-mono">
+                        ${formatNumber(emp.salario)}
+                      </span>
                     </div>
                     <div className="bg-slate-800/50 p-2 rounded-xl border border-slate-800">
                       <span className="text-slate-500 block">Desc. Máx</span>
-                      <span className="font-bold text-amber-300 font-mono">{emp.descuento_max_porcentaje}%</span>
+                      <span className="font-bold text-amber-300 font-mono">
+                        {emp.descuento_max_porcentaje}%
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -627,7 +703,9 @@ export default function EmpleadoManager({
                 {/* Acciones */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs">
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                    <span className={`h-2 w-2 rounded-full ${emp.activo ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                    <span
+                      className={`h-2 w-2 rounded-full ${emp.activo ? 'bg-emerald-400' : 'bg-rose-500'}`}
+                    />
                     <span>{emp.activo ? 'Acceso Habilitado' : 'Acceso Bloqueado'}</span>
                   </div>
 
@@ -641,7 +719,11 @@ export default function EmpleadoManager({
                           : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                       }`}
                     >
-                      {emp.activo ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
+                      {emp.activo ? (
+                        <UserX className="h-3.5 w-3.5" />
+                      ) : (
+                        <UserCheck className="h-3.5 w-3.5" />
+                      )}
                     </button>
 
                     <button
@@ -675,25 +757,41 @@ export default function EmpleadoManager({
               {/* KPIs Globales */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Colaboradores</p>
-                  <p className="text-2xl font-black text-white font-mono mt-1">{metricas.resumen?.total_empleados || 0}</p>
-                  <p className="text-[11px] text-emerald-400 mt-1 font-semibold">{metricas.resumen?.activos || 0} con acceso activo</p>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                    Total Colaboradores
+                  </p>
+                  <p className="text-2xl font-black text-white font-mono mt-1">
+                    {metricas.resumen?.total_empleados || 0}
+                  </p>
+                  <p className="text-[11px] text-emerald-400 mt-1 font-semibold">
+                    {metricas.resumen?.activos || 0} con acceso activo
+                  </p>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Inactivos / Bloqueados</p>
-                  <p className="text-2xl font-black text-rose-400 font-mono mt-1">{metricas.resumen?.inactivos || 0}</p>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                    Inactivos / Bloqueados
+                  </p>
+                  <p className="text-2xl font-black text-rose-400 font-mono mt-1">
+                    {metricas.resumen?.inactivos || 0}
+                  </p>
                   <p className="text-[11px] text-slate-400 mt-1">Sin permisos de login</p>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Salario Promedio</p>
-                  <p className="text-2xl font-black text-white font-mono mt-1">${formatNumber(metricas.resumen?.salario_promedio || 0)}</p>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                    Salario Promedio
+                  </p>
+                  <p className="text-2xl font-black text-white font-mono mt-1">
+                    ${formatNumber(metricas.resumen?.salario_promedio || 0)}
+                  </p>
                   <p className="text-[11px] text-slate-400 mt-1">Nómina mensual estimada</p>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Auditoría</p>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                    Auditoría
+                  </p>
                   <p className="text-2xl font-black text-indigo-400 font-mono mt-1">100%</p>
                   <p className="text-[11px] text-indigo-300 mt-1">Trazabilidad en audit_log</p>
                 </div>
@@ -727,9 +825,15 @@ export default function EmpleadoManager({
                               {v.rol_nombre}
                             </span>
                           </td>
-                          <td className="py-3 text-right font-mono text-slate-300">{v.total_facturas}</td>
-                          <td className="py-3 text-right font-mono text-slate-300">${formatNumber(v.ticket_promedio)}</td>
-                          <td className="py-3 text-right font-mono font-bold text-emerald-400">${formatNumber(v.total_vendido)}</td>
+                          <td className="py-3 text-right font-mono text-slate-300">
+                            {v.total_facturas}
+                          </td>
+                          <td className="py-3 text-right font-mono text-slate-300">
+                            ${formatNumber(v.ticket_promedio)}
+                          </td>
+                          <td className="py-3 text-right font-mono font-bold text-emerald-400">
+                            ${formatNumber(v.total_vendido)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -795,7 +899,9 @@ export default function EmpleadoManager({
                       </td>
                       <td className="py-2.5 font-semibold text-white">
                         {log.usuario_nombre} {log.usuario_apellido}
-                        <span className="text-[10px] text-slate-500 block font-normal uppercase">{log.rol_nombre}</span>
+                        <span className="text-[10px] text-slate-500 block font-normal uppercase">
+                          {log.rol_nombre}
+                        </span>
                       </td>
                       <td className="py-2.5">
                         <span className="font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded text-[10px] border border-blue-500/20 font-bold">
@@ -816,7 +922,9 @@ export default function EmpleadoManager({
                           {log.resultado}
                         </span>
                       </td>
-                      <td className="py-2.5 font-mono text-slate-500 text-[11px]">{log.ip_address || '127.0.0.1'}</td>
+                      <td className="py-2.5 font-mono text-slate-500 text-[11px]">
+                        {log.ip_address || '127.0.0.1'}
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -852,7 +960,9 @@ export default function EmpleadoManager({
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Nombre *</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Nombre *
+                  </label>
                   <input
                     type="text"
                     required
@@ -862,7 +972,9 @@ export default function EmpleadoManager({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Apellido *</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Apellido *
+                  </label>
                   <input
                     type="text"
                     required
@@ -875,24 +987,37 @@ export default function EmpleadoManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Tipo Doc.</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Tipo Doc.
+                  </label>
                   <select
                     value={formData.tipo_identificacion_id}
-                    onChange={(e) => setFormData({ ...formData, tipo_identificacion_id: parseInt(e.target.value, 10) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        tipo_identificacion_id: parseInt(e.target.value, 10),
+                      })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                   >
                     {tiposDoc.map((t) => (
-                      <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>
+                      <option key={t.id} value={t.id}>
+                        {t.codigo} - {t.nombre}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Número Documento *</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Número Documento *
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.numero_identificacion}
-                    onChange={(e) => setFormData({ ...formData, numero_identificacion: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, numero_identificacion: e.target.value })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
                   />
                 </div>
@@ -900,7 +1025,9 @@ export default function EmpleadoManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Correo Electrónico *</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Correo Electrónico *
+                  </label>
                   <input
                     type="email"
                     required
@@ -910,7 +1037,9 @@ export default function EmpleadoManager({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Teléfono</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Teléfono
+                  </label>
                   <input
                     type="text"
                     value={formData.telefono}
@@ -930,7 +1059,9 @@ export default function EmpleadoManager({
                     <input
                       type="password"
                       required={!editingEmp}
-                      placeholder={editingEmp ? 'Dejar en blanco para conservar' : 'Mínimo 6 caracteres'}
+                      placeholder={
+                        editingEmp ? 'Dejar en blanco para conservar' : 'Mínimo 6 caracteres'
+                      }
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
@@ -948,11 +1079,15 @@ export default function EmpleadoManager({
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className={`w-full bg-slate-800 border rounded-xl px-3 py-2 text-xs text-white focus:outline-none ${
-                        formData.password && confirmPassword && formData.password !== confirmPassword
+                        formData.password &&
+                        confirmPassword &&
+                        formData.password !== confirmPassword
                           ? 'border-rose-500 focus:border-rose-500'
-                          : formData.password && confirmPassword && formData.password === confirmPassword
-                          ? 'border-emerald-500 focus:border-emerald-500'
-                          : 'border-slate-700 focus:border-blue-500'
+                          : formData.password &&
+                              confirmPassword &&
+                              formData.password === confirmPassword
+                            ? 'border-emerald-500 focus:border-emerald-500'
+                            : 'border-slate-700 focus:border-blue-500'
                       }`}
                     />
                   </div>
@@ -962,27 +1097,43 @@ export default function EmpleadoManager({
                 {formData.password.length > 0 && (
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400 font-medium">Seguridad de la contraseña:</span>
-                      <span className={`font-bold ${passwordStrength.color}`}>{passwordStrength.label}</span>
+                      <span className="text-slate-400 font-medium">
+                        Seguridad de la contraseña:
+                      </span>
+                      <span className={`font-bold ${passwordStrength.color}`}>
+                        {passwordStrength.label}
+                      </span>
                     </div>
 
                     {/* Barra de Progreso Semafórica */}
                     <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden flex gap-1">
-                      <div className={`h-full rounded-full transition-all duration-300 ${passwordStrength.barColor}`} style={{ width: `${(passwordStrength.score / 5) * 100}%` }} />
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${passwordStrength.barColor}`}
+                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                      />
                     </div>
 
                     {/* Criterios Visuales */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-[10px] text-slate-400 pt-1">
-                      <span className={`flex items-center gap-1 ${formData.password.length >= 8 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      <span
+                        className={`flex items-center gap-1 ${formData.password.length >= 8 ? 'text-emerald-400' : 'text-slate-500'}`}
+                      >
                         {formData.password.length >= 8 ? '✓' : '○'} 8+ Caracteres
                       </span>
-                      <span className={`flex items-center gap-1 ${passwordStrength.hasUpper && passwordStrength.hasLower ? 'text-emerald-400' : 'text-slate-500'}`}>
-                        {passwordStrength.hasUpper && passwordStrength.hasLower ? '✓' : '○'} Mayús. & Minús.
+                      <span
+                        className={`flex items-center gap-1 ${passwordStrength.hasUpper && passwordStrength.hasLower ? 'text-emerald-400' : 'text-slate-500'}`}
+                      >
+                        {passwordStrength.hasUpper && passwordStrength.hasLower ? '✓' : '○'} Mayús.
+                        & Minús.
                       </span>
-                      <span className={`flex items-center gap-1 ${passwordStrength.hasNumber ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      <span
+                        className={`flex items-center gap-1 ${passwordStrength.hasNumber ? 'text-emerald-400' : 'text-slate-500'}`}
+                      >
                         {passwordStrength.hasNumber ? '✓' : '○'} Números
                       </span>
-                      <span className={`flex items-center gap-1 ${passwordStrength.hasSpecial ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      <span
+                        className={`flex items-center gap-1 ${passwordStrength.hasSpecial ? 'text-emerald-400' : 'text-slate-500'}`}
+                      >
                         {passwordStrength.hasSpecial ? '✓' : '○'} Especiales (!@#)
                       </span>
                     </div>
@@ -998,10 +1149,14 @@ export default function EmpleadoManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Rol de Acceso *</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Rol de Acceso *
+                  </label>
                   <select
                     value={formData.rol_id}
-                    onChange={(e) => setFormData({ ...formData, rol_id: parseInt(e.target.value, 10) })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, rol_id: parseInt(e.target.value, 10) })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                   >
                     {roles.map((r) => (
@@ -1012,7 +1167,9 @@ export default function EmpleadoManager({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Turno de Trabajo</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Turno de Trabajo
+                  </label>
                   <select
                     value={formData.turno}
                     onChange={(e) => setFormData({ ...formData, turno: e.target.value })}
@@ -1037,22 +1194,33 @@ export default function EmpleadoManager({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Salario (COP)</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Salario (COP)
+                  </label>
                   <input
                     type="number"
                     value={formData.salario}
-                    onChange={(e) => setFormData({ ...formData, salario: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, salario: parseFloat(e.target.value) || 0 })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Desc. Máx Aut. (%)</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">
+                    Desc. Máx Aut. (%)
+                  </label>
                   <input
                     type="number"
                     max={100}
                     min={0}
                     value={formData.descuento_max_porcentaje}
-                    onChange={(e) => setFormData({ ...formData, descuento_max_porcentaje: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        descuento_max_porcentaje: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
                   />
                 </div>
@@ -1073,7 +1241,15 @@ export default function EmpleadoManager({
                   className="flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {submitting && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
-                  <span>{editingEmp ? (submitting ? 'Guardando...' : 'Guardar Cambios') : (submitting ? 'Creando...' : 'Crear Empleado')}</span>
+                  <span>
+                    {editingEmp
+                      ? submitting
+                        ? 'Guardando...'
+                        : 'Guardar Cambios'
+                      : submitting
+                        ? 'Creando...'
+                        : 'Crear Empleado'}
+                  </span>
                 </button>
               </div>
             </form>

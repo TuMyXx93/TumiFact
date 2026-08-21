@@ -1,7 +1,7 @@
-import { Worker, type Job } from 'bullmq';
+import { type Job, Worker } from 'bullmq';
+import { logger } from '../lib/logger';
 import { queueConnection } from '../lib/queue/connection';
 import { schedulerQueue } from '../lib/queue/scheduler.queue';
-import { logger } from '../lib/logger';
 import { runAuditArchiver } from './audit-archiver.job';
 import { runSeparadosVencidos } from './separados-vencidos.job';
 import { runStockCritico } from './stock-critico.job';

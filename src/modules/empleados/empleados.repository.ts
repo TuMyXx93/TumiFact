@@ -1,9 +1,9 @@
+import { desc, eq } from 'drizzle-orm';
 import { db } from '../../db';
-import { usuarios } from '../../db/schema/usuarios';
 import { empleados } from '../../db/schema/empleados';
 import { roles } from '../../db/schema/roles';
 import { tiposIdentificacion } from '../../db/schema/tipos_identificacion';
-import { eq, desc } from 'drizzle-orm';
+import { usuarios } from '../../db/schema/usuarios';
 
 export class EmpleadosRepository {
   async findAll() {
@@ -27,7 +27,7 @@ export class EmpleadosRepository {
         descuento_max_monto: empleados.descuento_max_monto,
         activo: usuarios.activo,
         ultimo_login: usuarios.ultimo_login,
-        created_at: empleados.created_at
+        created_at: empleados.created_at,
       })
       .from(empleados)
       .innerJoin(usuarios, eq(empleados.usuario_id, usuarios.id))
@@ -57,7 +57,7 @@ export class EmpleadosRepository {
         descuento_max_porcentaje: empleados.descuento_max_porcentaje,
         descuento_max_monto: empleados.descuento_max_monto,
         activo: usuarios.activo,
-        ultimo_login: usuarios.ultimo_login
+        ultimo_login: usuarios.ultimo_login,
       })
       .from(empleados)
       .innerJoin(usuarios, eq(empleados.usuario_id, usuarios.id))

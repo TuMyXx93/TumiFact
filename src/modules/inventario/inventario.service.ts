@@ -1,11 +1,11 @@
-import { InventarioRepository } from './inventario.repository';
-import type { MovimientoInventarioInput, AjusteStockRapidoInput } from './inventario.dto';
-import { db } from '../../db';
-import { productos } from '../../db/schema/productos';
-import { movimientosInventario } from '../../db/schema/inventario';
 import { eq } from 'drizzle-orm';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { db } from '../../db';
+import { movimientosInventario } from '../../db/schema/inventario';
+import { productos } from '../../db/schema/productos';
+import { recordAudit } from '../../shared/utils/audit';
+import type { AjusteStockRapidoInput, MovimientoInventarioInput } from './inventario.dto';
+import { InventarioRepository } from './inventario.repository';
 
 export class InventarioService {
   constructor(private repo: InventarioRepository = new InventarioRepository()) {}
@@ -25,13 +25,17 @@ export class InventarioService {
       if (existing) {
         return {
           idempotent: true,
-          movimiento: existing
+          movimiento: existing,
         };
       }
     }
 
     return await db.transaction(async (tx) => {
-      const prodRows = await tx.select().from(productos).where(eq(productos.id, input.producto_id)).limit(1);
+      const prodRows = await tx
+        .select()
+        .from(productos)
+        .where(eq(productos.id, input.producto_id))
+        .limit(1);
       const prod = prodRows[0];
       if (!prod) {
         const error: any = new Error('Producto no encontrado');
@@ -55,7 +59,7 @@ export class InventarioService {
         .update(productos)
         .set({
           stock_actual: nuevoStock.toString(),
-          updated_at: new Date()
+          updated_at: new Date(),
         })
         .where(eq(productos.id, prod.id));
 
@@ -72,7 +76,7 @@ export class InventarioService {
           stock_nuevo: nuevoStock.toString(),
           costo_unitario: input.costo_unitario?.toString() || null,
           referencia_tipo: 'manual',
-          notas: input.notas || null
+          notas: input.notas || null,
         })
         .returning();
 
@@ -83,7 +87,7 @@ export class InventarioService {
         entidadId: prod.id,
         datosPrevios: { stock: stockActual },
         datosNuevos: { stock: nuevoStock, delta: cantidadDelta, tipo: input.tipo },
-        req
+        req,
       });
 
       return {
@@ -93,15 +97,19 @@ export class InventarioService {
           id: prod.id,
           nombre: prod.nombre,
           stock_anterior: stockActual,
-          stock_nuevo: nuevoStock
-        }
+          stock_nuevo: nuevoStock,
+        },
       };
     });
   }
 
   async ajusteStockRapido(input: AjusteStockRapidoInput, userId?: number, req?: Request) {
     return await db.transaction(async (tx) => {
-      const prodRows = await tx.select().from(productos).where(eq(productos.id, input.producto_id)).limit(1);
+      const prodRows = await tx
+        .select()
+        .from(productos)
+        .where(eq(productos.id, input.producto_id))
+        .limit(1);
       const prod = prodRows[0];
       if (!prod) {
         const error: any = new Error('Producto no encontrado');
@@ -118,7 +126,7 @@ export class InventarioService {
         .update(productos)
         .set({
           stock_actual: nuevoStock.toString(),
-          updated_at: new Date()
+          updated_at: new Date(),
         })
         .where(eq(productos.id, prod.id));
 
@@ -132,7 +140,7 @@ export class InventarioService {
           stock_anterior: stockActual.toString(),
           stock_nuevo: nuevoStock.toString(),
           referencia_tipo: 'ajuste_rapido',
-          notas: input.motivo
+          notas: input.motivo,
         })
         .returning();
 
@@ -143,7 +151,7 @@ export class InventarioService {
         entidadId: prod.id,
         datosPrevios: { stock: stockActual },
         datosNuevos: { stock: nuevoStock, motivo: input.motivo },
-        req
+        req,
       });
 
       return {
@@ -152,9 +160,9 @@ export class InventarioService {
           id: prod.id,
           nombre: prod.nombre,
           stock_anterior: stockActual,
-          stock_nuevo: nuevoStock
+          stock_nuevo: nuevoStock,
         },
-        movimiento: movRows[0]
+        movimiento: movRows[0],
       };
     });
   }

@@ -1,13 +1,13 @@
-import { DevolucionesRepository } from './devoluciones.repository';
-import type { CreateDevolucionInput } from './devoluciones.dto';
-import { db } from '../../db';
-import { devoluciones, detalleDevolucion } from '../../db/schema/devoluciones';
-import { facturas } from '../../db/schema/facturas';
-import { productos } from '../../db/schema/productos';
-import { movimientosInventario } from '../../db/schema/inventario';
 import { eq } from 'drizzle-orm';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { db } from '../../db';
+import { detalleDevolucion, devoluciones } from '../../db/schema/devoluciones';
+import { facturas } from '../../db/schema/facturas';
+import { movimientosInventario } from '../../db/schema/inventario';
+import { productos } from '../../db/schema/productos';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateDevolucionInput } from './devoluciones.dto';
+import { DevolucionesRepository } from './devoluciones.repository';
 
 export class DevolucionesService {
   constructor(private repo: DevolucionesRepository = new DevolucionesRepository()) {}
@@ -16,7 +16,7 @@ export class DevolucionesService {
     const list = await this.repo.findAll();
     return list.map((d) => ({
       ...d,
-      monto_devuelto: parseFloat(d.monto_devuelto)
+      monto_devuelto: parseFloat(d.monto_devuelto),
     }));
   }
 
@@ -30,8 +30,8 @@ export class DevolucionesService {
         ...i,
         cantidad_devuelta: parseFloat(i.cantidad_devuelta),
         precio_unitario: parseFloat(i.precio_unitario),
-        subtotal_devuelto: parseFloat(i.subtotal_devuelto)
-      }))
+        subtotal_devuelto: parseFloat(i.subtotal_devuelto),
+      })),
     };
   }
 
@@ -46,7 +46,11 @@ export class DevolucionesService {
 
     return await db.transaction(async (tx) => {
       // 1. Validar existencia de factura
-      const fRows = await tx.select().from(facturas).where(eq(facturas.id, input.factura_id)).limit(1);
+      const fRows = await tx
+        .select()
+        .from(facturas)
+        .where(eq(facturas.id, input.factura_id))
+        .limit(1);
       const factura = fRows[0];
       if (!factura) {
         const error: any = new Error('Factura de referencia no encontrada');
@@ -75,7 +79,7 @@ export class DevolucionesService {
           monto_devuelto: totalMontoDevuelto.toString(),
           forma_devolucion: input.forma_devolucion || 'efectivo',
           estado: 'aprobada',
-          fecha_aprobacion: new Date()
+          fecha_aprobacion: new Date(),
         })
         .returning();
 
@@ -94,17 +98,25 @@ export class DevolucionesService {
           subtotal_devuelto: subtotalItem.toString(),
           motivo_item: item.motivo_item || null,
           condicion: item.condicion || 'bueno',
-          reingresa_inventario: item.reingresa_inventario !== undefined ? item.reingresa_inventario : true
+          reingresa_inventario:
+            item.reingresa_inventario !== undefined ? item.reingresa_inventario : true,
         });
 
         // Reingreso de inventario
         if (item.reingresa_inventario !== false && item.condicion === 'bueno') {
-          const pRows = await tx.select().from(productos).where(eq(productos.id, item.producto_id)).limit(1);
+          const pRows = await tx
+            .select()
+            .from(productos)
+            .where(eq(productos.id, item.producto_id))
+            .limit(1);
           if (pRows[0]) {
             const stockActual = parseFloat(pRows[0].stock_actual);
             const newStock = stockActual + item.cantidad_devuelta;
 
-            await tx.update(productos).set({ stock_actual: newStock.toString() }).where(eq(productos.id, item.producto_id));
+            await tx
+              .update(productos)
+              .set({ stock_actual: newStock.toString() })
+              .where(eq(productos.id, item.producto_id));
 
             await tx.insert(movimientosInventario).values({
               producto_id: item.producto_id,
@@ -116,15 +128,19 @@ export class DevolucionesService {
               stock_nuevo: newStock.toString(),
               referencia_tipo: 'devolucion',
               referencia_id: newDev.id,
-              notas: `Reingreso por devolución #${newDev.id}`
+              notas: `Reingreso por devolución #${newDev.id}`,
             });
           }
         }
       }
 
       // 4. Actualizar estado de factura
-      const nuevoEstadoFactura = input.tipo === 'devolucion_total' ? 'devuelta' : 'parcialmente_devuelta';
-      await tx.update(facturas).set({ estado: nuevoEstadoFactura }).where(eq(facturas.id, input.factura_id));
+      const nuevoEstadoFactura =
+        input.tipo === 'devolucion_total' ? 'devuelta' : 'parcialmente_devuelta';
+      await tx
+        .update(facturas)
+        .set({ estado: nuevoEstadoFactura })
+        .where(eq(facturas.id, input.factura_id));
 
       await recordAudit({
         usuarioId: userId,
@@ -133,7 +149,7 @@ export class DevolucionesService {
         entidad: 'devoluciones',
         entidadId: newDev.id,
         datosNuevos: { factura_id: input.factura_id, monto: totalMontoDevuelto, tipo: input.tipo },
-        req
+        req,
       });
 
       return await this.getById(newDev.id);

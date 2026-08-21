@@ -1,14 +1,19 @@
-import { FacturasRepository } from './facturas.repository';
-import type { CreateFacturaInput } from './facturas.dto';
+import type { Request } from 'express';
 import { db } from '../../db';
 import { configuracionImpresion } from '../../db/schema/configuracion';
 import { recordAudit } from '../../shared/utils/audit';
-import type { Request } from 'express';
+import type { CreateFacturaInput } from './facturas.dto';
+import { FacturasRepository } from './facturas.repository';
 
 export class FacturasService {
-  constructor(private repo: FacturasRepository = new FacturasRepository()) { }
+  constructor(private repo: FacturasRepository = new FacturasRepository()) {}
 
-  async createFactura(input: CreateFacturaInput, userId?: number, sesionCajaId?: number, req?: Request) {
+  async createFactura(
+    input: CreateFacturaInput,
+    userId?: number,
+    sesionCajaId?: number,
+    req?: Request
+  ) {
     // Idempotency check
     if (input.idempotency_key) {
       const existing = await this.repo.findByIdempotencyKey(input.idempotency_key);
@@ -17,7 +22,7 @@ export class FacturasService {
         return {
           idempotent: true,
           message: 'Factura recuperada exitosamente (Idempotente)',
-          ...full
+          ...full,
         };
       }
     }
@@ -31,7 +36,8 @@ export class FacturasService {
       let descuentoItem = prod.descuento_aplicado || 0;
 
       if (prod.descuento_inline_tipo === 'porcentaje' && prod.descuento_inline_valor) {
-        descuentoItem = Math.round(((baseSubtotal * prod.descuento_inline_valor) / 100) * 100) / 100;
+        descuentoItem =
+          Math.round(((baseSubtotal * prod.descuento_inline_valor) / 100) * 100) / 100;
       } else if (prod.descuento_inline_tipo === 'monto_fijo' && prod.descuento_inline_valor) {
         descuentoItem = Math.min(baseSubtotal, prod.descuento_inline_valor);
       }
@@ -51,16 +57,26 @@ export class FacturasService {
         descuento_inline_valor: prod.descuento_inline_valor || 0,
         descuento_aplicado: descuentoItem,
         unidad_medida: prod.unidad || 'KG',
-        subtotal: itemSubtotal
+        subtotal: itemSubtotal,
       };
     });
 
     const descuentoGlobal = input.descuento_total || 0;
-    const totalDescuentos = Math.round((totalDescuentosItems + (descuentoGlobal > totalDescuentosItems ? descuentoGlobal - totalDescuentosItems : 0)) * 100) / 100;
-    const calculatedTotal = Math.max(0, Math.round((calculatedSubtotal - totalDescuentos) * 100) / 100);
+    const totalDescuentos =
+      Math.round(
+        (totalDescuentosItems +
+          (descuentoGlobal > totalDescuentosItems ? descuentoGlobal - totalDescuentosItems : 0)) *
+          100
+      ) / 100;
+    const calculatedTotal = Math.max(
+      0,
+      Math.round((calculatedSubtotal - totalDescuentos) * 100) / 100
+    );
 
     if (input.total !== undefined && Math.abs(input.total - calculatedTotal) > 0.05) {
-      const error: any = new Error(`Total manipulado o discrepancia de cálculo. Esperado: ${calculatedTotal}, Recibido: ${input.total}`);
+      const error: any = new Error(
+        `Total manipulado o discrepancia de cálculo. Esperado: ${calculatedTotal}, Recibido: ${input.total}`
+      );
       error.statusCode = 400;
       throw error;
     }
@@ -77,7 +93,7 @@ export class FacturasService {
         total: calculatedTotal.toString(),
         forma_pago: input.forma_pago || 'efectivo',
         tipo: input.tipo || 'contado',
-        estado: 'completada'
+        estado: 'completada',
       },
       itemCalculations
     );
@@ -88,8 +104,12 @@ export class FacturasService {
       accion: 'FACTURA_CREADA',
       entidad: 'facturas',
       entidadId: factura.id,
-      datosNuevos: { total: calculatedTotal, cliente_id: input.cliente_id, forma_pago: input.forma_pago },
-      req
+      datosNuevos: {
+        total: calculatedTotal,
+        cliente_id: input.cliente_id,
+        forma_pago: input.forma_pago,
+      },
+      req,
     });
 
     return {
@@ -102,7 +122,7 @@ export class FacturasService {
       forma_pago: factura.forma_pago,
       fecha: factura.fecha,
       tipo: factura.tipo,
-      detalles: detalles.map((d) => ({ ...d, subtotal: parseFloat(d.subtotal) }))
+      detalles: detalles.map((d) => ({ ...d, subtotal: parseFloat(d.subtotal) })),
     };
   }
 
@@ -118,7 +138,7 @@ export class FacturasService {
       nit: '',
       pie_pagina: '¡Gracias por su compra!',
       ancho_papel: 80,
-      font_size: 1
+      font_size: 1,
     };
 
     return {
@@ -126,7 +146,7 @@ export class FacturasService {
         ...data.factura,
         subtotal: parseFloat(data.factura.subtotal || '0'),
         descuento_total: parseFloat(data.factura.descuento_total || '0'),
-        total: parseFloat(data.factura.total)
+        total: parseFloat(data.factura.total),
       },
       detalles: data.detalles.map((d) => ({
         ...d,
@@ -134,9 +154,9 @@ export class FacturasService {
         precio_unitario: parseFloat(d.precio_unitario),
         precio_original: parseFloat(d.precio_original || d.precio_unitario),
         descuento_aplicado: parseFloat(d.descuento_aplicado || '0'),
-        subtotal: parseFloat(d.subtotal || '0')
+        subtotal: parseFloat(d.subtotal || '0'),
       })),
-      config: configData
+      config: configData,
     };
   }
 
@@ -150,8 +170,8 @@ export class FacturasService {
         ...d,
         subtotal: parseFloat(d.subtotal || '0'),
         precio_unitario: parseFloat(d.precio_unitario || '0'),
-        cantidad: parseFloat(d.cantidad || '0')
-      }))
+        cantidad: parseFloat(d.cantidad || '0'),
+      })),
     };
   }
 

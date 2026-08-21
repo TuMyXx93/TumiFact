@@ -1,8 +1,8 @@
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '../../db';
+import type { NewSesionCaja, SesionCajaItem } from '../../db/schema/sesiones_caja';
 import { sesionesCaja } from '../../db/schema/sesiones_caja';
-import type { SesionCajaItem, NewSesionCaja } from '../../db/schema/sesiones_caja';
 import { usuarios } from '../../db/schema/usuarios';
-import { eq, desc, and } from 'drizzle-orm';
 
 export class CajaRepository {
   async findActiveByUserId(userId: number): Promise<SesionCajaItem | null> {
@@ -36,7 +36,7 @@ export class CajaRepository {
         numero_transacciones: sesionesCaja.numero_transacciones,
         notas: sesionesCaja.notas,
         abierta_at: sesionesCaja.abierta_at,
-        cerrada_at: sesionesCaja.cerrada_at
+        cerrada_at: sesionesCaja.cerrada_at,
       })
       .from(sesionesCaja)
       .leftJoin(usuarios, eq(sesionesCaja.usuario_id, usuarios.id))
@@ -60,7 +60,7 @@ export class CajaRepository {
         total_ventas: sesionesCaja.total_ventas,
         numero_transacciones: sesionesCaja.numero_transacciones,
         abierta_at: sesionesCaja.abierta_at,
-        cerrada_at: sesionesCaja.cerrada_at
+        cerrada_at: sesionesCaja.cerrada_at,
       })
       .from(sesionesCaja)
       .leftJoin(usuarios, eq(sesionesCaja.usuario_id, usuarios.id))

@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { ClientesService } from './clientes.service';
+import { verifyAuth } from '../../shared/middleware/auth';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CreateClienteDTO, UpdateClienteDTO } from './clientes.dto';
-import { verifyAuth } from '../../shared/middleware/auth';
+import { ClientesService } from './clientes.service';
 
 export const clientesRouter = Router();
 const service = new ClientesService();

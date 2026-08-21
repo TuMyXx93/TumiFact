@@ -1,31 +1,31 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import type { Producto, Cliente, DetalleFacturaInput } from '../../types';
 import {
-  ShoppingCart,
-  User,
+  AlertCircle,
+  ArrowRight,
+  Banknote,
+  Barcode,
+  BookmarkPlus,
+  Calendar,
+  CheckCircle2,
+  CreditCard,
+  FolderOpen,
+  Layers,
+  Percent,
   Plus,
-  Trash2,
   Printer,
   Search,
-  CheckCircle2,
-  AlertCircle,
-  FolderOpen,
-  BookmarkPlus,
-  X,
-  Percent,
-  Tag,
-  CreditCard,
-  Banknote,
+  ShoppingCart,
   Smartphone,
-  ArrowRight,
   Sparkles,
-  Calendar,
-  Layers,
-  Barcode
+  Tag,
+  Trash2,
+  User,
+  X,
 } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
+import { formatDate, formatNumber } from '../../lib/format';
 import { enqueueFactura } from '../../lib/offline-queue';
-import { formatNumber, formatDate } from '../../lib/format';
+import type { Cliente, DetalleFacturaInput, Producto } from '../../types';
 
 interface POSTerminalProps {
   initialProductos?: Producto[];
@@ -59,7 +59,7 @@ export interface ExtendedCartItem extends DetalleFacturaInput {
 export default function POSTerminal({
   initialProductos = [],
   initialClientes = [],
-  user
+  user,
 }: POSTerminalProps) {
   // Clientes
   const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
@@ -90,7 +90,10 @@ export default function POSTerminal({
   // Estados de emisión
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastFacturaId, setLastFacturaId] = useState<number | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Pedidos Guardados (Borradores)
   const [pedidosGuardados, setPedidosGuardados] = useState<PedidoGuardado[]>([]);
@@ -100,7 +103,11 @@ export default function POSTerminal({
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   // Estado de Caja Activa y Modal de Apertura Rápida
-  const [cajaActiva, setCajaActiva] = useState<{ id: number; estado: string; monto_apertura: string | number } | null>(null);
+  const [cajaActiva, setCajaActiva] = useState<{
+    id: number;
+    estado: string;
+    monto_apertura: string | number;
+  } | null>(null);
   const [showAbrirCajaModal, setShowAbrirCajaModal] = useState(false);
   const [montoAperturaInput, setMontoAperturaInput] = useState<number | ''>('');
   const [isOpeningCaja, setIsOpeningCaja] = useState(false);
@@ -133,7 +140,8 @@ export default function POSTerminal({
   // Cargar borradores y verificar estado de caja al iniciar
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('tumifact_pedidos_v2') || localStorage.getItem('tumifact_pedidos');
+      const saved =
+        localStorage.getItem('tumifact_pedidos_v2') || localStorage.getItem('tumifact_pedidos');
       if (saved) {
         setPedidosGuardados(JSON.parse(saved));
       }
@@ -158,8 +166,8 @@ export default function POSTerminal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           monto_apertura: monto,
-          notas: 'Apertura rápida desde Terminal POS'
-        })
+          notas: 'Apertura rápida desde Terminal POS',
+        }),
       });
 
       const data = await res.json();
@@ -167,7 +175,10 @@ export default function POSTerminal({
         setCajaActiva(data.sesion);
         setShowAbrirCajaModal(false);
         setMontoAperturaInput('');
-        setStatusMessage({ type: 'success', text: `¡Caja abierta exitosamente con base de $${formatNumber(monto)}!` });
+        setStatusMessage({
+          type: 'success',
+          text: `¡Caja abierta exitosamente con base de $${formatNumber(monto)}!`,
+        });
       } else {
         setStatusMessage({ type: 'error', text: data.error || 'Error al abrir caja' });
       }
@@ -268,7 +279,12 @@ export default function POSTerminal({
     if (catTipo === 'calzado' || catNombre.includes('calzado') || catNombre.includes('zapato')) {
       return 'PAR';
     }
-    if (catTipo === 'perecedero' || catNombre.includes('perecedero') || catNombre.includes('fruta') || catNombre.includes('verdura')) {
+    if (
+      catTipo === 'perecedero' ||
+      catNombre.includes('perecedero') ||
+      catNombre.includes('fruta') ||
+      catNombre.includes('verdura')
+    ) {
       if (producto.precio_kg && Number(producto.precio_kg) > 0) return 'KG';
       if (producto.precio_libra && Number(producto.precio_libra) > 0) return 'LB';
       return 'UND';
@@ -282,13 +298,16 @@ export default function POSTerminal({
     const existingIndex = cart.findIndex((item) => item.producto_id === producto.id);
 
     // Determinación de precio base y unidad inteligente
-    const pDetal = Number(producto.precio_detal || producto.precio_unidad || producto.precio_kg || 1000);
+    const pDetal = Number(
+      producto.precio_detal || producto.precio_unidad || producto.precio_kg || 1000
+    );
     const unidad = getDefaultUnidadForProduct(producto);
 
     let precioBase = pDetal;
     if (unidad === 'KG' && producto.precio_kg) precioBase = Number(producto.precio_kg);
     else if (unidad === 'LB' && producto.precio_libra) precioBase = Number(producto.precio_libra);
-    else if (unidad === 'UND' && producto.precio_unidad) precioBase = Number(producto.precio_unidad);
+    else if (unidad === 'UND' && producto.precio_unidad)
+      precioBase = Number(producto.precio_unidad);
 
     if (forceMayorista && producto.precio_mayorista) {
       precioBase = Number(producto.precio_mayorista);
@@ -302,7 +321,11 @@ export default function POSTerminal({
       // Auto-aplicar precio mayorista si supera cantidad mínima
       let currentPrecio = currentItem.precio;
       let esMayorista = currentItem.es_mayorista || forceMayorista;
-      if (producto.precio_mayorista && producto.cantidad_mayorista && newQty >= producto.cantidad_mayorista) {
+      if (
+        producto.precio_mayorista &&
+        producto.cantidad_mayorista &&
+        newQty >= producto.cantidad_mayorista
+      ) {
         currentPrecio = Number(producto.precio_mayorista);
         esMayorista = true;
       }
@@ -317,7 +340,7 @@ export default function POSTerminal({
         precio: currentPrecio,
         es_mayorista: esMayorista,
         descuento_aplicado: descMonto,
-        subtotal: Math.max(0, subtotalSinDesc - descMonto)
+        subtotal: Math.max(0, subtotalSinDesc - descMonto),
       };
       setCart(updatedCart);
     } else {
@@ -334,8 +357,8 @@ export default function POSTerminal({
           descuento_porcentaje: 0,
           descuento_aplicado: 0,
           es_mayorista: forceMayorista,
-          subtotal: precioBase
-        }
+          subtotal: precioBase,
+        },
       ]);
     }
   };
@@ -345,7 +368,9 @@ export default function POSTerminal({
     if (cantidad <= 0) return;
     const updated = [...cart];
     const item = updated[index];
-    const prod = searchResults.find((p) => p.id === item.producto_id) || initialProductos.find((p) => p.id === item.producto_id);
+    const prod =
+      searchResults.find((p) => p.id === item.producto_id) ||
+      initialProductos.find((p) => p.id === item.producto_id);
 
     let precioActual = item.precio;
     let esMayorista = item.es_mayorista;
@@ -356,8 +381,10 @@ export default function POSTerminal({
       } else if (!item.es_mayorista) {
         // Regresar a precio detal
         if (item.unidad === 'KG' && prod.precio_kg) precioActual = Number(prod.precio_kg);
-        else if (item.unidad === 'LB' && prod.precio_libra) precioActual = Number(prod.precio_libra);
-        else if (item.unidad === 'UND' && prod.precio_unidad) precioActual = Number(prod.precio_unidad);
+        else if (item.unidad === 'LB' && prod.precio_libra)
+          precioActual = Number(prod.precio_libra);
+        else if (item.unidad === 'UND' && prod.precio_unidad)
+          precioActual = Number(prod.precio_unidad);
         else precioActual = Number(prod.precio_detal || item.precio_original || 1000);
       }
     }
@@ -372,7 +399,7 @@ export default function POSTerminal({
       precio: precioActual,
       es_mayorista: esMayorista,
       descuento_aplicado: descMonto,
-      subtotal: Math.max(0, subtotalSinDesc - descMonto)
+      subtotal: Math.max(0, subtotalSinDesc - descMonto),
     };
     setCart(updated);
   };
@@ -390,7 +417,7 @@ export default function POSTerminal({
       ...item,
       precio,
       descuento_aplicado: descMonto,
-      subtotal: Math.max(0, subtotalSinDesc - descMonto)
+      subtotal: Math.max(0, subtotalSinDesc - descMonto),
     };
     setCart(updated);
   };
@@ -409,7 +436,7 @@ export default function POSTerminal({
       descuento_inline_tipo: 'porcentaje',
       descuento_inline_valor: val,
       descuento_aplicado: descMonto,
-      subtotal: Math.max(0, subtotalSinDesc - descMonto)
+      subtotal: Math.max(0, subtotalSinDesc - descMonto),
     };
     setCart(updated);
   };
@@ -453,7 +480,7 @@ export default function POSTerminal({
     if (!prod || !prod.precio_mayorista) return;
 
     const willBeMayorista = !item.es_mayorista;
-    let nuevoPrecio = willBeMayorista
+    const nuevoPrecio = willBeMayorista
       ? Number(prod.precio_mayorista)
       : Number(prod.precio_kg || prod.precio_unidad || prod.precio_detal || item.precio_original);
 
@@ -466,7 +493,7 @@ export default function POSTerminal({
       es_mayorista: willBeMayorista,
       precio: nuevoPrecio,
       descuento_aplicado: descMonto,
-      subtotal: Math.max(0, subtotalSinDesc - descMonto)
+      subtotal: Math.max(0, subtotalSinDesc - descMonto),
     };
     setCart(updated);
   };
@@ -499,7 +526,10 @@ export default function POSTerminal({
   // Guardar pedido borrador
   const handleGuardarPedido = () => {
     if (!selectedClienteId) {
-      setStatusMessage({ type: 'error', text: 'Selecciona un cliente para guardar el pedido en lista' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Selecciona un cliente para guardar el pedido en lista',
+      });
       return;
     }
     if (cart.length === 0) {
@@ -518,14 +548,17 @@ export default function POSTerminal({
       total: totalFactura,
       forma_pago: formaPago,
       descuento_global_porcentaje: descuentoGlobal,
-      fecha: formatDate(new Date())
+      fecha: formatDate(new Date()),
     };
 
     const nuevosPedidos = [nuevoPedido, ...pedidosGuardados];
     syncPedidosStorage(nuevosPedidos);
 
     setCart([]);
-    setStatusMessage({ type: 'success', text: `Pedido de ${nuevoPedido.cliente_nombre} guardado en lista.` });
+    setStatusMessage({
+      type: 'success',
+      text: `Pedido de ${nuevoPedido.cliente_nombre} guardado en lista.`,
+    });
   };
 
   // Cargar pedido borrador
@@ -536,7 +569,10 @@ export default function POSTerminal({
     setDescuentoGlobal(pedido.descuento_global_porcentaje || 0);
     setPedidoActualId(pedido.id);
     setShowPedidosModal(false);
-    setStatusMessage({ type: 'success', text: `Pedido de ${pedido.cliente_nombre} cargado al POS.` });
+    setStatusMessage({
+      type: 'success',
+      text: `Pedido de ${pedido.cliente_nombre} cargado al POS.`,
+    });
   };
 
   // Eliminar pedido borrador
@@ -550,7 +586,7 @@ export default function POSTerminal({
     if (!cajaActiva) {
       setStatusMessage({
         type: 'error',
-        text: 'Caja cerrada. Debe abrir un turno de caja antes de realizar ventas.'
+        text: 'Caja cerrada. Debe abrir un turno de caja antes de realizar ventas.',
       });
       setShowAbrirCajaModal(true);
       return;
@@ -570,7 +606,10 @@ export default function POSTerminal({
     setStatusMessage(null);
 
     // Clave de Idempotencia única para evitar dobles facturas
-    const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `pos-${Date.now()}`;
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `pos-${Date.now()}`;
     let payload: any = null;
 
     try {
@@ -591,17 +630,17 @@ export default function POSTerminal({
           descuento_inline_tipo: item.descuento_porcentaje ? 'porcentaje' : null,
           descuento_inline_valor: item.descuento_porcentaje || 0,
           descuento_aplicado: item.descuento_aplicado || 0,
-          subtotal: Number(item.subtotal)
-        }))
+          subtotal: Number(item.subtotal),
+        })),
       };
 
       const res = await apiFetch('/api/facturas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey
+          'Idempotency-Key': idempotencyKey,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -609,7 +648,7 @@ export default function POSTerminal({
       if (res.ok && data.id) {
         setStatusMessage({
           type: 'success',
-          text: `¡Venta procesada con éxito! Factura POS #${data.id} generada.`
+          text: `¡Venta procesada con éxito! Factura POS #${data.id} generada.`,
         });
         setLastFacturaId(data.id);
         setCart([]);
@@ -626,12 +665,16 @@ export default function POSTerminal({
         handleVerImprimirTicket(data.id);
       } else {
         // Si es error 4xx de validación, mostrar mensaje; no encolar
-        setStatusMessage({ type: 'error', text: data.error || `Error ${res.status} al procesar la factura` });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || `Error ${res.status} al procesar la factura`,
+        });
       }
     } catch (err: any) {
       // Fase 4.2: Offline queue — si falla red (offline) o 5xx, encolar para replay
       const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-      const isNetworkError = err?.message?.includes('Failed to fetch') || err?.name === 'TypeError' || isOffline;
+      const isNetworkError =
+        err?.message?.includes('Failed to fetch') || err?.name === 'TypeError' || isOffline;
 
       if (isNetworkError) {
         try {
@@ -640,7 +683,7 @@ export default function POSTerminal({
           const offlineId = await enqueueFactura(payload, offlineHeaders);
           setStatusMessage({
             type: 'success',
-            text: `📴 Sin conexión — Factura encolada offline (#${offlineId.slice(0, 8)}). Se sincronizará al reconectar.`
+            text: `📴 Sin conexión — Factura encolada offline (#${offlineId.slice(0, 8)}). Se sincronizará al reconectar.`,
           });
           // Limpiar carrito igual — la venta está "prometida" offline
           setCart([]);
@@ -648,7 +691,10 @@ export default function POSTerminal({
           setDescuentoGlobal(0);
           setObservaciones('');
         } catch (queueErr) {
-          setStatusMessage({ type: 'error', text: 'Sin conexión y fallo al encolar offline. Reintente.' });
+          setStatusMessage({
+            type: 'error',
+            text: 'Sin conexión y fallo al encolar offline. Reintente.',
+          });
         }
       } else {
         setStatusMessage({ type: 'error', text: 'Error de comunicación con el servidor' });
@@ -661,7 +707,10 @@ export default function POSTerminal({
   // Convertir carrito a Separado (Layaway)
   const handleCrearSeparado = async () => {
     if (!selectedClienteId) {
-      setStatusMessage({ type: 'error', text: 'Seleccione un cliente para registrar el plan de separado' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Seleccione un cliente para registrar el plan de separado',
+      });
       return;
     }
     if (cart.length === 0) {
@@ -674,12 +723,18 @@ export default function POSTerminal({
       return;
     }
     if (abono > totalFactura) {
-      setStatusMessage({ type: 'error', text: 'El abono inicial no puede superar el total del separado' });
+      setStatusMessage({
+        type: 'error',
+        text: 'El abono inicial no puede superar el total del separado',
+      });
       return;
     }
 
     setIsSubmittingSeparado(true);
-    const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sep-${Date.now()}`;
+    const idempotencyKey =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `sep-${Date.now()}`;
 
     try {
       const payload = {
@@ -698,30 +753,33 @@ export default function POSTerminal({
           precio: Number(item.precio),
           unidad: item.unidad,
           descuento_aplicado: item.descuento_aplicado || 0,
-          subtotal: Number(item.subtotal)
-        }))
+          subtotal: Number(item.subtotal),
+        })),
       };
 
       const res = await apiFetch('/api/separados', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey
+          'Idempotency-Key': idempotencyKey,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (res.ok && data.id) {
         setStatusMessage({
           type: 'success',
-          text: `¡Plan de Separado #${data.id} creado con éxito! Abono registrado: $${formatNumber(abono)}.`
+          text: `¡Plan de Separado #${data.id} creado con éxito! Abono registrado: $${formatNumber(abono)}.`,
         });
         setCart([]);
         setShowSeparadoModal(false);
         setAbonoInicialSeparado('');
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Error al registrar el plan de separado' });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || 'Error al registrar el plan de separado',
+        });
       }
     } catch (err) {
       setStatusMessage({ type: 'error', text: 'Error de red al crear el separado' });
@@ -741,7 +799,9 @@ export default function POSTerminal({
                 <AlertCircle className="h-5 w-5 text-rose-400" />
               </div>
               <div className="min-w-0">
-                <h4 className="font-bold text-xs sm:text-sm text-white font-['Outfit'] truncate">Turno de Caja Cerrado</h4>
+                <h4 className="font-bold text-xs sm:text-sm text-white font-['Outfit'] truncate">
+                  Turno de Caja Cerrado
+                </h4>
                 <p className="text-[11px] sm:text-xs text-rose-300/80 line-clamp-2 sm:line-clamp-1">
                   Se requiere abrir turno de caja con base inicial para realizar ventas.
                 </p>
@@ -781,7 +841,6 @@ export default function POSTerminal({
       {/* PANEL IZQUIERDO: CATÁLOGO, CLIENTE & BÚSQUEDA RÁPIDA      */}
       {/* ========================================================== */}
       <div className="w-full lg:col-span-7 space-y-5 min-w-0">
-
         {/* Selección de Cliente con Búsqueda Integrada */}
         <div className="bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-2xl space-y-3 shadow-xl backdrop-blur-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -813,7 +872,9 @@ export default function POSTerminal({
                 <option value="">-- Seleccionar Cliente Registrado --</option>
                 {filteredClientes.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.nombre} {c.apellido || ''} {c.numero_identificacion ? `(Doc: ${c.numero_identificacion})` : ''} {c.telefono ? `· ${c.telefono}` : ''}
+                    {c.nombre} {c.apellido || ''}{' '}
+                    {c.numero_identificacion ? `(Doc: ${c.numero_identificacion})` : ''}{' '}
+                    {c.telefono ? `· ${c.telefono}` : ''}
                   </option>
                 ))}
               </select>
@@ -846,10 +907,11 @@ export default function POSTerminal({
               <button
                 type="button"
                 onClick={() => setSelectedCategoria('todas')}
-                className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${selectedCategoria === 'todas'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
-                  }`}
+                className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                  selectedCategoria === 'todas'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                }`}
               >
                 Todas las categorías
               </button>
@@ -858,10 +920,11 @@ export default function POSTerminal({
                   key={cat}
                   type="button"
                   onClick={() => setSelectedCategoria(cat)}
-                  className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${selectedCategoria === cat
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
-                    }`}
+                  className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                    selectedCategoria === cat
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                      : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                  }`}
                 >
                   {cat}
                 </button>
@@ -889,10 +952,11 @@ export default function POSTerminal({
                       </span>
                       {typeof prod.stock_actual === 'number' && (
                         <span
-                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${prod.stock_actual <= (prod.stock_minimo || 5)
-                            ? 'bg-rose-500/20 text-rose-300'
-                            : 'bg-slate-700 text-slate-300'
-                            }`}
+                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                            prod.stock_actual <= (prod.stock_minimo || 5)
+                              ? 'bg-rose-500/20 text-rose-300'
+                              : 'bg-slate-700 text-slate-300'
+                          }`}
                         >
                           Stock: {prod.stock_actual}
                         </span>
@@ -906,14 +970,19 @@ export default function POSTerminal({
                   <div className="mt-3 pt-2 border-t border-slate-700/50 flex items-center justify-between">
                     <div>
                       <p className="text-xs text-emerald-400 font-extrabold font-mono">
-                        ${formatNumber(prod.precio_kg || prod.precio_unidad || prod.precio_detal || 0)}
+                        $
+                        {formatNumber(
+                          prod.precio_kg || prod.precio_unidad || prod.precio_detal || 0
+                        )}
                         <span className="text-[10px] text-slate-400 font-normal">
-                          {' '}/ {prod.precio_kg ? 'KG' : prod.precio_libra ? 'LB' : 'UND'}
+                          {' '}
+                          / {prod.precio_kg ? 'KG' : prod.precio_libra ? 'LB' : 'UND'}
                         </span>
                       </p>
                       {prod.precio_mayorista && (
                         <p className="text-[10px] text-amber-400">
-                          Mayorista: ${formatNumber(prod.precio_mayorista)} (≥{prod.cantidad_mayorista || 6})
+                          Mayorista: ${formatNumber(prod.precio_mayorista)} (≥
+                          {prod.cantidad_mayorista || 6})
                         </p>
                       )}
                     </div>
@@ -936,7 +1005,6 @@ export default function POSTerminal({
       {/* ========================================================== */}
       <div className="w-full lg:col-span-5 bg-slate-900/95 border border-slate-800 p-4 sm:p-6 rounded-2xl space-y-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between min-w-0">
         <div className="space-y-4">
-
           {/* Header Carrito */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h3 className="text-base font-bold text-white font-['Outfit'] flex items-center gap-2">
@@ -983,10 +1051,11 @@ export default function POSTerminal({
           {statusMessage && (
             <div className="space-y-2">
               <div
-                className={`p-3 rounded-xl text-xs font-medium flex items-center justify-between gap-2 border ${statusMessage.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                  : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                  }`}
+                className={`p-3 rounded-xl text-xs font-medium flex items-center justify-between gap-2 border ${
+                  statusMessage.type === 'success'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                }`}
               >
                 <div className="flex items-center gap-2">
                   {statusMessage.type === 'success' ? (
@@ -1036,10 +1105,11 @@ export default function POSTerminal({
                       <button
                         type="button"
                         onClick={() => toggleItemMayorista(index)}
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${item.es_mayorista
-                          ? 'bg-amber-500 text-slate-950 shadow-sm'
-                          : 'bg-slate-700 text-slate-400 hover:text-white'
-                          }`}
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                          item.es_mayorista
+                            ? 'bg-amber-500 text-slate-950 shadow-sm'
+                            : 'bg-slate-700 text-slate-400 hover:text-white'
+                        }`}
                         title="Alternar precio mayorista"
                       >
                         {item.es_mayorista ? 'MAYOR' : 'DETAL'}
@@ -1057,7 +1127,9 @@ export default function POSTerminal({
                   {/* Controles de Cantidad, Unidad, Precio y Descuento */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase block mb-0.5">Cant.</span>
+                      <span className="text-[10px] text-slate-400 uppercase block mb-0.5">
+                        Cant.
+                      </span>
                       <input
                         type="number"
                         min="1"
@@ -1069,7 +1141,9 @@ export default function POSTerminal({
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase block mb-0.5">Unidad</span>
+                      <span className="text-[10px] text-slate-400 uppercase block mb-0.5">
+                        Unidad
+                      </span>
                       <select
                         value={item.unidad}
                         onChange={(e) => updateUnidad(index, e.target.value as any)}
@@ -1084,7 +1158,9 @@ export default function POSTerminal({
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase block mb-0.5">Precio ($)</span>
+                      <span className="text-[10px] text-slate-400 uppercase block mb-0.5">
+                        Precio ($)
+                      </span>
                       <input
                         type="number"
                         min="0"
@@ -1098,7 +1174,9 @@ export default function POSTerminal({
                       <span className="text-[10px] text-slate-400 uppercase block mb-0.5 flex items-center justify-between">
                         <span>Desc%</span>
                         {item.descuento_porcentaje ? (
-                          <span className="text-amber-400 font-bold">{item.descuento_porcentaje}%</span>
+                          <span className="text-amber-400 font-bold">
+                            {item.descuento_porcentaje}%
+                          </span>
                         ) : null}
                       </span>
                       <input
@@ -1138,7 +1216,6 @@ export default function POSTerminal({
         {/* LIQUIDACIÓN DE TOTALES, DESCUENTOS Y MEDIOS DE PAGO       */}
         {/* ========================================================== */}
         <div className="space-y-4 pt-4 border-t border-slate-800">
-
           {/* Descuento Global */}
           <div className="flex items-center justify-between gap-3 bg-slate-800/40 p-2.5 rounded-xl border border-slate-800">
             <span className="text-xs text-slate-300 flex items-center gap-1.5 font-medium">
@@ -1168,10 +1245,11 @@ export default function POSTerminal({
               <button
                 type="button"
                 onClick={() => setFormaPago('efectivo')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${formaPago === 'efectivo'
-                  ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/10'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
-                  }`}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  formaPago === 'efectivo'
+                    ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/10'
+                    : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+                }`}
               >
                 <Banknote className="h-4 w-4" />
                 Efectivo
@@ -1180,10 +1258,11 @@ export default function POSTerminal({
               <button
                 type="button"
                 onClick={() => setFormaPago('transferencia')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${formaPago === 'transferencia'
-                  ? 'bg-blue-600/20 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
-                  }`}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  formaPago === 'transferencia'
+                    ? 'bg-blue-600/20 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10'
+                    : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+                }`}
               >
                 <Smartphone className="h-4 w-4" />
                 Transferencia
@@ -1192,10 +1271,11 @@ export default function POSTerminal({
               <button
                 type="button"
                 onClick={() => setFormaPago('tarjeta')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${formaPago === 'tarjeta'
-                  ? 'bg-purple-600/20 border-purple-500 text-purple-300 shadow-md shadow-purple-500/10'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
-                  }`}
+                className={`py-2 px-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  formaPago === 'tarjeta'
+                    ? 'bg-purple-600/20 border-purple-500 text-purple-300 shadow-md shadow-purple-500/10'
+                    : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white'
+                }`}
               >
                 <CreditCard className="h-4 w-4" />
                 Tarjeta
@@ -1212,7 +1292,9 @@ export default function POSTerminal({
                   type="number"
                   placeholder="0"
                   value={efectivoRecibido}
-                  onChange={(e) => setEfectivoRecibido(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) =>
+                    setEfectivoRecibido(e.target.value ? Number(e.target.value) : '')
+                  }
                   className="w-36 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-right font-bold text-white text-sm focus:border-emerald-500"
                 />
               </div>
@@ -1249,7 +1331,9 @@ export default function POSTerminal({
 
             <div className="flex items-center justify-between text-2xl font-extrabold text-white pt-2 border-t border-slate-800">
               <span className="font-['Outfit'] tracking-tight">TOTAL:</span>
-              <span className="text-emerald-400 font-mono tracking-tight">${formatNumber(totalFactura)}</span>
+              <span className="text-emerald-400 font-mono tracking-tight">
+                ${formatNumber(totalFactura)}
+              </span>
             </div>
           </div>
 
@@ -1269,10 +1353,11 @@ export default function POSTerminal({
               type="button"
               onClick={handleEmitirFactura}
               disabled={isSubmitting || cart.length === 0}
-              className={`py-3 px-4 rounded-xl font-bold text-xs shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${isSubmitting || cart.length === 0
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-500/25 transform hover:-translate-y-0.5'
-                }`}
+              className={`py-3 px-4 rounded-xl font-bold text-xs shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                isSubmitting || cart.length === 0
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-emerald-500/25 transform hover:-translate-y-0.5'
+              }`}
             >
               <Printer className="h-4 w-4" />
               {isSubmitting ? 'Emitiendo Factura...' : 'Emitir Factura POS'}
@@ -1303,7 +1388,9 @@ export default function POSTerminal({
 
             <div className="space-y-4 text-xs">
               <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 space-y-1">
-                <p className="font-bold">Total del Plan de Apartado: ${formatNumber(totalFactura)}</p>
+                <p className="font-bold">
+                  Total del Plan de Apartado: ${formatNumber(totalFactura)}
+                </p>
                 <p className="text-[11px] text-amber-400/80">
                   Los productos quedarán reservados en bodega hasta completar el 100% de los abonos.
                 </p>
@@ -1319,7 +1406,9 @@ export default function POSTerminal({
                   max={totalFactura}
                   placeholder={`Ej: ${Math.round(totalFactura * 0.3)} (Sugerido 30%)`}
                   value={abonoInicialSeparado}
-                  onChange={(e) => setAbonoInicialSeparado(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) =>
+                    setAbonoInicialSeparado(e.target.value ? Number(e.target.value) : '')
+                  }
                   className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold text-sm focus:border-amber-500"
                 />
               </div>
@@ -1470,7 +1559,8 @@ export default function POSTerminal({
               <div className="p-3 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-300 space-y-1">
                 <p className="font-semibold text-white">Requisito Obligatorio POS 2026</p>
                 <p className="text-slate-400 text-[11px]">
-                  Ingrese la base de dinero en efectivo con la que inicia la jornada para garantizar el cuadre de arqueo.
+                  Ingrese la base de dinero en efectivo con la que inicia la jornada para garantizar
+                  el cuadre de arqueo.
                 </p>
               </div>
 
@@ -1483,7 +1573,9 @@ export default function POSTerminal({
                   min="0"
                   placeholder="Ej: 50000"
                   value={montoAperturaInput}
-                  onChange={(e) => setMontoAperturaInput(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) =>
+                    setMontoAperturaInput(e.target.value ? Number(e.target.value) : '')
+                  }
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold text-sm sm:text-base focus:border-emerald-500 focus:outline-none"
                   autoFocus
                 />
@@ -1523,8 +1615,12 @@ export default function POSTerminal({
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-white font-['Outfit']">Venta Exitosa</h3>
-                  <p className="text-[11px] text-slate-400">Comprobante térmico listo para impresión</p>
+                  <h3 className="text-sm sm:text-base font-bold text-white font-['Outfit']">
+                    Venta Exitosa
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Comprobante térmico listo para impresión
+                  </p>
                 </div>
               </div>
               <button
@@ -1556,7 +1652,9 @@ export default function POSTerminal({
                     />
                   )}
                   <div className="text-center">
-                    <p className="font-extrabold text-sm">{ticketData.config?.nombre_negocio || 'TumiFact'}</p>
+                    <p className="font-extrabold text-sm">
+                      {ticketData.config?.nombre_negocio || 'TumiFact'}
+                    </p>
                     {ticketData.config?.nit && <p>NIT: {ticketData.config.nit}</p>}
                     {ticketData.config?.direccion && <p>{ticketData.config.direccion}</p>}
                     {ticketData.config?.telefono && <p>Tel: {ticketData.config.telefono}</p>}
@@ -1565,10 +1663,22 @@ export default function POSTerminal({
                   <div className="border-t border-dashed border-black my-2.5" />
 
                   <div className="space-y-0.5 text-[10px]">
-                    <p><strong>FACTURA POS:</strong> #{ticketData.factura.id}</p>
-                    <p><strong>FECHA:</strong> {new Date(ticketData.factura.created_at || ticketData.factura.fecha).toLocaleString('es-CO')}</p>
-                    <p><strong>CLIENTE:</strong> {ticketData.factura.cliente_nombre}</p>
-                    <p><strong>MÉTODO DE PAGO:</strong> {(ticketData.factura.forma_pago || 'efectivo').toUpperCase()}</p>
+                    <p>
+                      <strong>FACTURA POS:</strong> #{ticketData.factura.id}
+                    </p>
+                    <p>
+                      <strong>FECHA:</strong>{' '}
+                      {new Date(
+                        ticketData.factura.created_at || ticketData.factura.fecha
+                      ).toLocaleString('es-CO')}
+                    </p>
+                    <p>
+                      <strong>CLIENTE:</strong> {ticketData.factura.cliente_nombre}
+                    </p>
+                    <p>
+                      <strong>MÉTODO DE PAGO:</strong>{' '}
+                      {(ticketData.factura.forma_pago || 'efectivo').toUpperCase()}
+                    </p>
                   </div>
 
                   <div className="border-t border-dashed border-black my-2.5" />
@@ -1579,10 +1689,13 @@ export default function POSTerminal({
                         <div>
                           <p className="font-bold">{d.producto_nombre}</p>
                           <p className="text-neutral-600">
-                            {Number(d.cantidad)} {d.unidad_medida || 'UND'} × ${Number(d.precio_unitario).toLocaleString('es-CO')}
+                            {Number(d.cantidad)} {d.unidad_medida || 'UND'} × $
+                            {Number(d.precio_unitario).toLocaleString('es-CO')}
                           </p>
                         </div>
-                        <p className="font-bold font-mono">${Number(d.subtotal).toLocaleString('es-CO')}</p>
+                        <p className="font-bold font-mono">
+                          ${Number(d.subtotal).toLocaleString('es-CO')}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -1594,7 +1707,11 @@ export default function POSTerminal({
 
                   {ticketData.config?.qr_src && (
                     <div className="text-center pt-2">
-                      <img src={ticketData.config.qr_src} alt="QR" className="max-h-20 max-w-[80px] mx-auto" />
+                      <img
+                        src={ticketData.config.qr_src}
+                        alt="QR"
+                        className="max-h-20 max-w-[80px] mx-auto"
+                      />
                     </div>
                   )}
 
@@ -1617,7 +1734,10 @@ export default function POSTerminal({
                   <button
                     type="button"
                     onClick={() => {
-                      const printWindow = window.open(`/facturas/${ticketData.factura.id}/imprimir`, '_blank');
+                      const printWindow = window.open(
+                        `/facturas/${ticketData.factura.id}/imprimir`,
+                        '_blank'
+                      );
                       if (printWindow) {
                         printWindow.focus();
                       }

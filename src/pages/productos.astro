@@ -1,6 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import ProductGrid from '../components/productos/ProductGrid';
+import Layout from '../layouts/Layout.astro';
 import db from '../lib/db.js';
 
 let productos = [];
@@ -13,7 +13,7 @@ try {
       LEFT JOIN categorias_producto c ON p.categoria_id = c.id
       ORDER BY p.id DESC
     `),
-    db.query('SELECT * FROM categorias_producto WHERE activo = true ORDER BY id ASC')
+    db.query('SELECT * FROM categorias_producto WHERE activo = true ORDER BY id ASC'),
   ]);
   productos = prodRes.rows || [];
   categorias = catRes.rows || [];

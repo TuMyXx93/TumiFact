@@ -33,7 +33,7 @@ export class LocalStorageService implements IStorageService {
     return {
       key: relativeKey,
       url: `${this.baseUrl}/${relativeKey}`,
-      provider: 'local'
+      provider: 'local',
     };
   }
 
@@ -74,13 +74,15 @@ export class MockS3StorageService implements IStorageService {
   }
 
   async uploadFile(file: StorageFile, folder: string = ''): Promise<StorageUploadResult> {
-    const key = folder ? `${folder}/${Date.now()}-${file.filename}` : `${Date.now()}-${file.filename}`;
+    const key = folder
+      ? `${folder}/${Date.now()}-${file.filename}`
+      : `${Date.now()}-${file.filename}`;
     this.inMemoryBucket.set(key, file.buffer);
 
     return {
       key,
       url: `https://${this.bucketName}.s3.amazonaws.com/${key}`,
-      provider: 's3'
+      provider: 's3',
     };
   }
 

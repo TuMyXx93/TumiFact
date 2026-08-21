@@ -1,7 +1,7 @@
-import { CategoriasRepository } from './categorias.repository';
-import type { CreateCategoriaInput, UpdateCategoriaInput } from './categorias.dto';
-import { recordAudit } from '../../shared/utils/audit';
 import type { Request } from 'express';
+import { recordAudit } from '../../shared/utils/audit';
+import type { CreateCategoriaInput, UpdateCategoriaInput } from './categorias.dto';
+import { CategoriasRepository } from './categorias.repository';
 
 export class CategoriasService {
   constructor(private repo: CategoriasRepository = new CategoriasRepository()) {}
@@ -21,7 +21,7 @@ export class CategoriasService {
       descripcion: input.descripcion || null,
       campos_extra: input.campos_extra || [],
       aplica_inventario: input.aplica_inventario !== undefined ? input.aplica_inventario : true,
-      activo: true
+      activo: true,
     });
 
     await recordAudit({
@@ -30,7 +30,7 @@ export class CategoriasService {
       entidad: 'categorias_producto',
       entidadId: created.id,
       datosNuevos: input,
-      req
+      req,
     });
 
     return created;
@@ -45,7 +45,7 @@ export class CategoriasService {
         entidad: 'categorias_producto',
         entidadId: id,
         datosNuevos: input,
-        req
+        req,
       });
     }
     return updated;

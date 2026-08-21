@@ -1,11 +1,15 @@
-import { db } from '../../db';
-import { descuentos } from '../../db/schema/descuentos';
-import type { DescuentoItem, NewDescuento } from '../../db/schema/descuentos';
 import { eq } from 'drizzle-orm';
+import { db } from '../../db';
+import type { DescuentoItem, NewDescuento } from '../../db/schema/descuentos';
+import { descuentos } from '../../db/schema/descuentos';
 
 export class DescuentosRepository {
   async findAll(): Promise<DescuentoItem[]> {
-    return await db.select().from(descuentos).where(eq(descuentos.activo, true)).orderBy(descuentos.nombre);
+    return await db
+      .select()
+      .from(descuentos)
+      .where(eq(descuentos.activo, true))
+      .orderBy(descuentos.nombre);
   }
 
   async findById(id: number): Promise<DescuentoItem | null> {
@@ -19,12 +23,20 @@ export class DescuentosRepository {
   }
 
   async update(id: number, data: Partial<NewDescuento>): Promise<DescuentoItem | null> {
-    const rows = await db.update(descuentos).set({ ...data, updated_at: new Date() }).where(eq(descuentos.id, id)).returning();
+    const rows = await db
+      .update(descuentos)
+      .set({ ...data, updated_at: new Date() })
+      .where(eq(descuentos.id, id))
+      .returning();
     return rows[0] || null;
   }
 
   async delete(id: number): Promise<boolean> {
-    const rows = await db.update(descuentos).set({ activo: false, updated_at: new Date() }).where(eq(descuentos.id, id)).returning();
+    const rows = await db
+      .update(descuentos)
+      .set({ activo: false, updated_at: new Date() })
+      .where(eq(descuentos.id, id))
+      .returning();
     return rows.length > 0;
   }
 }

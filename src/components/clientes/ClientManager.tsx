@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
-import type { Cliente } from '../../types';
-import { Users, UserPlus, Search, CheckCircle2, AlertCircle, Phone, MapPin, Edit2, Trash2, Mail, CreditCard, Award } from 'lucide-react';
+import {
+  AlertCircle,
+  Award,
+  CheckCircle2,
+  CreditCard,
+  Edit2,
+  Mail,
+  MapPin,
+  Phone,
+  Search,
+  Trash2,
+  UserPlus,
+  Users,
+} from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
 import { apiFetch } from '../../lib/apiClient';
 import { formatNumber } from '../../lib/format';
+import type { Cliente } from '../../types';
 
 interface ClientManagerProps {
   initialClientes: Cliente[];
@@ -13,7 +27,10 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Formulario nuevo/editar cliente
   const [formData, setFormData] = useState({
@@ -25,7 +42,7 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
     telefono_secundario: '',
     direccion_texto: '',
     tipo_cliente: 'detal',
-    notas: ''
+    notas: '',
   });
 
   const filteredClientes = clientes.filter((c) => {
@@ -34,7 +51,9 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
     const ident = (c.numero_identificacion || '').toLowerCase();
     const tel = (c.telefono || '').toLowerCase();
     const email = (c.email || '').toLowerCase();
-    return fullName.includes(term) || ident.includes(term) || tel.includes(term) || email.includes(term);
+    return (
+      fullName.includes(term) || ident.includes(term) || tel.includes(term) || email.includes(term)
+    );
   });
 
   const handleEditClick = (c: Cliente) => {
@@ -48,7 +67,7 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
       telefono_secundario: c.telefono_secundario || '',
       direccion_texto: c.direccion_texto || c.direccion?.calle || '',
       tipo_cliente: c.tipo_cliente || 'detal',
-      notas: c.notas || ''
+      notas: c.notas || '',
     });
     setIsModalOpen(true);
   };
@@ -65,12 +84,21 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
 
       if (res.ok) {
         setClientes(clientes.filter((c) => c.id !== id));
-        setStatusMessage({ type: 'success', text: data.message || 'Cliente eliminado exitosamente' });
+        setStatusMessage({
+          type: 'success',
+          text: data.message || 'Cliente eliminado exitosamente',
+        });
       } else {
-        setStatusMessage({ type: 'error', text: data.error || `Error ${res.status} al eliminar el cliente` });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || `Error ${res.status} al eliminar el cliente`,
+        });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'No se pudo conectar con el servidor para eliminar el cliente' });
+      setStatusMessage({
+        type: 'error',
+        text: 'No se pudo conectar con el servidor para eliminar el cliente',
+      });
     }
   };
 
@@ -90,7 +118,7 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
       telefono_secundario: formData.telefono_secundario.trim() || null,
       direccion_texto: formData.direccion_texto.trim() || null,
       tipo_cliente: formData.tipo_cliente,
-      notas: formData.notas.trim() || null
+      notas: formData.notas.trim() || null,
     };
 
     try {
@@ -100,17 +128,23 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
       const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (res.ok) {
         if (editingCliente) {
           setClientes(clientes.map((c) => (c.id === editingCliente.id ? { ...c, ...payload } : c)));
-          setStatusMessage({ type: 'success', text: `Cliente "${payload.nombre}" actualizado exitosamente` });
+          setStatusMessage({
+            type: 'success',
+            text: `Cliente "${payload.nombre}" actualizado exitosamente`,
+          });
         } else {
           setClientes([data, ...clientes]);
-          setStatusMessage({ type: 'success', text: `Cliente "${data.nombre}" registrado exitosamente` });
+          setStatusMessage({
+            type: 'success',
+            text: `Cliente "${data.nombre}" registrado exitosamente`,
+          });
         }
         setIsModalOpen(false);
         setEditingCliente(null);
@@ -123,7 +157,7 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
           telefono_secundario: '',
           direccion_texto: '',
           tipo_cliente: 'detal',
-          notas: ''
+          notas: '',
         });
       } else {
         setStatusMessage({ type: 'error', text: data.error || 'Error al guardar el cliente' });
@@ -160,7 +194,7 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
               telefono_secundario: '',
               direccion_texto: '',
               tipo_cliente: 'detal',
-              notas: ''
+              notas: '',
             });
             setIsModalOpen(true);
           }}
@@ -179,7 +213,11 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
               : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
           }`}
         >
-          {statusMessage.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          {statusMessage.type === 'success' ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
           {statusMessage.text}
         </div>
       )}
@@ -204,8 +242,8 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
                       c.tipo_cliente === 'vip'
                         ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                         : c.tipo_cliente === 'mayorista'
-                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : 'bg-slate-800 text-slate-400'
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          : 'bg-slate-800 text-slate-400'
                     }`}
                   >
                     {c.tipo_cliente || 'detal'}
@@ -262,7 +300,9 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
 
               {/* Métricas del cliente */}
               <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Compras: <strong>{c.numero_facturas || 0}</strong></span>
+                <span>
+                  Compras: <strong>{c.numero_facturas || 0}</strong>
+                </span>
                 <span className="text-emerald-400 font-semibold">
                   ${formatNumber(c.total_compras || 0)}
                 </span>
@@ -279,7 +319,9 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <h3 className="text-lg font-bold text-white font-['Outfit'] flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-400" />
-                {editingCliente ? `Editar Cliente #${editingCliente.id}` : 'Registrar Nuevo Cliente'}
+                {editingCliente
+                  ? `Editar Cliente #${editingCliente.id}`
+                  : 'Registrar Nuevo Cliente'}
               </h3>
               <button
                 onClick={() => {
@@ -307,7 +349,9 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 uppercase">Apellido / Razón</label>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">
+                    Apellido / Razón
+                  </label>
                   <input
                     type="text"
                     placeholder="ej. Pérez o S.A.S."
@@ -320,18 +364,24 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 uppercase">Documento / NIT</label>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">
+                    Documento / NIT
+                  </label>
                   <input
                     type="text"
                     placeholder="ej. 1020304050"
                     value={formData.numero_identificacion}
-                    onChange={(e) => setFormData({ ...formData, numero_identificacion: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, numero_identificacion: e.target.value })
+                    }
                     className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 uppercase">Tipo de Cliente</label>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">
+                    Tipo de Cliente
+                  </label>
                   <select
                     value={formData.tipo_cliente}
                     onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value })}
@@ -346,7 +396,9 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 uppercase">Teléfono Principal</label>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">
+                    Teléfono Principal
+                  </label>
                   <input
                     type="text"
                     placeholder="ej. 301 523 4567"
@@ -357,7 +409,9 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 uppercase">Correo Electrónico</label>
+                  <label className="text-xs font-semibold text-slate-300 uppercase">
+                    Correo Electrónico
+                  </label>
                   <input
                     type="email"
                     placeholder="cliente@ejemplo.com"

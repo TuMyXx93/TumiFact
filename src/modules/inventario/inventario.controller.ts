@@ -1,24 +1,31 @@
 import { Router } from 'express';
-import { InventarioService } from './inventario.service';
-import { validateDTO } from '../../shared/middleware/validate';
-import { MovimientoInventarioDTO, AjusteStockRapidoDTO } from './inventario.dto';
-import { verifyAuth, requireRole } from '../../shared/middleware/auth';
+import { requireRole, verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
+import { validateDTO } from '../../shared/middleware/validate';
+import { AjusteStockRapidoDTO, MovimientoInventarioDTO } from './inventario.dto';
+import { InventarioService } from './inventario.service';
 
 export const inventarioRouter = Router();
 const service = new InventarioService();
 
 // GET /api/inventario/movimientos — Listado de kardex / movimientos
-inventarioRouter.get('/movimientos', verifyAuth, requireRole('gerente', 'admin'), async (req, res, next) => {
-  try {
-    const limit = parseInt(req.query.limit as string, 10) || 50;
-    const productoId = req.query.producto_id ? parseInt(req.query.producto_id as string, 10) : undefined;
-    const list = await service.getMovimientos(limit, productoId);
-    res.json(list);
-  } catch (error) {
-    next(error);
+inventarioRouter.get(
+  '/movimientos',
+  verifyAuth,
+  requireRole('gerente', 'admin'),
+  async (req, res, next) => {
+    try {
+      const limit = parseInt(req.query.limit as string, 10) || 50;
+      const productoId = req.query.producto_id
+        ? parseInt(req.query.producto_id as string, 10)
+        : undefined;
+      const list = await service.getMovimientos(limit, productoId);
+      res.json(list);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 // GET /api/inventario/stock-critico — Alertas de productos bajo stock mínimo
 inventarioRouter.get('/stock-critico', verifyAuth, async (req, res, next) => {

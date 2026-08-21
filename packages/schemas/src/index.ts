@@ -5,10 +5,17 @@ import { z } from 'zod';
 // Fase 5 contracts — workspaces bootstrap (TumiFact usa SERIAL integer, no UUID)
 
 export * from './auth';
-export * from './productos';
-export * from './clientes';
-export * from './facturas';
 export * from './caja';
+export * from './categorias';
+export * from './clientes';
+export * from './configuracion';
+export * from './descuentos';
+export * from './devoluciones';
+export * from './empleados';
+export * from './facturas';
+export * from './inventario';
+export * from './productos';
+export * from './proveedores';
 export * from './separados';
 
 // Helpers comunes
@@ -20,11 +27,11 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
   sortBy: z.string().optional(),
-  order: z.enum(['asc', 'desc']).optional().default('desc')
+  order: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
 export const apiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
   z.object({
     data: dataSchema,
-    correlationId: z.string().optional()
+    correlationId: z.string().optional(),
   });

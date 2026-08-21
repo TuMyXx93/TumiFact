@@ -1,6 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import WhiteLabelStudio from '../components/configuracion/WhiteLabelStudio';
+import Layout from '../layouts/Layout.astro';
 import db from '../lib/db.js';
 
 let config = {
@@ -13,14 +13,15 @@ let config = {
   font_size: 1,
   mensaje_bienvenida: '¡Bienvenido a nuestro establecimiento!',
   politica_devolucion: 'Cambios y devoluciones dentro de los 30 días con el comprobante de compra.',
-  politica_separados: 'Plazo máximo de separado: 30 a 45 días. Abonos no reembolsables si vence el plazo.',
+  politica_separados:
+    'Plazo máximo de separado: 30 a 45 días. Abonos no reembolsables si vence el plazo.',
   esquema_colores: {
     primary: '#3b82f6',
     secondary: '#0891b2',
     accent: '#10b981',
     background: '#060913',
-    surface: '#0d1424'
-  }
+    surface: '#0d1424',
+  },
 };
 
 try {

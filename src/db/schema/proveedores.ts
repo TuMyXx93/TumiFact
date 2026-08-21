@@ -1,12 +1,14 @@
-import { pgTable, serial, varchar, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
-import { tiposIdentificacion } from './tipos_identificacion';
+import { boolean, integer, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { direcciones } from './direcciones';
+import { tiposIdentificacion } from './tipos_identificacion';
 
 export const proveedores = pgTable('proveedores', {
   id: serial('id').primaryKey(),
   nombre: varchar('nombre', { length: 150 }).notNull(),
   razon_social: varchar('razon_social', { length: 150 }),
-  tipo_identificacion_id: integer('tipo_identificacion_id').references(() => tiposIdentificacion.id),
+  tipo_identificacion_id: integer('tipo_identificacion_id').references(
+    () => tiposIdentificacion.id
+  ),
   numero_identificacion: varchar('numero_identificacion', { length: 30 }),
   contacto_nombre: varchar('contacto_nombre', { length: 100 }),
   email: varchar('email', { length: 150 }),
@@ -19,7 +21,7 @@ export const proveedores = pgTable('proveedores', {
   notas: text('notas'),
   activo: boolean('activo').default(true).notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export type ProveedorItem = typeof proveedores.$inferSelect;

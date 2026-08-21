@@ -1,4 +1,14 @@
-import { pgTable, serial, varchar, text, numeric, boolean, date, timestamp, integer } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  date,
+  integer,
+  numeric,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 export const descuentos = pgTable('descuentos', {
   id: serial('id').primaryKey(),
@@ -12,7 +22,7 @@ export const descuentos = pgTable('descuentos', {
   vigencia_desde: date('vigencia_desde'),
   vigencia_hasta: date('vigencia_hasta'),
   created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export type DescuentoItem = typeof descuentos.$inferSelect;
