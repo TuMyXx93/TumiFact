@@ -66,7 +66,8 @@ export class SeparadosService {
     const abonoInicial = Math.round(input.abono_inicial * 100) / 100;
     const saldoPendiente = Math.round((valorTotal - abonoInicial) * 100) / 100;
 
-    return await db.transaction(async (tx) => {
+    let newSeparadoId: number;
+    await db.transaction(async (tx) => {
       // 1. Insertar Separado
       const sepRows = await tx
         .insert(separados)
@@ -88,6 +89,7 @@ export class SeparadosService {
         .returning();
 
       const newSeparado = sepRows[0];
+      newSeparadoId = newSeparado.id;
 
       // 2. Insertar productos del separado y reservar en inventario
       for (const prod of input.productos) {
@@ -146,9 +148,9 @@ export class SeparadosService {
         datosNuevos: { valor_total: valorTotal, abono_inicial: abonoInicial, fecha_limite: fechaLimiteStr },
         req
       });
-
-      return await this.getSeparadoById(newSeparado.id);
     });
+
+    return await this.getSeparadoById(newSeparadoId!);
   }
 
   async registrarAbono(separadoId: number, input: RegistrarAbonoInput, userId: number, sesionCajaId?: number, req?: Request) {
@@ -164,7 +166,11 @@ export class SeparadosService {
       }
     }
 
-    return await db.transaction(async (tx) => {
+    let _insertedAbono: any = null;
+    let _esCompletado = false;
+    let _facturaId: number | null = null;
+
+    await db.transaction(async (tx) => {
       const sepRows = await tx.select().from(separados).where(eq(separados.id, separadoId)).limit(1);
       const sep = sepRows[0];
 
@@ -186,6 +192,7 @@ export class SeparadosService {
       const nuevoTotalAbonado = Math.round((totalAbonadoPrevio + montoAbono) * 100) / 100;
       const nuevoSaldo = Math.round(Math.max(0, valorTotal - nuevoTotalAbonado) * 100) / 100;
       const esCompletado = nuevoSaldo <= 0.01;
+      _esCompletado = esCompletado;
 
       // Obtener conteo de abonos anteriores
       const prevAbonos = await tx.select({ count: sql<number>`COUNT(*)` }).from(abonosSeparado).where(eq(abonosSeparado.separado_id, separadoId));
@@ -207,6 +214,8 @@ export class SeparadosService {
           es_abono_final: esCompletado
         })
         .returning();
+
+      _insertedAbono = insertedAbonos[0];
 
       // Si el separado se completa, generar factura final y registrar movimiento
       let facturaGeneradaId: number | null = null;
@@ -243,6 +252,8 @@ export class SeparadosService {
         }
       }
 
+      _facturaId = facturaGeneradaId;
+
       // Actualizar separado
       await tx
         .update(separados)
@@ -264,14 +275,15 @@ export class SeparadosService {
         datosNuevos: { monto: montoAbono, saldo_restante: nuevoSaldo, completado: esCompletado },
         req
       });
-
-      return {
-        message: esCompletado ? '¡Separado cancelado en su totalidad y completado exitosamente!' : 'Abono registrado exitosamente',
-        separado: await this.getSeparadoById(separadoId),
-        abono: insertedAbonos[0],
-        completado: esCompletado,
-        factura_id: facturaGeneradaId
-      };
     });
+
+    const separadoFinal = await this.getSeparadoById(separadoId);
+    return {
+      message: _esCompletado ? '¡Separado cancelado en su totalidad y completado exitosamente!' : 'Abono registrado exitosamente',
+      separado: separadoFinal,
+      abono: _insertedAbono,
+      completado: _esCompletado,
+      factura_id: _facturaId
+    };
   }
 }

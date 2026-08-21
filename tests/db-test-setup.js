@@ -31,24 +31,30 @@ async function setupTestDatabase() {
         await adminClient.end();
     }
 
-    // Fase 0.1: fuente única es Drizzle baseline (22 tablas). database_pg.sql está archivado (19 tablas sin auth_sessions)
-    const drizzlePath = path.join(__dirname, '..', 'drizzle', '0000_baseline.sql');
+    // Fase 0.1: fuente única es Drizzle (22 tablas + migraciones). database_pg.sql está archivado (19 tablas sin auth_sessions)
+    const drizzleDir = path.join(__dirname, '..', 'drizzle');
     const sqlPath = path.join(__dirname, '..', 'database_pg.sql');
-    let sql;
-    if (fs.existsSync(drizzlePath)) {
-        sql = fs.readFileSync(drizzlePath, 'utf8');
-        console.log('✓ Usando drizzle/0000_baseline.sql (22 tablas)');
-    } else {
-        sql = fs.readFileSync(sqlPath, 'utf8');
-        console.log('⚠ drizzle baseline no encontrado, usando database_pg.sql');
+    let sqlFiles = [];
+    if (fs.existsSync(drizzleDir)) {
+        sqlFiles = fs.readdirSync(drizzleDir).filter(f => f.endsWith('.sql')).sort().map(f => path.join(drizzleDir, f));
+        console.log(`✓ Usando ${sqlFiles.length} migraciones Drizzle en ${drizzleDir}`);
     }
 
     const testClient = new Client(testConfig);
     await testClient.connect();
     try {
         await testClient.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
-        await testClient.query(sql);
-        console.log('✓ Schema ejecutado en tumifact_test');
+        if (sqlFiles.length > 0) {
+            for (const file of sqlFiles) {
+                const sql = fs.readFileSync(file, 'utf8');
+                await testClient.query(sql);
+                console.log(`✓ Migración aplicada: ${path.basename(file)}`);
+            }
+        } else {
+            const sql = fs.readFileSync(sqlPath, 'utf8');
+            await testClient.query(sql);
+            console.log('✓ Schema ejecutado en tumifact_test (database_pg.sql)');
+        }
     } finally {
         await testClient.end();
     }

@@ -12,6 +12,7 @@ export const clientes = pgTable('clientes', {
   telefono: varchar('telefono', { length: 20 }),
   telefono_secundario: varchar('telefono_secundario', { length: 20 }),
   direccion_id: integer('direccion_id').references(() => direcciones.id),
+  direccion: text('direccion'), // Legacy compat: routes/clientes.js uses 'direccion' column
   direccion_texto: text('direccion_texto'), // Backward compatibility and fast display
   tipo_cliente: varchar('tipo_cliente', { length: 20 }).default('detal').notNull(), // 'detal', 'mayorista', 'vip'
   notas: text('notas'),
