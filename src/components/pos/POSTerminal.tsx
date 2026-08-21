@@ -24,6 +24,7 @@ import {
   Barcode
 } from 'lucide-react';
 import { apiFetch } from '../../lib/apiClient';
+import { enqueueFactura } from '../../lib/offline-queue';
 import { formatNumber, formatDate } from '../../lib/format';
 
 interface POSTerminalProps {
@@ -570,9 +571,10 @@ export default function POSTerminal({
 
     // Clave de Idempotencia única para evitar dobles facturas
     const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `pos-${Date.now()}`;
+    let payload: any = null;
 
     try {
-      const payload = {
+      payload = {
         idempotency_key: idempotencyKey,
         cliente_id: Number(selectedClienteId),
         sesion_caja_id: cajaActiva.id,
@@ -602,7 +604,7 @@ export default function POSTerminal({
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.id) {
         setStatusMessage({
@@ -623,10 +625,34 @@ export default function POSTerminal({
         // Mostrar tiquete térmico inmediatamente
         handleVerImprimirTicket(data.id);
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Error al procesar la factura' });
+        // Si es error 4xx de validación, mostrar mensaje; no encolar
+        setStatusMessage({ type: 'error', text: data.error || `Error ${res.status} al procesar la factura` });
       }
     } catch (err: any) {
-      setStatusMessage({ type: 'error', text: 'Error de comunicación con el servidor' });
+      // Fase 4.2: Offline queue — si falla red (offline) o 5xx, encolar para replay
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+      const isNetworkError = err?.message?.includes('Failed to fetch') || err?.name === 'TypeError' || isOffline;
+
+      if (isNetworkError) {
+        try {
+          const offlineHeaders: Record<string, string> = { 'Idempotency-Key': idempotencyKey };
+          // Reenviar Authorization si existe en apiClient
+          const offlineId = await enqueueFactura(payload, offlineHeaders);
+          setStatusMessage({
+            type: 'success',
+            text: `📴 Sin conexión — Factura encolada offline (#${offlineId.slice(0, 8)}). Se sincronizará al reconectar.`
+          });
+          // Limpiar carrito igual — la venta está "prometida" offline
+          setCart([]);
+          setEfectivoRecibido('');
+          setDescuentoGlobal(0);
+          setObservaciones('');
+        } catch (queueErr) {
+          setStatusMessage({ type: 'error', text: 'Sin conexión y fallo al encolar offline. Reintente.' });
+        }
+      } else {
+        setStatusMessage({ type: 'error', text: 'Error de comunicación con el servidor' });
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -4,6 +4,7 @@ packages:
 allowBuilds:
   argon2: true
   esbuild: true
+  msgpackr-extract: true
 overrides:
   nanoid: ^3.3.18
   js-yaml: ^4.3.1

@@ -47,6 +47,8 @@ const navItems = baseNavItems.filter(item => !item.requiresAdmin || isAdminOrGer
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="/manifest.json" />
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -476,5 +478,55 @@ const navItems = baseNavItems.filter(item => !item.requiresAdmin || isAdminOrGer
         window.addEventListener('offline', () => setState('disconnected', { checkedAt: new Date() }));
       })();
     </script>
+
+    <!-- PWA Service Worker — Fase 4.2 -->
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+    <span id="offline-queue-badge" class="hidden fixed bottom-4 right-4 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500 text-white shadow-lg border border-amber-600 z-50"></span>
   </body>
 </html>
+
+<script>
+  import { getQueueCount, replayQueuedFacturas } from '../lib/offline-queue';
+  import { apiFetch } from '../lib/apiClient';
+
+  const updateOfflineBadge = async () => {
+    try {
+      const count = await getQueueCount();
+      const badge = document.getElementById('offline-queue-badge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = `${count} offline`;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+    } catch {}
+  };
+
+  window.addEventListener('online', async () => {
+    try {
+      const result = await replayQueuedFacturas(apiFetch);
+      if (result.replayed > 0) {
+        console.info(`[OfflineQueue] ${result.replayed} facturas sincronizadas`);
+        window.dispatchEvent(new CustomEvent('tumifact:offline-synced', { detail: result }));
+      }
+      updateOfflineBadge();
+    } catch (e) {
+      console.error('[OfflineQueue] replay error', e);
+    }
+  });
+
+  setInterval(() => {
+    if (navigator.onLine) window.dispatchEvent(new Event('online'));
+    updateOfflineBadge();
+  }, 60000);
+
+  updateOfflineBadge();
+</script>

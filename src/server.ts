@@ -1,9 +1,13 @@
 import http from 'http';
 import dotenv from 'dotenv';
+import closeWithGrace from 'close-with-grace';
 import app from './app';
 import { pool } from './db';
 import { initSocketIO } from './server/socket';
 import { initRedis, closeRedis } from './config/redis';
+import { logger } from './lib/logger';
+import { initSchedulerQueue, closeSchedulerQueue } from './lib/queue/scheduler.queue';
+import { initSchedulerWorker, closeSchedulerWorker } from './jobs';
 
 dotenv.config();
 
@@ -18,20 +22,34 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
+let httpServer: http.Server | null = null;
+
 async function startServer(): Promise<void> {
   try {
-    console.log('Intentando conectar a la base de datos...');
+    logger.info('Intentando conectar a la base de datos...');
     await pool.query('SELECT NOW()');
     await initRedis();
-    console.log('✓ Conexión exitosa a PostgreSQL');
-    console.log(`  Base de datos: ${process.env.DB_DATABASE || 'tumifact_db'}`);
-    console.log(`  Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);
+    logger.info(
+      { database: process.env.DB_DATABASE || 'tumifact_db', host: process.env.DB_HOST || 'localhost' },
+      '✓ Conexión exitosa a PostgreSQL + Redis'
+    );
 
-    const httpServer = http.createServer(app);
+    httpServer = http.createServer(app);
     initSocketIO(httpServer);
 
+    // Scheduler BullMQ (audit, separados vencidos, stock crítico) — Fase 4.1
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        await initSchedulerQueue();
+        await initSchedulerWorker();
+        logger.info('Scheduler BullMQ iniciado (audit-archiver, separados-vencidos, stock-critico)');
+      } catch (err) {
+        logger.error({ err: (err as Error).message }, 'Error iniciando scheduler — continuando sin jobs');
+      }
+    }
+
     httpServer.listen(PORT, '0.0.0.0', () => {
-      console.log(`\n✓ Servidor API Backend con Socket.io corriendo en http://localhost:${PORT}`);
+      logger.info(`\n✓ Servidor API Backend con Socket.io corriendo en http://localhost:${PORT}`);
       console.log('\nRutas de API v2 disponibles:');
       console.log('- POST /api/auth/login', '(Inicio de sesión dual)');
       console.log('- GET  /api/productos', '(Catálogo con categorías y mayorista)');
@@ -45,26 +63,25 @@ async function startServer(): Promise<void> {
 
     httpServer.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
-        console.error(`El puerto ${PORT} está en uso. Intenta con otro puerto.`);
+        logger.error(`El puerto ${PORT} está en uso. Intenta con otro puerto.`);
       } else {
-        console.error('Error al iniciar el servidor:', error);
+        logger.error({ err: error }, 'Error al iniciar el servidor');
       }
       process.exit(1);
     });
+
+    // Graceful shutdown con close-with-grace (10s) — Fase 4.1
+    closeWithGrace({ delay: Number(process.env.SHUTDOWN_DELAY_MS) || 10000 }, async ({ signal, err }) => {
+      if (err) logger.error({ err }, 'Shutdown por error');
+      logger.info({ signal }, '⏳ Graceful shutdown iniciado...');
+      if (httpServer) await new Promise<void>((resolve) => httpServer!.close(() => resolve()));
+      await Promise.allSettled([closeSchedulerWorker(), closeSchedulerQueue(), closeRedis(), pool.end()]);
+      logger.info('✅ Shutdown completo');
+    });
   } catch (err) {
-    console.error('Error al conectar a la base de datos:', err);
+    logger.error({ err: (err as Error).message }, 'Error al conectar a la base de datos');
     process.exit(1);
   }
 }
-
-process.on('SIGTERM', () => {
-  console.log('Recibida señal SIGTERM. Cerrando servidor...');
-  Promise.all([pool.end(), closeRedis()]).finally(() => process.exit(0));
-});
-
-process.on('SIGINT', () => {
-  console.log('Recibida señal SIGINT. Cerrando servidor...');
-  Promise.all([pool.end(), closeRedis()]).finally(() => process.exit(0));
-});
 
 startServer();
