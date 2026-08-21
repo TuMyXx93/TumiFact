@@ -31,8 +31,17 @@ async function setupTestDatabase() {
         await adminClient.end();
     }
 
+    // Fase 0.1: fuente única es Drizzle baseline (22 tablas). database_pg.sql está archivado (19 tablas sin auth_sessions)
+    const drizzlePath = path.join(__dirname, '..', 'drizzle', '0000_baseline.sql');
     const sqlPath = path.join(__dirname, '..', 'database_pg.sql');
-    const sql = fs.readFileSync(sqlPath, 'utf8');
+    let sql;
+    if (fs.existsSync(drizzlePath)) {
+        sql = fs.readFileSync(drizzlePath, 'utf8');
+        console.log('✓ Usando drizzle/0000_baseline.sql (22 tablas)');
+    } else {
+        sql = fs.readFileSync(sqlPath, 'utf8');
+        console.log('⚠ drizzle baseline no encontrado, usando database_pg.sql');
+    }
 
     const testClient = new Client(testConfig);
     await testClient.connect();

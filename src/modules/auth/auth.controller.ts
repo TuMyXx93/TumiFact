@@ -15,9 +15,10 @@ const cookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === 'produc
 const refreshCookieOptions = { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 };
 
 // Rate limiter estricto para intentos de login (10 intentos por minuto por IP)
+// En test se relaja a 1000 para permitir múltiples logins por suite sin 429
 const loginLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 10,
   message: { error: 'Demasiados intentos de inicio de sesión. Por favor intente más tarde.' },
   standardHeaders: true,
   legacyHeaders: false,
