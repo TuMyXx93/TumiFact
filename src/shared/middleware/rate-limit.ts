@@ -15,6 +15,10 @@ export const apiRateLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   store: apiStore,
+  // Readiness probes are infrastructure traffic, not business API usage.
+  // Exempting this endpoint prevents browser/container health checks from
+  // exhausting the user-facing quota and returning false 429 outages.
+  skip: (req) => req.method === 'GET' && req.path === '/health/db',
   message: { error: 'Límite de solicitudes excedido', code: 'RATE_LIMITED' }
 });
 

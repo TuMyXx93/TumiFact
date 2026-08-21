@@ -466,9 +466,11 @@ const navItems = baseNavItems.filter(item => !item.requiresAdmin || isAdminOrGer
         };
 
         checkDbHealth(true);
+        // Health is a readiness signal; polling every 30s avoids creating
+        // sustained API traffic while keeping the indicator responsive.
         setInterval(() => {
           checkDbHealth(false);
-        }, 2500);
+        }, 30000);
 
         window.addEventListener('online', () => checkDbHealth(true));
         window.addEventListener('offline', () => setState('disconnected', { checkedAt: new Date() }));
