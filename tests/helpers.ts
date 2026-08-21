@@ -36,4 +36,6 @@ export async function truncateAll(): Promise<void> {
      ON CONFLICT (id) DO NOTHING;`,
     [hash]
   );
+  // Avanzar secuencia de usuarios tras insert explícito con id=1 (RESTART IDENTITY la deja en 1)
+  await pool.query(`SELECT setval('usuarios_id_seq', (SELECT MAX(id) FROM usuarios))`);
 }
