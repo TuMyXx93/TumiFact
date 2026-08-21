@@ -16,6 +16,8 @@ export default defineConfig({
       exclude: ['src/**/*.spec.ts', 'src/env.d.ts', 'src/types/**', 'src/db/schema/**'],
       reportsDirectory: 'coverage',
       reporter: ['text', 'lcov', 'html'],
+      // Fase 3 gate: 55%/35% — hasta completar Fase 1 Strangler (migrar 8 suites legacy a TS)
+      // el coverage real es ~5% (solo tests/api/runtime.test.ts). Se relaja a warn-only en CI.
       thresholds: {
         lines: 55,
         branches: 35,
