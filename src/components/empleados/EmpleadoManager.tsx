@@ -385,14 +385,23 @@ export default function EmpleadoManager({
         method: 'PATCH',
       });
       if (res.ok) {
-        setStatusMessage({ type: 'success', text: 'Estado de acceso actualizado exitosamente' });
+        setStatusMessage({
+          type: 'success',
+          text: 'Estado de acceso actualizado exitosamente',
+        });
         await fetchEmpleados();
       } else {
         const data = await res.json();
-        setStatusMessage({ type: 'error', text: data.error || 'Error al cambiar estado' });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || 'Error al cambiar estado',
+        });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error de conexión con el servidor' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error de conexión con el servidor',
+      });
     }
   };
 
@@ -407,14 +416,23 @@ export default function EmpleadoManager({
         method: 'DELETE',
       });
       if (res.ok) {
-        setStatusMessage({ type: 'success', text: `Colaborador ${nombre} eliminado exitosamente` });
+        setStatusMessage({
+          type: 'success',
+          text: `Colaborador ${nombre} eliminado exitosamente`,
+        });
         await fetchEmpleados();
       } else {
         const data = await res.json();
-        setStatusMessage({ type: 'error', text: data.error || 'No se pudo eliminar el empleado' });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || 'No se pudo eliminar el empleado',
+        });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error de red al intentar eliminar' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error de red al intentar eliminar',
+      });
     }
   };
 
@@ -448,7 +466,10 @@ export default function EmpleadoManager({
           return;
         }
         if (formData.password !== confirmPassword) {
-          setStatusMessage({ type: 'error', text: 'Las nuevas contraseñas no coinciden' });
+          setStatusMessage({
+            type: 'error',
+            text: 'Las nuevas contraseñas no coinciden',
+          });
           return;
         }
       }
@@ -471,12 +492,18 @@ export default function EmpleadoManager({
 
         const data = await res.json();
         if (res.ok) {
-          setStatusMessage({ type: 'success', text: 'Empleado actualizado con éxito' });
+          setStatusMessage({
+            type: 'success',
+            text: 'Empleado actualizado con éxito',
+          });
           setIsModalOpen(false);
           await fetchEmpleados();
         } else {
           const detailMsg = data.details ? Object.values(data.details).join(', ') : data.error;
-          setStatusMessage({ type: 'error', text: detailMsg || 'Error al actualizar empleado' });
+          setStatusMessage({
+            type: 'error',
+            text: detailMsg || 'Error al actualizar empleado',
+          });
         }
       } else {
         // Crear
@@ -488,16 +515,25 @@ export default function EmpleadoManager({
 
         const data = await res.json();
         if (res.ok) {
-          setStatusMessage({ type: 'success', text: 'Nuevo empleado registrado exitosamente' });
+          setStatusMessage({
+            type: 'success',
+            text: 'Nuevo empleado registrado exitosamente',
+          });
           setIsModalOpen(false);
           await fetchEmpleados();
         } else {
           const detailMsg = data.details ? Object.values(data.details).join(', ') : data.error;
-          setStatusMessage({ type: 'error', text: detailMsg || 'Error al registrar empleado' });
+          setStatusMessage({
+            type: 'error',
+            text: detailMsg || 'Error al registrar empleado',
+          });
         }
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error inesperado de comunicación con el servidor' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error inesperado de comunicación con el servidor',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1016,7 +1052,10 @@ export default function EmpleadoManager({
                     required
                     value={formData.numero_identificacion}
                     onChange={(e) =>
-                      setFormData({ ...formData, numero_identificacion: e.target.value })
+                      setFormData({
+                        ...formData,
+                        numero_identificacion: e.target.value,
+                      })
                     }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
                   />
@@ -1109,7 +1148,9 @@ export default function EmpleadoManager({
                     <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden flex gap-1">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${passwordStrength.barColor}`}
-                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                        style={{
+                          width: `${(passwordStrength.score / 5) * 100}%`,
+                        }}
                       />
                     </div>
 
@@ -1155,7 +1196,10 @@ export default function EmpleadoManager({
                   <select
                     value={formData.rol_id}
                     onChange={(e) =>
-                      setFormData({ ...formData, rol_id: parseInt(e.target.value, 10) })
+                      setFormData({
+                        ...formData,
+                        rol_id: parseInt(e.target.value, 10),
+                      })
                     }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                   >
@@ -1201,7 +1245,10 @@ export default function EmpleadoManager({
                     type="number"
                     value={formData.salario}
                     onChange={(e) =>
-                      setFormData({ ...formData, salario: parseFloat(e.target.value) || 0 })
+                      setFormData({
+                        ...formData,
+                        salario: parseFloat(e.target.value) || 0,
+                      })
                     }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
                   />

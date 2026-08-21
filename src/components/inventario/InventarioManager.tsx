@@ -45,9 +45,10 @@ export default function InventarioManager() {
     cantidad: '',
     notas: '',
   });
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null
-  );
+  const [statusMsg, setStatusMsg] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -86,15 +87,29 @@ export default function InventarioManager() {
 
       const data = await res.json();
       if (res.ok) {
-        setStatusMsg({ type: 'success', text: 'Movimiento de inventario registrado con éxito.' });
+        setStatusMsg({
+          type: 'success',
+          text: 'Movimiento de inventario registrado con éxito.',
+        });
         setIsModalOpen(false);
-        setFormData({ producto_id: '', tipo: 'entrada_compra', cantidad: '', notas: '' });
+        setFormData({
+          producto_id: '',
+          tipo: 'entrada_compra',
+          cantidad: '',
+          notas: '',
+        });
         fetchData();
       } else {
-        setStatusMsg({ type: 'error', text: data.error || 'Error al registrar movimiento' });
+        setStatusMsg({
+          type: 'error',
+          text: data.error || 'Error al registrar movimiento',
+        });
       }
     } catch (err) {
-      setStatusMsg({ type: 'error', text: 'Error al conectar con el servidor' });
+      setStatusMsg({
+        type: 'error',
+        text: 'Error al conectar con el servidor',
+      });
     }
   };
 

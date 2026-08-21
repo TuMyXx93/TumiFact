@@ -86,7 +86,11 @@ export class InventarioService {
         entidad: 'productos',
         entidadId: prod.id,
         datosPrevios: { stock: stockActual },
-        datosNuevos: { stock: nuevoStock, delta: cantidadDelta, tipo: input.tipo },
+        datosNuevos: {
+          stock: nuevoStock,
+          delta: cantidadDelta,
+          tipo: input.tipo,
+        },
         req,
       });
 

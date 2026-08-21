@@ -17,17 +17,25 @@ const cookieOptions = {
   sameSite: 'lax' as const,
   maxAge: 15 * 60 * 1000,
 };
-const refreshCookieOptions = { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 };
+const refreshCookieOptions = {
+  ...cookieOptions,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
 
 // Rate limiter estricto para intentos de login (10 intentos por minuto por IP)
 // En test se relaja a 1000 para permitir múltiples logins por suite sin 429
 const loginLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: process.env.NODE_ENV === 'test' ? 1000 : 10,
-  message: { error: 'Demasiados intentos de inicio de sesión. Por favor intente más tarde.' },
+  message: {
+    error: 'Demasiados intentos de inicio de sesión. Por favor intente más tarde.',
+  },
   standardHeaders: true,
   legacyHeaders: false,
-  store: new RedisStore({ prefix: 'tumifact:rl:login:', sendCommand: redisSendCommand }),
+  store: new RedisStore({
+    prefix: 'tumifact:rl:login:',
+    sendCommand: redisSendCommand,
+  }),
 });
 
 // POST /api/auth/login — Inicio de sesión con correo O número de identificación

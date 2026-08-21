@@ -80,11 +80,8 @@ jobs:
           DB_PASSWORD: tumifact_password
           DB_DATABASE: tumifact_test
 
-      - name: Run Vitest — 31 tests (Strangler complete)
-        # Coverage gate 55% se activa cuando todos los módulos DDD tengan tests (Fase 5)
-        # Hoy 31 tests cubren 8/15 módulos → ~45% lines, se mantiene warn-only hasta 55%
-        continue-on-error: true
-        run: pnpm test:coverage --run || true
+      - name: Run Vitest — 57 tests + coverage gate 55% (Fase 5 completa)
+        run: pnpm test:coverage --run
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -95,8 +92,8 @@ jobs:
           JWT_SECRET: test-ci-jwt-secret-32-bytes-minimum-123456
           NODE_ENV: test
 
-      - name: Lint & Format Check (Biome)
-        run: pnpm exec biome check src/ packages/ --diagnostic-level=error --max-diagnostics=50 || true
+      - name: Lint & Format Check (Biome) — gate activo
+        run: pnpm exec biome check src/ packages/
 
       - name: Upload Coverage Report Artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

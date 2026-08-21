@@ -155,7 +155,10 @@ export default function POSTerminal({
   const handleAbrirCajaRapida = async () => {
     const monto = typeof montoAperturaInput === 'number' ? montoAperturaInput : 0;
     if (monto < 0) {
-      setStatusMessage({ type: 'error', text: 'El monto de apertura no puede ser negativo' });
+      setStatusMessage({
+        type: 'error',
+        text: 'El monto de apertura no puede ser negativo',
+      });
       return;
     }
 
@@ -180,10 +183,16 @@ export default function POSTerminal({
           text: `¡Caja abierta exitosamente con base de $${formatNumber(monto)}!`,
         });
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Error al abrir caja' });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || 'Error al abrir caja',
+        });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error de conexión al abrir caja' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error de conexión al abrir caja',
+      });
     } finally {
       setIsOpeningCaja(false);
     }
@@ -199,11 +208,17 @@ export default function POSTerminal({
         const data = await res.json();
         setTicketData(data);
       } else {
-        setStatusMessage({ type: 'error', text: 'No se pudo cargar el tiquete para impresión' });
+        setStatusMessage({
+          type: 'error',
+          text: 'No se pudo cargar el tiquete para impresión',
+        });
         setShowTicketModal(false);
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error de red al obtener tiquete' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error de red al obtener tiquete',
+      });
       setShowTicketModal(false);
     } finally {
       setIsLoadingTicket(false);
@@ -533,7 +548,10 @@ export default function POSTerminal({
       return;
     }
     if (cart.length === 0) {
-      setStatusMessage({ type: 'error', text: 'Agrega al menos un producto antes de guardar' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Agrega al menos un producto antes de guardar',
+      });
       return;
     }
 
@@ -593,12 +611,18 @@ export default function POSTerminal({
     }
 
     if (!selectedClienteId) {
-      setStatusMessage({ type: 'error', text: 'Seleccione o registre un cliente para la venta' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Seleccione o registre un cliente para la venta',
+      });
       return;
     }
 
     if (cart.length === 0) {
-      setStatusMessage({ type: 'error', text: 'El carrito del terminal POS está vacío' });
+      setStatusMessage({
+        type: 'error',
+        text: 'El carrito del terminal POS está vacío',
+      });
       return;
     }
 
@@ -678,7 +702,9 @@ export default function POSTerminal({
 
       if (isNetworkError) {
         try {
-          const offlineHeaders: Record<string, string> = { 'Idempotency-Key': idempotencyKey };
+          const offlineHeaders: Record<string, string> = {
+            'Idempotency-Key': idempotencyKey,
+          };
           // Reenviar Authorization si existe en apiClient
           const offlineId = await enqueueFactura(payload, offlineHeaders);
           setStatusMessage({
@@ -697,7 +723,10 @@ export default function POSTerminal({
           });
         }
       } else {
-        setStatusMessage({ type: 'error', text: 'Error de comunicación con el servidor' });
+        setStatusMessage({
+          type: 'error',
+          text: 'Error de comunicación con el servidor',
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -714,12 +743,18 @@ export default function POSTerminal({
       return;
     }
     if (cart.length === 0) {
-      setStatusMessage({ type: 'error', text: 'El carrito no tiene productos para separar' });
+      setStatusMessage({
+        type: 'error',
+        text: 'El carrito no tiene productos para separar',
+      });
       return;
     }
     const abono = typeof abonoInicialSeparado === 'number' ? abonoInicialSeparado : 0;
     if (abono <= 0) {
-      setStatusMessage({ type: 'error', text: 'Debe ingresar un abono inicial mayor a $0' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Debe ingresar un abono inicial mayor a $0',
+      });
       return;
     }
     if (abono > totalFactura) {
@@ -782,7 +817,10 @@ export default function POSTerminal({
         });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error de red al crear el separado' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error de red al crear el separado',
+      });
     } finally {
       setIsSubmittingSeparado(false);
     }

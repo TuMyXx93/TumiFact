@@ -14,7 +14,9 @@ export interface StockCriticoItem {
  * Detecta productos con stock_actual <= stock_minimo y emite alerta.
  * Cada 30 min. Es idempotente — no escribe DB, solo notifica.
  */
-export async function runStockCritico(): Promise<{ criticos: StockCriticoItem[] }> {
+export async function runStockCritico(): Promise<{
+  criticos: StockCriticoItem[];
+}> {
   try {
     const { rows } = await pool.query(
       `SELECT id, codigo, nombre, stock_actual, stock_minimo

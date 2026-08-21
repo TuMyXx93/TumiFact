@@ -43,7 +43,10 @@ export async function verifyAuth(req: Request, res: Response, next: NextFunction
       return res.status(401).json({ error: 'Acceso no autorizado: Token no proporcionado' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      id: number;
+      email: string;
+    };
 
     const userRows = await db
       .select({

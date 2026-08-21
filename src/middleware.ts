@@ -68,7 +68,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Si es un request de API que no es login/health, responder 401 JSON
     if (pathname.startsWith('/api/')) {
       return new Response(
-        JSON.stringify({ error: 'No autorizado. Se requiere inicio de sesión.' }),
+        JSON.stringify({
+          error: 'No autorizado. Se requiere inicio de sesión.',
+        }),
         {
           status: 401,
           headers: { 'Content-Type': 'application/json' },

@@ -46,9 +46,18 @@ export const detalleDevolucion = pgTable('detalle_devolucion', {
   producto_id: integer('producto_id')
     .references(() => productos.id)
     .notNull(),
-  cantidad_devuelta: numeric('cantidad_devuelta', { precision: 10, scale: 2 }).notNull(),
-  precio_unitario: numeric('precio_unitario', { precision: 10, scale: 2 }).notNull(),
-  subtotal_devuelto: numeric('subtotal_devuelto', { precision: 10, scale: 2 }).notNull(),
+  cantidad_devuelta: numeric('cantidad_devuelta', {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
+  precio_unitario: numeric('precio_unitario', {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
+  subtotal_devuelto: numeric('subtotal_devuelto', {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
   motivo_item: text('motivo_item'),
   condicion: varchar('condicion', { length: 30 }).default('bueno').notNull(), // 'bueno', 'dañado', 'defectuoso'
   reingresa_inventario: boolean('reingresa_inventario').default(true).notNull(),

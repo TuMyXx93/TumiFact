@@ -105,7 +105,10 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
   const handleCreateOrUpdateCliente = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre.trim()) {
-      setStatusMessage({ type: 'error', text: 'El nombre del cliente es requerido' });
+      setStatusMessage({
+        type: 'error',
+        text: 'El nombre del cliente es requerido',
+      });
       return;
     }
 
@@ -160,10 +163,16 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
           notas: '',
         });
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Error al guardar el cliente' });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || 'Error al guardar el cliente',
+        });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error al conectar con el servidor' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error al conectar con el servidor',
+      });
     }
   };
 
@@ -372,7 +381,10 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
                     placeholder="ej. 1020304050"
                     value={formData.numero_identificacion}
                     onChange={(e) =>
-                      setFormData({ ...formData, numero_identificacion: e.target.value })
+                      setFormData({
+                        ...formData,
+                        numero_identificacion: e.target.value,
+                      })
                     }
                     className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
                   />
@@ -428,7 +440,12 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
                   type="text"
                   placeholder="ej. Calle 50 #25-15, Medellín"
                   value={formData.direccion_texto}
-                  onChange={(e) => setFormData({ ...formData, direccion_texto: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      direccion_texto: e.target.value,
+                    })
+                  }
                   className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>

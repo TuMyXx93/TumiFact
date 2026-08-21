@@ -148,7 +148,11 @@ export class DevolucionesService {
         accion: 'DEVOLUCION_CREADA',
         entidad: 'devoluciones',
         entidadId: newDev.id,
-        datosNuevos: { factura_id: input.factura_id, monto: totalMontoDevuelto, tipo: input.tipo },
+        datosNuevos: {
+          factura_id: input.factura_id,
+          monto: totalMontoDevuelto,
+          tipo: input.tipo,
+        },
         req,
       });
 

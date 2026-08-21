@@ -133,7 +133,9 @@ export class ReportesService {
       doc
         .fontSize(10)
         .font('Helvetica')
-        .text(`NIT: ${config.nit || 'N/A'} | Tel: ${config.telefono || ''}`, { align: 'center' });
+        .text(`NIT: ${config.nit || 'N/A'} | Tel: ${config.telefono || ''}`, {
+          align: 'center',
+        });
       doc.text(config.direccion || '', { align: 'center' });
       doc.moveDown();
 

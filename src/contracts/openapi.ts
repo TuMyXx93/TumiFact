@@ -4,7 +4,12 @@ export const openApiDocument = {
   servers: [{ url: '/api' }],
   security: [{ cookieAuth: [] }],
   paths: {
-    '/health': { get: { security: [], responses: { '200': { description: 'Servicio activo' } } } },
+    '/health': {
+      get: {
+        security: [],
+        responses: { '200': { description: 'Servicio activo' } },
+      },
+    },
     '/ready': {
       get: {
         security: [],
@@ -40,5 +45,9 @@ export const openApiDocument = {
       },
     },
   },
-  components: { securitySchemes: { cookieAuth: { type: 'apiKey', in: 'cookie', name: 'token' } } },
+  components: {
+    securitySchemes: {
+      cookieAuth: { type: 'apiKey', in: 'cookie', name: 'token' },
+    },
+  },
 } as const;

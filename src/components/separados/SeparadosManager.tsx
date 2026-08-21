@@ -39,9 +39,10 @@ export default function SeparadosManager() {
   const [abonoModal, setAbonoModal] = useState<Separado | null>(null);
   const [abonoMonto, setAbonoMonto] = useState('');
   const [formaPago, setFormaPago] = useState('efectivo');
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null
-  );
+  const [statusMsg, setStatusMsg] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const fetchSeparados = async () => {
     try {
@@ -98,10 +99,16 @@ export default function SeparadosManager() {
         setAbonoMonto('');
         fetchSeparados();
       } else {
-        setStatusMsg({ type: 'error', text: data.error || 'Error al registrar abono' });
+        setStatusMsg({
+          type: 'error',
+          text: data.error || 'Error al registrar abono',
+        });
       }
     } catch (err) {
-      setStatusMsg({ type: 'error', text: 'Error al conectar con el servidor' });
+      setStatusMsg({
+        type: 'error',
+        text: 'Error al conectar con el servidor',
+      });
     }
   };
 

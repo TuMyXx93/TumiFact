@@ -304,7 +304,11 @@ export class SeparadosService {
         accion: esCompletado ? 'SEPARADO_COMPLETADO' : 'SEPARADO_ABONO_REGISTRADO',
         entidad: 'separados',
         entidadId: separadoId,
-        datosNuevos: { monto: montoAbono, saldo_restante: nuevoSaldo, completado: esCompletado },
+        datosNuevos: {
+          monto: montoAbono,
+          saldo_restante: nuevoSaldo,
+          completado: esCompletado,
+        },
         req,
       });
     });

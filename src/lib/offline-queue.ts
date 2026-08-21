@@ -43,7 +43,10 @@ export async function enqueueFactura(
   const item: QueuedFactura = {
     offlineId,
     payload: { ...payload, offlineId },
-    headers: { ...headers, 'Idempotency-Key': headers['Idempotency-Key'] || offlineId },
+    headers: {
+      ...headers,
+      'Idempotency-Key': headers['Idempotency-Key'] || offlineId,
+    },
     createdAt: new Date().toISOString(),
     retries: 0,
   };

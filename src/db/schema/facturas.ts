@@ -25,7 +25,7 @@ export const facturas = pgTable('facturas', {
   total: numeric('total', { precision: 12, scale: 2 }).notNull(),
   forma_pago: varchar('forma_pago', { length: 50 }).default('efectivo').notNull(), // 'efectivo', 'transferencia', 'tarjeta', 'mixto'
   tipo: varchar('tipo', { length: 20 }).default('contado').notNull(), // 'contado', 'separado_final'
-  estado: varchar('estado', { length: 20 }).default('completada').notNull(), // 'completada', 'devuelta', 'parcialmente_devuelta', 'anulada'
+  estado: varchar('estado', { length: 30 }).default('completada').notNull(), // 'completada', 'devuelta', 'parcialmente_devuelta' (21 chars), 'anulada'
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
 });

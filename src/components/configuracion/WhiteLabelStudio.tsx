@@ -43,11 +43,27 @@ interface WhiteLabelStudioProps {
 }
 
 const PRESET_ACCENTS = [
-  { name: 'Azul Eléctrico (Default)', hex: '#3b82f6', class: 'from-blue-600 to-cyan-500' },
+  {
+    name: 'Azul Eléctrico (Default)',
+    hex: '#3b82f6',
+    class: 'from-blue-600 to-cyan-500',
+  },
   { name: 'Cian Neón', hex: '#06b6d4', class: 'from-cyan-500 to-teal-400' },
-  { name: 'Esmeralda Fiscal', hex: '#10b981', class: 'from-emerald-500 to-green-400' },
-  { name: 'Ámbar Comercial', hex: '#f59e0b', class: 'from-amber-500 to-yellow-400' },
-  { name: 'Púrpura Deep', hex: '#8b5cf6', class: 'from-purple-600 to-indigo-500' },
+  {
+    name: 'Esmeralda Fiscal',
+    hex: '#10b981',
+    class: 'from-emerald-500 to-green-400',
+  },
+  {
+    name: 'Ámbar Comercial',
+    hex: '#f59e0b',
+    class: 'from-amber-500 to-yellow-400',
+  },
+  {
+    name: 'Púrpura Deep',
+    hex: '#8b5cf6',
+    class: 'from-purple-600 to-indigo-500',
+  },
   { name: 'Rosa Neón', hex: '#ec4899', class: 'from-pink-500 to-rose-400' },
 ];
 
@@ -105,7 +121,10 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
         });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'No se pudo conectar con el servidor' });
+      setStatusMessage({
+        type: 'error',
+        text: 'No se pudo conectar con el servidor',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -320,7 +339,10 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                         'Cambios y devoluciones dentro de los 30 días con el comprobante.'
                       }
                       onChange={(e) =>
-                        setConfig({ ...config, politica_devolucion: e.target.value })
+                        setConfig({
+                          ...config,
+                          politica_devolucion: e.target.value,
+                        })
                       }
                       className="w-full px-3.5 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 resize-none"
                     />
@@ -335,7 +357,12 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                         config.politica_separados ||
                         'Plazo máximo de separado: 30 a 45 días. Abonos no reembolsables.'
                       }
-                      onChange={(e) => setConfig({ ...config, politica_separados: e.target.value })}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          politica_separados: e.target.value,
+                        })
+                      }
                       className="w-full px-3.5 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500 resize-none"
                     />
                   </div>
@@ -401,7 +428,10 @@ export default function WhiteLabelStudio({ initialConfig }: WhiteLabelStudioProp
                 <span>FECHA:</span>
                 <span>
                   {new Date().toLocaleDateString('es-CO')}{' '}
-                  {new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                  {new Date().toLocaleTimeString('es-CO', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </span>
               </div>
               <div className="flex justify-between">

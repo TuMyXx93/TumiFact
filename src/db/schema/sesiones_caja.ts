@@ -8,13 +8,23 @@ export const sesionesCaja = pgTable('sesiones_caja', {
     .notNull(),
   estado: varchar('estado', { length: 20 }).default('abierta').notNull(), // 'abierta', 'cerrada'
   monto_apertura: numeric('monto_apertura', { precision: 12, scale: 2 }).default('0').notNull(),
-  monto_cierre_declarado: numeric('monto_cierre_declarado', { precision: 12, scale: 2 }),
-  monto_cierre_calculado: numeric('monto_cierre_calculado', { precision: 12, scale: 2 }).default(
-    '0'
-  ),
-  diferencia_caja: numeric('diferencia_caja', { precision: 12, scale: 2 }).default('0'),
+  monto_cierre_declarado: numeric('monto_cierre_declarado', {
+    precision: 12,
+    scale: 2,
+  }),
+  monto_cierre_calculado: numeric('monto_cierre_calculado', {
+    precision: 12,
+    scale: 2,
+  }).default('0'),
+  diferencia_caja: numeric('diferencia_caja', {
+    precision: 12,
+    scale: 2,
+  }).default('0'),
   ventas_efectivo: numeric('ventas_efectivo', { precision: 12, scale: 2 }).default('0').notNull(),
-  ventas_transferencia: numeric('ventas_transferencia', { precision: 12, scale: 2 })
+  ventas_transferencia: numeric('ventas_transferencia', {
+    precision: 12,
+    scale: 2,
+  })
     .default('0')
     .notNull(),
   ventas_tarjeta: numeric('ventas_tarjeta', { precision: 12, scale: 2 }).default('0').notNull(),
@@ -22,7 +32,10 @@ export const sesionesCaja = pgTable('sesiones_caja', {
   total_devoluciones: numeric('total_devoluciones', { precision: 12, scale: 2 })
     .default('0')
     .notNull(),
-  total_separados_abonos: numeric('total_separados_abonos', { precision: 12, scale: 2 })
+  total_separados_abonos: numeric('total_separados_abonos', {
+    precision: 12,
+    scale: 2,
+  })
     .default('0')
     .notNull(),
   numero_transacciones: integer('numero_transacciones').default(0).notNull(),

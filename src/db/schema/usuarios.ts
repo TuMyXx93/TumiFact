@@ -10,7 +10,9 @@ export const usuarios = pgTable('usuarios', {
   tipo_identificacion_id: integer('tipo_identificacion_id').references(
     () => tiposIdentificacion.id
   ),
-  numero_identificacion: varchar('numero_identificacion', { length: 30 }).unique(),
+  numero_identificacion: varchar('numero_identificacion', {
+    length: 30,
+  }).unique(),
   email: varchar('email', { length: 150 }).notNull().unique(),
   telefono: varchar('telefono', { length: 20 }),
   direccion_id: integer('direccion_id').references(() => direcciones.id),

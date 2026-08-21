@@ -163,9 +163,11 @@ app.use('/reportes', reportesRouter);
 app.use('/api/reportes', reportesRouter);
 
 app.use((req: Request, res: Response) => {
-  res
-    .status(404)
-    .json({ error: 'Ruta no encontrada', code: 'NOT_FOUND', correlationId: req.correlationId });
+  res.status(404).json({
+    error: 'Ruta no encontrada',
+    code: 'NOT_FOUND',
+    correlationId: req.correlationId,
+  });
 });
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

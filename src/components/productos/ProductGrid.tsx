@@ -26,7 +26,12 @@ interface Categoria {
   nombre: string;
   tipo: string;
   descripcion?: string;
-  campos_extra?: Array<{ key: string; label: string; type: string; options?: string[] }>;
+  campos_extra?: Array<{
+    key: string;
+    label: string;
+    type: string;
+    options?: string[];
+  }>;
 }
 
 interface ProductGridProps {
@@ -160,7 +165,10 @@ export default function ProductGrid({
           text: data.message || 'Producto eliminado exitosamente',
         });
       } else {
-        setStatusMessage({ type: 'error', text: data.error || 'Error al eliminar' });
+        setStatusMessage({
+          type: 'error',
+          text: data.error || 'Error al eliminar',
+        });
       }
     } catch (err) {
       setStatusMessage({ type: 'error', text: 'Error de conexión' });
@@ -170,7 +178,10 @@ export default function ProductGrid({
   const handleCreateOrUpdateProducto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.codigo.trim() || !formData.nombre.trim()) {
-      setStatusMessage({ type: 'error', text: 'El código y el nombre son obligatorios' });
+      setStatusMessage({
+        type: 'error',
+        text: 'El código y el nombre son obligatorios',
+      });
       return;
     }
 
@@ -265,7 +276,10 @@ export default function ProductGrid({
         setStatusMessage({ type: 'error', text: errorDetail });
       }
     } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Error de conexión con el servidor' });
+      setStatusMessage({
+        type: 'error',
+        text: 'Error de conexión con el servidor',
+      });
     }
   };
 
@@ -576,7 +590,12 @@ export default function ProductGrid({
                     step="any"
                     placeholder="35000"
                     value={formData.precio_mayorista}
-                    onChange={(e) => setFormData({ ...formData, precio_mayorista: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        precio_mayorista: e.target.value,
+                      })
+                    }
                     className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-cyan-400 font-mono font-bold focus:outline-none focus:border-cyan-500"
                   />
                 </div>
@@ -590,7 +609,10 @@ export default function ProductGrid({
                     placeholder="12"
                     value={formData.cantidad_mayorista}
                     onChange={(e) =>
-                      setFormData({ ...formData, cantidad_mayorista: e.target.value })
+                      setFormData({
+                        ...formData,
+                        cantidad_mayorista: e.target.value,
+                      })
                     }
                     className="w-full mt-1 px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-blue-500"
                   />
@@ -641,7 +663,10 @@ export default function ProductGrid({
                               onChange={(e) =>
                                 setFormData({
                                   ...formData,
-                                  atributos: { ...formData.atributos, [campo.key]: e.target.value },
+                                  atributos: {
+                                    ...formData.atributos,
+                                    [campo.key]: e.target.value,
+                                  },
                                 })
                               }
                               className="w-full mt-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500"
@@ -667,7 +692,10 @@ export default function ProductGrid({
                               onChange={(e) =>
                                 setFormData({
                                   ...formData,
-                                  atributos: { ...formData.atributos, [campo.key]: e.target.value },
+                                  atributos: {
+                                    ...formData.atributos,
+                                    [campo.key]: e.target.value,
+                                  },
                                 })
                               }
                               className="w-full mt-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500"

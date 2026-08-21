@@ -22,7 +22,10 @@ export const movimientosInventario = pgTable('movimientos_inventario', {
   sesion_caja_id: integer('sesion_caja_id').references(() => sesionesCaja.id),
   tipo: varchar('tipo', { length: 40 }).notNull(), // 'entrada_manual', 'salida_venta', 'devolucion_entrada', 'ajuste_positivo', 'ajuste_negativo', 'perdida', 'separado_reserva', 'separado_liberacion'
   cantidad: numeric('cantidad', { precision: 10, scale: 2 }).notNull(),
-  stock_anterior: numeric('stock_anterior', { precision: 10, scale: 2 }).notNull(),
+  stock_anterior: numeric('stock_anterior', {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
   stock_nuevo: numeric('stock_nuevo', { precision: 10, scale: 2 }).notNull(),
   costo_unitario: numeric('costo_unitario', { precision: 10, scale: 2 }),
   referencia_tipo: varchar('referencia_tipo', { length: 30 }), // 'factura', 'separado', 'devolucion', 'manual'

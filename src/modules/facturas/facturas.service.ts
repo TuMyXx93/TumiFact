@@ -122,7 +122,10 @@ export class FacturasService {
       forma_pago: factura.forma_pago,
       fecha: factura.fecha,
       tipo: factura.tipo,
-      detalles: detalles.map((d) => ({ ...d, subtotal: parseFloat(d.subtotal) })),
+      detalles: detalles.map((d) => ({
+        ...d,
+        subtotal: parseFloat(d.subtotal),
+      })),
     };
   }
 

@@ -19,7 +19,13 @@ export const CreateFacturaDTO = z.object({
   subtotal: z.coerce.number().optional(),
   descuento_total: z.coerce.number().min(0).optional().default(0),
   descuento_detalle: z
-    .array(z.object({ tipo: z.string(), valor: z.number(), motivo: z.string().optional() }))
+    .array(
+      z.object({
+        tipo: z.string(),
+        valor: z.number(),
+        motivo: z.string().optional(),
+      })
+    )
     .optional()
     .default([]),
   total: z.coerce.number().optional(),

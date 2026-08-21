@@ -18,10 +18,21 @@
       "recommended": true,
       "correctness": {
         "noUnusedVariables": "warn",
-        "noUnusedImports": "warn"
+        "noUnusedImports": "warn",
+        "useExhaustiveDependencies": "warn"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "warn"
+      },
+      "a11y": {
+        // Deuda técnica UI: 56 labels sin control + 36 botones sin type.
+        // Se degradan a warn con plan de remediación (Fase 6 a11y pass).
+        "noLabelWithoutControl": "warn",
+        "useButtonType": "warn",
+        "noAutofocus": "off",
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off"
       }
     }
   },

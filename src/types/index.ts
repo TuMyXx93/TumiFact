@@ -100,7 +100,12 @@ export interface CategoriaProducto {
     | 'generico'
     | string;
   descripcion?: string | null;
-  campos_extra?: Array<{ key: string; label: string; type: string; options?: string[] }>;
+  campos_extra?: Array<{
+    key: string;
+    label: string;
+    type: string;
+    options?: string[];
+  }>;
   aplica_inventario: boolean;
   activo: boolean;
   created_at?: string;

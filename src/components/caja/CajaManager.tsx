@@ -24,9 +24,10 @@ export default function CajaManager() {
   const [closeModal, setCloseModal] = useState(false);
   const [montoApertura, setMontoApertura] = useState('');
   const [notas, setNotas] = useState('');
-  const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    null
-  );
+  const [statusMsg, setStatusMsg] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const [conteoBilletes, setConteoBilletes] = useState<Record<number, number>>({
     100000: 0,
@@ -111,10 +112,16 @@ export default function CajaManager() {
         setNotas('');
         fetchStatus();
       } else {
-        setStatusMsg({ type: 'error', text: data.error || 'Error al abrir caja' });
+        setStatusMsg({
+          type: 'error',
+          text: data.error || 'Error al abrir caja',
+        });
       }
     } catch (err) {
-      setStatusMsg({ type: 'error', text: 'Error al conectar con el servidor' });
+      setStatusMsg({
+        type: 'error',
+        text: 'Error al conectar con el servidor',
+      });
     }
   };
 
@@ -140,10 +147,16 @@ export default function CajaManager() {
         setNotas('');
         fetchStatus();
       } else {
-        setStatusMsg({ type: 'error', text: data.error || 'Error al cerrar caja' });
+        setStatusMsg({
+          type: 'error',
+          text: data.error || 'Error al cerrar caja',
+        });
       }
     } catch (err) {
-      setStatusMsg({ type: 'error', text: 'Error al conectar con el servidor' });
+      setStatusMsg({
+        type: 'error',
+        text: 'Error al conectar con el servidor',
+      });
     }
   };
 
@@ -426,8 +439,16 @@ export default function CajaManager() {
                 title: 'Apertura',
                 desc: 'Base en gaveta, sesión congelada por cajero.',
               },
-              { num: '02', title: 'Operación', desc: 'Ventas, retiros y vales auditados.' },
-              { num: '03', title: 'Corte X', desc: 'Cierre parcial sin congelar gaveta.' },
+              {
+                num: '02',
+                title: 'Operación',
+                desc: 'Ventas, retiros y vales auditados.',
+              },
+              {
+                num: '03',
+                title: 'Corte X',
+                desc: 'Cierre parcial sin congelar gaveta.',
+              },
               {
                 num: '04',
                 title: 'Cierre Ciego',

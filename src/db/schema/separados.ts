@@ -28,9 +28,15 @@ export const separados = pgTable('separados', {
   descripcion: text('descripcion').notNull(),
   observaciones: text('observaciones'),
   valor_total: numeric('valor_total', { precision: 12, scale: 2 }).notNull(),
-  abono_inicial: numeric('abono_inicial', { precision: 12, scale: 2 }).notNull(),
+  abono_inicial: numeric('abono_inicial', {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
   total_abonado: numeric('total_abonado', { precision: 12, scale: 2 }).default('0').notNull(),
-  saldo_pendiente: numeric('saldo_pendiente', { precision: 12, scale: 2 }).notNull(),
+  saldo_pendiente: numeric('saldo_pendiente', {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
   fecha_inicio: date('fecha_inicio').defaultNow().notNull(),
   fecha_limite: date('fecha_limite').notNull(),
   dias_plazo: integer('dias_plazo').default(30).notNull(),
@@ -49,7 +55,10 @@ export const separadosProductos = pgTable('separados_productos', {
     .references(() => productos.id)
     .notNull(),
   cantidad: numeric('cantidad', { precision: 10, scale: 2 }).notNull(),
-  precio_unitario: numeric('precio_unitario', { precision: 10, scale: 2 }).notNull(),
+  precio_unitario: numeric('precio_unitario', {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
   unidad_medida: varchar('unidad_medida', { length: 10 }).default('UND').notNull(),
   subtotal: numeric('subtotal', { precision: 10, scale: 2 }).notNull(),
   descuento_aplicado: numeric('descuento_aplicado', { precision: 10, scale: 2 })
