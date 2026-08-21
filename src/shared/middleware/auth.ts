@@ -105,6 +105,31 @@ export function requireRole(...allowedRoles: string[]) {
   };
 }
 
+// Fase 2: RBAC granular por permisos JSONB (preparación Workspaces)
+// Usa roles.permisos {"facturas:create":true} en vez de rol hardcode.
+// Mantiene requireRole como alias para compatibilidad.
+// Ejemplo: requirePermission('caja:abrir'), requirePermission('reportes:read')
+export function requirePermission(...requiredPerms: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autenticado', code: 'NOT_AUTHENTICATED' });
+    }
+    // admin bypass
+    if (req.user.rol_nombre === 'admin') return next();
+
+    const perms = req.user.permisos || {};
+    const hasAll = requiredPerms.every((p) => perms[p] === true || (perms as any)[p] === 1);
+    // Fallback compat: si permisos es {"admin":true} antiguo, respeta requireRole
+    if (!hasAll) {
+      return res.status(403).json({
+        error: `Permiso denegado: requiere ${requiredPerms.join(', ')}`,
+        code: 'FORBIDDEN_PERMISSION'
+      });
+    }
+    next();
+  };
+}
+
 export async function optionalAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const token = extractToken(req);

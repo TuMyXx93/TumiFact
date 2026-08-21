@@ -18,6 +18,24 @@ const REFRESH_DAYS = 7;
 
 const hashRefreshToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
+// DUMMY_HASH para timing-safe: hash real de 'DummyPassword*2026_NotFound' con misma config.
+// Se usa cuando el usuario no existe para igualar latencia argon2 (~80ms) y evitar enumeración.
+const DUMMY_HASH =
+  '$argon2id$v=19$m=65536,t=3,p=4$Tp0ULvzgZ++Y7ZYssQEDbA$fyuPJOHAd9ny9aCDI64PXJ8YotMMEEdKhMrm1g83Ngg';
+
+/**
+ * Tarpit exponencial para mitigar brute-force sin DoS.
+ * 0-2 fallos: 0ms, 3: +1s, 4: +2s, 5+: +4s (cap 4000ms)
+ */
+function tarpitDelay(failedCount: number): number {
+  if (failedCount < 3) return 0;
+  return Math.min(1000 * 2 ** (failedCount - 3), 4000);
+}
+
+function randomJitter(ms: number): number {
+  return ms + Math.floor(Math.random() * 80) - 40; // ±40ms jitter para no fingerprint
+}
+
 export class AuthService {
   async login(input: LoginInput, req?: Request) {
     const cred = input.credential.trim();
@@ -46,6 +64,14 @@ export class AuthService {
     const user = rows[0];
 
     if (!user) {
+      // Timing-safe: ejecutar argon2.verify dummy para igualar latencia (~80ms)
+      // y evitar enumeración de credenciales por timing.
+      try {
+        await argon2.verify(DUMMY_HASH, input.password);
+      } catch (_) {
+        // dummy hash puede fallar si argon2 cambia formato — no bloquea flujo
+      }
+      await new Promise((r) => setTimeout(r, randomJitter(60)));
       await recordAudit({
         accion: 'LOGIN_FALLIDO',
         entidad: 'usuarios',
@@ -95,6 +121,10 @@ export class AuthService {
       if (newAttempts >= 5) {
         // Bloquear por 15 minutos tras 5 intentos
         blockTime = new Date(Date.now() + 15 * 60 * 1000);
+      } else if (newAttempts >= 3) {
+        // Tarpit exponencial anti-brute-force (Fase 2)
+        const delay = tarpitDelay(newAttempts);
+        await new Promise((r) => setTimeout(r, randomJitter(delay)));
       }
 
       await db
@@ -237,6 +267,14 @@ export class AuthService {
 
   async revokeAllSessions(userId: number) {
     await db.update(authSessions).set({ revoked_at: new Date() }).where(and(eq(authSessions.usuario_id, userId), isNull(authSessions.revoked_at)));
+  }
+
+  /**
+   * Debe llamarse cuando se cambia password_hash para invalidar sesiones robadas.
+   * Fase 2: revoke on password change — cubre brecha de token theft.
+   */
+  async revokeSessionsOnPasswordChange(userId: number) {
+    await this.revokeAllSessions(userId);
   }
 
   async register(input: RegisterUserInput, req?: Request) {

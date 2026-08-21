@@ -117,28 +117,11 @@ import Layout from '../layouts/Layout.astro';
           errorDiv.classList.remove('hidden');
         }
       } catch (err) {
-        // Fallback directo a :3000 si apiFetch fallase
-        try {
-          const directRes = await fetch('http://localhost:3000/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credential, password })
-          });
-          const data = await directRes.json();
-          if (directRes.ok && data.user) {
-            localStorage.setItem('tumifact_user', JSON.stringify(data.user));
-            sessionStorage.setItem('tumifact_user', JSON.stringify(data.user));
-            window.location.href = '/';
-            return;
-          } else {
-            errorDiv.textContent = data.error || 'Credenciales inválidas';
-            errorDiv.classList.remove('hidden');
-            return;
-          }
-        } catch (_fallbackErr) {
-          errorDiv.textContent = 'Error al contactar con el servidor de autenticación (Puerto 3000)';
-          errorDiv.classList.remove('hidden');
-        }
+        // Sin fallback hardcodeado: apiFetch ya resuelve base URL vía probe + autoDiscovery.
+        // Un fallo aquí es error de red/CORS real — mostrar mensaje y respetar CORS_ORIGINS.
+        const message = err instanceof Error ? err.message : 'Error de red';
+        errorDiv.textContent = `Error al contactar con el servidor de autenticación: ${message}. Verifique que la API esté en ${import.meta.env.PUBLIC_API_BASE_URL || 'el origen permitido'}.`;
+        errorDiv.classList.remove('hidden');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>Iniciar Sesión</span>';

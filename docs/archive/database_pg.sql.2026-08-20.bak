@@ -1,8 +1,5 @@
--- ARCHIVED — 2026-08-20 — Fuente única ahora es Drizzle (src/db/schema/*) → drizzle/0000_baseline.sql
--- Este archivo se mantiene solo para auditoría histórica. No se usa en docker-entrypoint ni en CI.
--- Ver docs/archive/database_pg.sql.2026-08-20.bak para snapshot previo y drizzle/ para baseline activo.
 -- TumiFact v2.0 — Base de Datos PostgreSQL 18.4
--- Schema completo y normalizado (3NF) — ARCHIVED
+-- Schema completo y normalizado (3NF)
 
 -- =====================================================
 -- 1. TABLA: tipos_identificacion

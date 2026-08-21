@@ -20,9 +20,11 @@ services:
       - "5432:5432"
     
     # Volúmenes para persistencia y schema
+    # NOTA 2026-08-21: fuente única Drizzle → drizzle/0000_baseline.sql
+    # database_pg.sql está archivado (docs/archive/). El init.sql se genera desde Drizzle.
     volumes:
       - tumifact_postgres_data:/var/lib/postgresql
-      - ./database_pg.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./drizzle/0000_baseline.sql:/docker-entrypoint-initdb.d/init.sql
     
     # Health check para verificar que está listo
     healthcheck:

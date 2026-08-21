@@ -1,6 +1,9 @@
 import { Server as SocketIOServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
-import { CORS_ORIGINS } from '../config/security';
+import { CORS_ORIGINS, JWT_SECRET } from '../config/security';
+import { jwtVerify } from 'jose';
+
+const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 export let io: SocketIOServer | null = null;
 
@@ -30,8 +33,29 @@ export function initSocketIO(httpServer: HttpServer): SocketIOServer {
     }
   });
 
+  // Fase 2: Auth en handshake — evita que cualquier ws:// escuche totales de caja
+  io.use(async (socket, next) => {
+    try {
+      const token =
+        (socket.handshake.auth as any)?.token ||
+        (socket.handshake.headers.cookie?.match(/(?:^|;\s*)tumifact_token=([^;]+)/)?.[1]
+          ? decodeURIComponent(socket.handshake.headers.cookie.match(/(?:^|;\s*)tumifact_token=([^;]+)/)![1])
+          : null) ||
+        (socket.handshake.headers.authorization?.startsWith('Bearer ')
+          ? socket.handshake.headers.authorization.substring(7)
+          : null);
+
+      if (!token) return next(new Error('No autorizado: token requerido para Socket.io'));
+
+      await jwtVerify(token, secretKey);
+      next();
+    } catch {
+      next(new Error('Token inválido para Socket.io'));
+    }
+  });
+
   io.on('connection', (socket) => {
-    // console.log(`🔌 Cliente conectado a Socket.io: ${socket.id}`);
+    // console.log(`🔌 Cliente autenticado conectado: ${socket.id}`);
 
     socket.on('disconnect', () => {
       // console.log(`🔌 Cliente desconectado: ${socket.id}`);

@@ -33,6 +33,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repository
@@ -54,8 +63,10 @@ jobs:
       - name: Build Astro Production Application
         run: pnpm build
 
-      - name: Initialize Test Database & Schema
-        run: node tests/db-test-setup.js
+      - name: Initialize Test Database & Schema (Drizzle baseline)
+        run: |
+          PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d tumifact_test -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || true
+          DB_DATABASE=tumifact_test pnpm drizzle-kit push --force
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -63,8 +74,21 @@ jobs:
           DB_PASSWORD: tumifact_password
           DB_DATABASE: tumifact_test
 
-      - name: Run Unit & Integration Tests with Coverage
+      - name: Run Vitest (55% gate) — stack TS
         run: pnpm test:coverage
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: tumifact_user
+          DB_PASSWORD: tumifact_password
+          DB_DATABASE: tumifact_test
+          REDIS_URL: redis://localhost:6380
+          JWT_SECRET: test-ci-jwt-secret-32-bytes-minimum-123456
+          NODE_ENV: test
+
+      - name: Run Legacy Jest (informative, no gate)
+        continue-on-error: true
+        run: pnpm test:legacy 2>&1 | tail -n 100
         env:
           DB_HOST: localhost
           DB_PORT: 5432

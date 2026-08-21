@@ -1,3 +1,9 @@
+/**
+ * @deprecated — 2026-08-21 — Fuente única ahora es src/db/index.ts (Drizzle pool).
+ * Este archivo se mantiene solo para compatibilidad de tests legacy (Jest) y scripts.
+ * No usar en código nuevo. Ver Fase 1 Strangler.
+ * TODO(Fase1): eliminar tras migrar tests a Vitest + src/db.
+ */
 require('dotenv').config();
 const { Pool } = require('pg');
 
