@@ -25,6 +25,7 @@ jobs:
         with:
           path: .
           format: cyclonedx-json
+          output-file: tumifact-sbom.cdx.json
           artifact-name: tumifact-sbom.cdx.json
           upload-artifact: true
 
