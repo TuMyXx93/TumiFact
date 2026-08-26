@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import path from 'path';
+import { checkRedis } from './config/redis';
 import { isAllowedOrigin } from './config/security';
 import { openApiDocument } from './contracts/openapi';
 import { pool } from './db';
@@ -39,12 +40,21 @@ app.use('/api', apiRateLimiter);
 
 app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 app.get('/ready', async (req, res) => {
-  try {
-    await pool.query('SELECT 1');
-    res.status(200).json({ status: 'ready', correlationId: req.correlationId });
-  } catch {
-    res.status(503).json({ status: 'not_ready', correlationId: req.correlationId });
-  }
+  const checks = await Promise.allSettled([
+    Promise.race([
+      pool.query('SELECT 1'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB readiness timeout')), 1500)),
+    ]),
+    checkRedis(),
+  ]);
+  const database = checks[0].status === 'fulfilled';
+  const redis = checks[1].status === 'fulfilled';
+  const ready = database && redis;
+  res.status(ready ? 200 : 503).json({
+    status: ready ? 'ready' : 'not_ready',
+    dependencies: { database, redis },
+    correlationId: req.correlationId,
+  });
 });
 app.get(['/openapi.json', '/api/openapi.json'], (_req, res) => res.json(openApiDocument));
 

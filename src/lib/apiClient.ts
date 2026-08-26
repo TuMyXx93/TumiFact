@@ -15,6 +15,7 @@ const ENV_API_PORT_SCAN_RANGE = (import.meta.env.PUBLIC_API_PORT_SCAN_RANGE || '
 
 let cachedApiBase: string | null = null;
 let scanAttempted = false;
+let refreshInFlight: Promise<boolean> | null = null;
 
 interface ProbeResult {
   ok: boolean;
@@ -228,6 +229,27 @@ function handleUnauthorized(): void {
   window.location.href = '/login';
 }
 
+async function refreshSession(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const url = await resolveApiUrl('/api/auth/refresh');
+        const response = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        return response.ok;
+      } catch {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
+
 export async function apiFetch(
   path: string,
   init?: RequestInit & { timeoutMs?: number }
@@ -259,7 +281,30 @@ export async function apiFetch(
   try {
     const res = await fetch(primaryUrl, fetchInit);
     clearTimeout(timeoutId);
-    if (res.status === 401) handleUnauthorized();
+    if (
+      res.status === 401 &&
+      cleanPath !== '/api/auth/login' &&
+      cleanPath !== '/api/auth/refresh' &&
+      cleanPath !== '/api/auth/logout'
+    ) {
+      if (await refreshSession()) {
+        const retryController = new AbortController();
+        const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
+        try {
+          const retryResponse = await fetch(primaryUrl, {
+            ...fetchInit,
+            signal: retryController.signal,
+          });
+          clearTimeout(retryTimeoutId);
+          if (retryResponse.status === 401) handleUnauthorized();
+          return retryResponse;
+        } catch (retryError) {
+          clearTimeout(retryTimeoutId);
+          throw retryError;
+        }
+      }
+      handleUnauthorized();
+    }
     return res;
   } catch (err) {
     clearTimeout(timeoutId);

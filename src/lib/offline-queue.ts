@@ -15,6 +15,7 @@ export interface QueuedFactura {
   createdAt: string;
   retries: number;
   lastError?: string;
+  status?: 'pending' | 'failed' | 'needs_auth';
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -49,6 +50,7 @@ export async function enqueueFactura(
     },
     createdAt: new Date().toISOString(),
     retries: 0,
+    status: 'pending',
   };
 
   return new Promise((resolve, reject) => {
@@ -99,6 +101,10 @@ export async function replayQueuedFacturas(
   let failed = 0;
 
   for (const item of queued) {
+    if (item.status && item.status !== 'pending') {
+      failed++;
+      continue;
+    }
     try {
       const res = await apiFetch('/api/facturas', {
         method: 'POST',
@@ -110,34 +116,29 @@ export async function replayQueuedFacturas(
         await removeQueuedFactura(item.offlineId);
         replayed++;
       } else {
-        // Si es 4xx (validación), no reintentar — sacar de cola y mostrar error
-        if (res.status >= 400 && res.status < 500) {
-          const data = await res.json().catch(() => ({}));
-          item.lastError = data.error || `HTTP ${res.status}`;
-          // Mover a failed pero no reintentar indefinidamente — remover tras 1 intento 4xx
-          await removeQueuedFactura(item.offlineId);
-          // Opcional: guardar en otro store de fallidos para auditoría
-          console.error(
-            `[OfflineQueue] Factura ${item.offlineId} rechazada 4xx, descartada`,
-            item.lastError
-          );
-          failed++;
-        } else {
-          // 5xx o red → incrementar retries, dejar en cola
-          item.retries++;
-          item.lastError = `HTTP ${res.status}`;
-          const db = await openDB();
-          await new Promise<void>((resolve, reject) => {
-            const tx = db.transaction(STORE_FACTURAS, 'readwrite');
-            tx.objectStore(STORE_FACTURAS).put(item);
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-          });
-          failed++;
-        }
+        const data = await res.json().catch(() => ({}));
+        item.lastError = data.error || `HTTP ${res.status}`;
+        item.status =
+          res.status === 401
+            ? 'needs_auth'
+            : res.status >= 400 && res.status < 500
+              ? 'failed'
+              : 'pending';
+        // Ningún rechazo se elimina silenciosamente: 401 requiere sesión,
+        // 409/422 revisión manual y 429/5xx reintento posterior.
+        if (item.status === 'pending') item.retries++;
+        const db = await openDB();
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction(STORE_FACTURAS, 'readwrite');
+          tx.objectStore(STORE_FACTURAS).put(item);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+        failed++;
       }
     } catch (err) {
       item.retries++;
+      item.status = 'pending';
       item.lastError = (err as Error).message;
       const db = await openDB();
       await new Promise<void>((resolve, reject) => {

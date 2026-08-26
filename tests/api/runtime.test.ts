@@ -32,20 +32,40 @@ describe('TumiFact TypeScript API security runtime', () => {
     assert.equal(response.headers['x-correlation-id'], 'api-test-1');
   });
 
-  it('logs in with an HttpOnly access and refresh cookie', async () => {
-    const response = await api.post('/api/auth/login').send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
+  it('reports database and Redis readiness independently', async () => {
+    const response = await api.get('/ready');
     assert.equal(response.status, 200);
-    assert.ok(response.headers['set-cookie']?.some((cookie: string) => cookie.startsWith('tumifact_token=')));
-    accessCookie = response.headers['set-cookie']!.find((cookie: string) => cookie.startsWith('tumifact_token='))!.split(';')[0];
-    const refreshCookie = response.headers['set-cookie']?.find((cookie: string) => cookie.startsWith('tumifact_refresh='));
+    assert.deepEqual(response.body.dependencies, { database: true, redis: true });
+  });
+
+  it('logs in with an HttpOnly access and refresh cookie', async () => {
+    const response = await api
+      .post('/api/auth/login')
+      .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
+    assert.equal(response.status, 200);
+    assert.ok(
+      response.headers['set-cookie']?.some((cookie: string) => cookie.startsWith('tumifact_token='))
+    );
+    accessCookie = response.headers['set-cookie']!.find((cookie: string) =>
+      cookie.startsWith('tumifact_token=')
+    )!.split(';')[0];
+    const refreshCookie = response.headers['set-cookie']?.find((cookie: string) =>
+      cookie.startsWith('tumifact_refresh=')
+    );
     assert.ok(refreshCookie);
     oldRefresh = refreshCookie!.split(';')[0];
   });
 
   it('rotates refresh and rejects replay', async () => {
-    const rotated = await api.post('/api/auth/refresh').set('Cookie', oldRefresh).set('Origin', 'http://localhost:4321');
+    const rotated = await api
+      .post('/api/auth/refresh')
+      .set('Cookie', oldRefresh)
+      .set('Origin', 'http://localhost:4321');
     assert.equal(rotated.status, 200);
-    const replay = await api.post('/api/auth/refresh').set('Cookie', oldRefresh).set('Origin', 'http://localhost:4321');
+    const replay = await api
+      .post('/api/auth/refresh')
+      .set('Cookie', oldRefresh)
+      .set('Origin', 'http://localhost:4321');
     assert.equal(replay.status, 401);
     assert.equal(replay.body.code, 'AUTH_REFRESH_REJECTED');
   });

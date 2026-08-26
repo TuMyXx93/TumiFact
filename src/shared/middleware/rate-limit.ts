@@ -16,6 +16,7 @@ export const apiRateLimiter = rateLimit({
   limit: Number(process.env.API_RATE_LIMIT || 300),
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  passOnStoreError: true,
   store: apiStore,
   // Readiness probes are infrastructure traffic, not business API usage.
   // Exempting this endpoint prevents browser/container health checks from
@@ -29,6 +30,7 @@ export const refreshRateLimiter = rateLimit({
   limit: Number(process.env.REFRESH_RATE_LIMIT || 20),
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  passOnStoreError: true,
   store: refreshStore,
   keyGenerator: (req) => `${ipKeyGenerator(req.ip || 'unknown')}:refresh`,
   message: { error: 'Demasiadas renovaciones de sesión', code: 'RATE_LIMITED' },

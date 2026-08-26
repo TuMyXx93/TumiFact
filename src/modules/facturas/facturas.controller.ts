@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyAuth } from '../../shared/middleware/auth';
+import { isScopedOperator, verifyAuth } from '../../shared/middleware/auth';
 import { ensureIdempotencyKey } from '../../shared/middleware/idempotency';
 import { validateDTO } from '../../shared/middleware/validate';
 import { CajaService } from '../caja/caja.service';
@@ -34,7 +34,7 @@ facturasRouter.get('/:id/imprimir', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getFacturaWithDetails(parseInt(String(req.params.id), 10));
     if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
-    if (req.user!.rol_nombre === 'cajero' && data.factura.usuario_id !== req.user!.id)
+    if (isScopedOperator(req.user!) && data.factura.usuario_id !== req.user!.id)
       return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
     res.json(data);
   } catch (error) {
@@ -47,7 +47,7 @@ facturasRouter.get('/:id/detalles', verifyAuth, async (req, res, next) => {
   try {
     const data = await service.getFacturaDetailsOnly(parseInt(String(req.params.id), 10));
     if (!data) return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
-    if (req.user!.rol_nombre === 'cajero' && data.factura.usuario_id !== req.user!.id)
+    if (isScopedOperator(req.user!) && data.factura.usuario_id !== req.user!.id)
       return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
     res.json(data);
   } catch (error) {
@@ -67,7 +67,7 @@ ventasRouter.get('/', verifyAuth, async (req, res, next) => {
       : undefined;
     const estado = req.query.estado ? String(req.query.estado) : undefined;
 
-    const scopedUserId = req.user!.rol_nombre === 'cajero' ? req.user!.id : usuarioId;
+    const scopedUserId = isScopedOperator(req.user!) ? req.user!.id : usuarioId;
     const data = await service.getSalesHistory(desde, hasta, scopedUserId, estado);
     res.json(data);
   } catch (error) {

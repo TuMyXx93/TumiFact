@@ -32,6 +32,7 @@ const loginLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  passOnStoreError: true,
   store: new RedisStore({
     prefix: 'tumifact:rl:login:',
     sendCommand: redisSendCommand,

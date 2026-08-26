@@ -115,9 +115,18 @@ Navega en tu explorador web a: **`http://localhost:4321`**
 | `pnpm dev` | Inicia el servidor de desarrollo de **Astro** (`http://localhost:4321`) |
 | `pnpm dev:api` | Inicia el servidor API **Express.js** con nodemon y Socket.io (`http://localhost:3000`) |
 | `pnpm build` | Compila el bundle de producción optimizado de Astro (`/dist`) |
-| `pnpm test` | Ejecuta la suite completa de pruebas automatizadas con Jest y Base de Datos de prueba |
+| `pnpm build:api` | Compila el servidor Express de producción (`/dist-api`) |
+| `pnpm build:all` | Compila frontend Astro y API Express para una entrega completa |
+| `pnpm test` | Ejecuta la suite completa de pruebas automatizadas con Vitest y Base de Datos de prueba |
 | `pnpm test:coverage` | Genera reporte de cobertura de código (mínimo 40% requerido) |
 | `pnpm start` | Inicia el servidor Express en modo producción |
+| `pnpm start:web` | Inicia el servidor Astro SSR compilado |
+| `pnpm db:migrate` | Aplica las migraciones Drizzle pendientes |
+| `SEED_ADMIN_PASSWORD='...' pnpm db:seed` | Crea/actualiza usuarios iniciales sin contraseña hardcodeada |
+
+La API valida PostgreSQL y Redis en `GET /ready`. Redis se utiliza para los
+límites distribuidos; una caída transitoria no convierte el login en HTTP 500,
+pero `/ready` responderá `503` hasta que la dependencia se recupere.
 
 ---
 

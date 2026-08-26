@@ -1,5 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+const isDev = import.meta.env.DEV;
+const demoPassword = import.meta.env.PUBLIC_DEMO_PASSWORD || '';
+const showDemoBlock = isDev && demoPassword.length > 0;
+const demoPasswordMasked = showDemoBlock ? demoPassword : '';
 ---
 
 <Layout title="Iniciar Sesión — TumiFact POS">
@@ -65,14 +70,16 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </form>
 
-      <div class="mt-6 pt-6 border-t border-slate-800/80 text-center">
-        <p class="text-xs text-slate-400 mb-2 font-medium">Accesos Demo preconfigurados:</p>
-        <div class="inline-flex flex-col gap-1 text-[11px] text-slate-500 bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 w-full text-left font-mono">
-          <div><span class="text-red-400 font-semibold">Admin:</span> admin@tumifact.com | 10000001 <span class="text-slate-400">(Password*2026)</span></div>
-          <div><span class="text-amber-400 font-semibold">Gerente:</span> gerente@tumifact.com | 10000002 <span class="text-slate-400">(Password*2026)</span></div>
-          <div><span class="text-blue-400 font-semibold">Cajero:</span> ventas1@tumifact.com | 10000003 <span class="text-slate-400">(Password*2026)</span></div>
+      {showDemoBlock && (
+        <div class="mt-6 pt-6 border-t border-slate-800/80 text-center">
+          <p class="text-xs text-slate-400 mb-2 font-medium">Accesos Demo preconfigurados:</p>
+          <div class="inline-flex flex-col gap-1 text-[11px] text-slate-500 bg-slate-950/40 p-3 rounded-xl border border-slate-800/60 w-full text-left font-mono">
+            <div><span class="text-red-400 font-semibold">Admin:</span> admin@tumifact.com | 10000001 <span class="text-slate-400">({demoPasswordMasked})</span></div>
+            <div><span class="text-amber-400 font-semibold">Gerente:</span> gerente@tumifact.com | 10000002 <span class="text-slate-400">({demoPasswordMasked})</span></div>
+            <div><span class="text-blue-400 font-semibold">Cajero:</span> ventas1@tumifact.com | 10000003 <span class="text-slate-400">({demoPasswordMasked})</span></div>
+          </div>
         </div>
-      </div>
+      )}
 
       <div class="text-center pt-2">
         <p class="text-[11px] text-slate-500">

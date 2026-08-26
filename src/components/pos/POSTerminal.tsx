@@ -688,11 +688,24 @@ export default function POSTerminal({
         // Mostrar tiquete térmico inmediatamente
         handleVerImprimirTicket(data.id);
       } else {
-        // Si es error 4xx de validación, mostrar mensaje; no encolar
-        setStatusMessage({
-          type: 'error',
-          text: data.error || `Error ${res.status} al procesar la factura`,
-        });
+        if (res.status === 429 || res.status >= 500) {
+          const offlineId = await enqueueFactura(payload, {
+            'Idempotency-Key': idempotencyKey,
+          });
+          setStatusMessage({
+            type: 'success',
+            text: `Servidor temporalmente no disponible — Factura retenida (#${offlineId.slice(0, 8)}). Se reintentará automáticamente.`,
+          });
+          setCart([]);
+          setEfectivoRecibido('');
+          setDescuentoGlobal(0);
+          setObservaciones('');
+        } else {
+          setStatusMessage({
+            type: 'error',
+            text: data.error || `Error ${res.status} al procesar la factura`,
+          });
+        }
       }
     } catch (err: any) {
       // Fase 4.2: Offline queue — si falla red (offline) o 5xx, encolar para replay

@@ -108,6 +108,13 @@ export function requireRole(...allowedRoles: string[]) {
   };
 }
 
+/** Roles whose data access is restricted to records opened by the operator. */
+export function isScopedOperator(user: AuthenticatedUser): boolean {
+  // `cajero` is retained for installations that have not yet migrated the
+  // legacy role catalog to the canonical `empleado` name.
+  return user.rol_nombre === 'empleado' || user.rol_nombre === 'cajero';
+}
+
 // Fase 2: RBAC granular por permisos JSONB (preparación Workspaces)
 // Usa roles.permisos {"facturas:create":true} en vez de rol hardcode.
 // Mantiene requireRole como alias para compatibilidad.

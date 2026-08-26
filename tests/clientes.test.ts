@@ -7,11 +7,13 @@ async function loginAsAdmin() {
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` };
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { authHeader: '', cookie: tokenCookie };
 }
 
@@ -30,7 +32,7 @@ describe('Clientes — Stack TS (Vitest + src/app)', () => {
     const auth = await loginAsAdmin();
     const res = await withAuth(request(app).post('/api/clientes'), auth).send({
       nombre: 'Fruver Central S.A.S.',
-      telefono: '3010000000'
+      telefono: '3010000000',
     });
 
     expect(res.status).toBe(201);
@@ -52,12 +54,15 @@ describe('Clientes — Stack TS (Vitest + src/app)', () => {
     const prodRes = await withAuth(request(app).post('/api/productos'), auth).send({
       codigo: 'TEST-001',
       nombre: 'Producto Test',
-      precio_kg: 1000
+      precio_kg: 1000,
+      stock_actual: 1,
     });
     expect(prodRes.status).toBe(201);
     const productoId = prodRes.body.id;
 
-    const cliRes = await withAuth(request(app).post('/api/clientes'), auth).send({ nombre: 'Cliente Test' });
+    const cliRes = await withAuth(request(app).post('/api/clientes'), auth).send({
+      nombre: 'Cliente Test',
+    });
     expect(cliRes.status).toBe(201);
     const clienteId = cliRes.body.id;
 
@@ -67,7 +72,7 @@ describe('Clientes — Stack TS (Vitest + src/app)', () => {
       cliente_id: clienteId,
       forma_pago: 'efectivo',
       total: 1000,
-      productos: [{ producto_id: productoId, cantidad: 1, precio: 1000, unidad: 'KG' }]
+      productos: [{ producto_id: productoId, cantidad: 1, precio: 1000, unidad: 'KG' }],
     });
     // Puede ser 201 si el flujo es válido
     expect([201, 400]).toContain(facturaRes.status);

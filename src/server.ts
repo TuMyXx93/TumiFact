@@ -1,7 +1,6 @@
 import closeWithGrace from 'close-with-grace';
 import dotenv from 'dotenv';
 import http from 'http';
-import app from './app';
 import { closeRedis, initRedis } from './config/redis';
 import { pool } from './db';
 import { closeSchedulerWorker, initSchedulerWorker } from './jobs';
@@ -23,12 +22,16 @@ for (let i = 0; i < args.length; i++) {
 }
 
 let httpServer: http.Server | null = null;
+let app: typeof import('./app').default;
 
 async function startServer(): Promise<void> {
   try {
     logger.info('Intentando conectar a la base de datos...');
     await pool.query('SELECT NOW()');
     await initRedis();
+    // Cargar los middlewares después de validar Redis para que RedisStore no
+    // inicialice scripts contra un cliente todavía desconectado.
+    ({ default: app } = await import('./app'));
     logger.info(
       {
         database: process.env.DB_DATABASE || 'tumifact_db',

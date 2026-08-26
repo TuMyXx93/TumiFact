@@ -48,20 +48,25 @@ export class FacturasRepository {
           subtotal: item.subtotal.toString(),
         });
 
-        // Decrementar stock en productos
-        const prodRows = await tx
-          .select()
-          .from(productos)
-          .where(eq(productos.id, item.producto_id))
-          .limit(1);
-        if (prodRows[0]) {
-          const currentStock = parseFloat(prodRows[0].stock_actual);
-          const newStock = Math.max(0, currentStock - item.cantidad);
+        // Decrementar stock de forma atómica. El predicado evita que dos
+        // ventas concurrentes consuman las mismas existencias.
+        const updatedProducts = await tx
+          .update(productos)
+          .set({
+            stock_actual: sql`CAST(${productos.stock_actual} AS NUMERIC) - ${item.cantidad}`,
+            updated_at: new Date(),
+          })
+          .where(
+            and(
+              eq(productos.id, item.producto_id),
+              sql`CAST(${productos.stock_actual} AS NUMERIC) >= ${item.cantidad}`
+            )
+          )
+          .returning({ id: productos.id, stock_actual: productos.stock_actual });
 
-          await tx
-            .update(productos)
-            .set({ stock_actual: newStock.toString(), updated_at: new Date() })
-            .where(eq(productos.id, item.producto_id));
+        if (updatedProducts[0]) {
+          const newStock = parseFloat(updatedProducts[0].stock_actual);
+          const currentStock = newStock + item.cantidad;
 
           // Registrar movimiento de inventario
           await tx.insert(movimientosInventario).values({
@@ -76,6 +81,16 @@ export class FacturasRepository {
             referencia_id: newFactura.id,
             notas: `Venta POS en Factura #${newFactura.id}`,
           });
+        } else {
+          const error = new Error(
+            `Stock insuficiente para el producto ${item.producto_id}`
+          ) as Error & {
+            statusCode?: number;
+            code?: string;
+          };
+          error.statusCode = 409;
+          error.code = 'INSUFFICIENT_STOCK';
+          throw error;
         }
       }
 
