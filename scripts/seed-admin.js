@@ -120,7 +120,9 @@ async function seedAdmin() {
       activo = EXCLUDED.activo;
   `);
 
-  const catArtRow = await db.query("SELECT id FROM categorias_producto WHERE nombre = 'Artículos' LIMIT 1");
+  const catArtRow = await db.query(
+    "SELECT id FROM categorias_producto WHERE nombre = 'Artículos' LIMIT 1"
+  );
   const catArtId = catArtRow.rows[0]?.id || null;
 
   // Producto demo (idempotente por codigo)
@@ -147,35 +149,52 @@ async function seedAdmin() {
   `);
 
   // Crear perfiles empleados para los usuarios semilla (admin, gerente, cajero)
-  const adminUser = await db.query("SELECT id FROM usuarios WHERE email = 'admin@tumifact.com' LIMIT 1");
-  const gerenteUser = await db.query("SELECT id FROM usuarios WHERE email = 'gerente@tumifact.com' LIMIT 1");
-  const cajeroUser = await db.query("SELECT id FROM usuarios WHERE email = 'ventas1@tumifact.com' LIMIT 1");
+  const adminUser = await db.query(
+    "SELECT id FROM usuarios WHERE email = 'admin@tumifact.com' LIMIT 1"
+  );
+  const gerenteUser = await db.query(
+    "SELECT id FROM usuarios WHERE email = 'gerente@tumifact.com' LIMIT 1"
+  );
+  const cajeroUser = await db.query(
+    "SELECT id FROM usuarios WHERE email = 'ventas1@tumifact.com' LIMIT 1"
+  );
 
   if (adminUser.rows[0]?.id) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO empleados (usuario_id, cargo, departamento, salario, turno, descuento_max_porcentaje, descuento_max_monto)
       VALUES ($1, 'Administrador General', 'Dirección', 5000000, 'completo', 100, 99999999)
       ON CONFLICT (usuario_id) DO NOTHING
-    `, [adminUser.rows[0].id]);
+    `,
+      [adminUser.rows[0].id]
+    );
   }
 
   if (gerenteUser.rows[0]?.id) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO empleados (usuario_id, cargo, departamento, salario, turno, descuento_max_porcentaje, descuento_max_monto)
       VALUES ($1, 'Gerente de Tienda', 'Operaciones', 3500000, 'completo', 30, 500000)
       ON CONFLICT (usuario_id) DO NOTHING
-    `, [gerenteUser.rows[0].id]);
+    `,
+      [gerenteUser.rows[0].id]
+    );
   }
 
   if (cajeroUser.rows[0]?.id) {
-    await db.query(`
+    await db.query(
+      `
       INSERT INTO empleados (usuario_id, cargo, departamento, salario, turno, descuento_max_porcentaje, descuento_max_monto)
       VALUES ($1, 'Cajero POS', 'Ventas', 1500000, 'rotativo', 10, 50000)
       ON CONFLICT (usuario_id) DO NOTHING
-    `, [cajeroUser.rows[0].id]);
+    `,
+      [cajeroUser.rows[0].id]
+    );
   }
 
-  console.log('   ✅ Catálogo demo sembrado: 7 categorías + producto DEMO-001 + configuración + perfiles empleados');
+  console.log(
+    '   ✅ Catálogo demo sembrado: 7 categorías + producto DEMO-001 + configuración + perfiles empleados'
+  );
 
   await db.end();
   process.exit(0);

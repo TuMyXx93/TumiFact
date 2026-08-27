@@ -4,7 +4,7 @@
 function readPackage(pkg) {
   // Aquí se pueden agregar hooks para resolver conflictos de dependencias
   // Ejemplo: peerDependencies forcing, overrides, etc.
-  
+
   return pkg;
 }
 

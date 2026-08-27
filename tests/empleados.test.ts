@@ -1,18 +1,20 @@
 import request from 'supertest';
 import app from '../src/app';
-import { truncateAll } from './helpers';
 import { pool } from '../src/db';
+import { truncateAll } from './helpers';
 
 async function loginAsAdmin() {
   const res = await request(app)
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` } as const;
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { cookie: tokenCookie } as const;
 }
 
@@ -53,7 +55,7 @@ describe('Empleados — Stack TS (Vitest + src/app)', () => {
       email: `emp${Date.now()}@test.com`,
       password: 'Password*2026',
       rol_id: 3,
-      cargo: 'Cajero'
+      cargo: 'Cajero',
     });
     expect(res.status).toBe(201);
     expect(res.body.empleado).toBeDefined();
@@ -63,7 +65,7 @@ describe('Empleados — Stack TS (Vitest + src/app)', () => {
     const auth = await loginAsAdmin();
     // admin usuario_id=1 → empleado id=1
     const res = await withAuth(request(app).put('/api/empleados/1'), auth).send({
-      cargo: 'Director General'
+      cargo: 'Director General',
     });
     expect(res.status).toBe(200);
     expect(res.body.empleado.cargo).toBe('Director General');

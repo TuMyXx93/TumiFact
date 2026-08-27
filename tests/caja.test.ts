@@ -7,11 +7,13 @@ async function loginAsAdmin() {
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` } as const;
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { cookie: tokenCookie } as const;
 }
 
@@ -32,7 +34,7 @@ describe('Caja (Sesiones de Caja) — Stack TS (Vitest + src/app)', () => {
     // 1. Abrir caja
     const openRes = await withAuth(request(app).post('/api/caja/abrir'), auth).send({
       monto_apertura: 100000,
-      notas: 'Apertura de turno mañana'
+      notas: 'Apertura de turno mañana',
     });
     expect(openRes.status).toBe(201);
     expect(openRes.body.sesion).toBeDefined();
@@ -47,7 +49,7 @@ describe('Caja (Sesiones de Caja) — Stack TS (Vitest + src/app)', () => {
     // 3. Cerrar caja
     const closeRes = await withAuth(request(app).post('/api/caja/cerrar'), auth).send({
       monto_cierre_declarado: 100000,
-      notas: 'Cierre de turno normal'
+      notas: 'Cierre de turno normal',
     });
     expect(closeRes.status).toBe(200);
     expect(closeRes.body.reporte).toBeDefined();

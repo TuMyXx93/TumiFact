@@ -1,18 +1,20 @@
 import request from 'supertest';
 import app from '../src/app';
-import { truncateAll } from './helpers';
 import { pool } from '../src/db';
+import { truncateAll } from './helpers';
 
 async function loginAsAdmin() {
   const res = await request(app)
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` };
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { authHeader: '', cookie: tokenCookie };
 }
 
@@ -113,7 +115,9 @@ describe('Productos — Stack TS (Vitest + src/app)', () => {
   });
 
   it('rechaza crear producto sin auth → 401', async () => {
-    const res = await request(app).post('/api/productos').send({ codigo: 'X-001', nombre: 'Sin Auth' });
+    const res = await request(app)
+      .post('/api/productos')
+      .send({ codigo: 'X-001', nombre: 'Sin Auth' });
     expect(res.status).toBe(401);
   });
 

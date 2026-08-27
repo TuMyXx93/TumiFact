@@ -1,18 +1,20 @@
 import request from 'supertest';
 import app from '../src/app';
-import { truncateAll } from './helpers';
 import { pool } from '../src/db';
+import { truncateAll } from './helpers';
 
 async function loginAsAdmin() {
   const res = await request(app)
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` } as const;
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { cookie: tokenCookie } as const;
 }
 
@@ -48,7 +50,7 @@ describe('Separados (Layaway) — Stack TS (Vitest + src/app)', () => {
       valor_total: 150000,
       abono_inicial: 50000,
       dias_plazo: 30,
-      productos: [{ producto_id: prodId, cantidad: 1, precio_unitario: 150000, subtotal: 150000 }]
+      productos: [{ producto_id: prodId, cantidad: 1, precio_unitario: 150000, subtotal: 150000 }],
     });
 
     expect(sepRes.status).toBe(201);
@@ -57,14 +59,23 @@ describe('Separados (Layaway) — Stack TS (Vitest + src/app)', () => {
     expect(separadoId).toBeDefined();
 
     // 3. Registrar segundo abono que completa el separado
-    const abonoRes = await withAuth(request(app).post(`/api/separados/${separadoId}/abonos`), auth).send({
+    const abonoRes = await withAuth(
+      request(app).post(`/api/separados/${separadoId}/abonos`),
+      auth
+    ).send({
       monto: 100000,
-      forma_pago: 'efectivo'
+      forma_pago: 'efectivo',
     });
 
     expect(abonoRes.status).toBe(201);
     // TS puede devolver completado o estado
-    expect(abonoRes.body.completado === true || abonoRes.body.estado === 'completado' || abonoRes.body.saldo_pendiente === 0 || abonoRes.body.saldo_pendiente === '0' || abonoRes.body.message).toBeTruthy();
+    expect(
+      abonoRes.body.completado === true ||
+        abonoRes.body.estado === 'completado' ||
+        abonoRes.body.saldo_pendiente === 0 ||
+        abonoRes.body.saldo_pendiente === '0' ||
+        abonoRes.body.message
+    ).toBeTruthy();
 
     // 4. Listar con auth
     const listRes = await withAuth(request(app).get('/api/separados'), auth);
@@ -79,7 +90,7 @@ describe('Separados (Layaway) — Stack TS (Vitest + src/app)', () => {
       descripcion: 'Sin auth',
       valor_total: 10000,
       abono_inicial: 1000,
-      productos: []
+      productos: [],
     });
     expect(res.status).toBe(401);
   });

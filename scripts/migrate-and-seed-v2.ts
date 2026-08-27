@@ -411,12 +411,12 @@ export async function runMigrationAndSeed() {
         descripcion = EXCLUDED.descripcion,
         campos_extra = EXCLUDED.campos_extra;
     `);
-    
+
     const adminPassHash = await argon2.hash('Password*2026', {
       type: argon2.argon2id,
       memoryCost: 65536,
       timeCost: 3,
-      parallelism: 4
+      parallelism: 4,
     });
 
     const ccRow = await client.query("SELECT id FROM tipos_identificacion WHERE codigo = 'CC'");
@@ -425,22 +425,28 @@ export async function runMigrationAndSeed() {
     const adminRoleRow = await client.query("SELECT id FROM roles WHERE nombre = 'admin'");
     const adminRoleId = adminRoleRow.rows[0]?.id || 1;
 
-    const userRes = await client.query(`
+    const userRes = await client.query(
+      `
       INSERT INTO usuarios (nombre, apellido, tipo_identificacion_id, numero_identificacion, email, telefono, password_hash, rol_id, activo)
       VALUES ('Hack', 'Tu', $1, '10000001', 'admin@tumifact.com', '3014540408', $2, $3, true)
       ON CONFLICT (email) DO UPDATE SET password_hash = $2, numero_identificacion = '10000001', rol_id = $3
       RETURNING id;
-    `, [ccId, adminPassHash, adminRoleId]);
+    `,
+      [ccId, adminPassHash, adminRoleId]
+    );
 
     const adminUserId = userRes.rows[0]?.id;
 
     // Seed Admin Empleado profile
     if (adminUserId) {
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO empleados (usuario_id, cargo, departamento, salario, descuento_max_porcentaje, descuento_max_monto)
         VALUES ($1, 'Director General / Administrador', 'Administración', 5000000, 100.00, 10000000.00)
         ON CONFLICT (usuario_id) DO NOTHING;
-      `, [adminUserId]);
+      `,
+        [adminUserId]
+      );
     }
 
     // Seed Demo Gerente & Empleado
@@ -449,34 +455,46 @@ export async function runMigrationAndSeed() {
     const empRoleRow = await client.query("SELECT id FROM roles WHERE nombre = 'empleado'");
     const empRoleId = empRoleRow.rows[0]?.id || 3;
 
-    const gerenteRes = await client.query(`
+    const gerenteRes = await client.query(
+      `
       INSERT INTO usuarios (nombre, apellido, tipo_identificacion_id, numero_identificacion, email, telefono, password_hash, rol_id, activo)
       VALUES ('Carlos', 'Galan', $1, '10000002', 'gerente@tumifact.com', '3001112233', $2, $3, true)
       ON CONFLICT (email) DO UPDATE SET password_hash = $2, numero_identificacion = '10000002', activo = true
       RETURNING id;
-    `, [ccId, adminPassHash, gerenteRoleId]);
+    `,
+      [ccId, adminPassHash, gerenteRoleId]
+    );
 
     if (gerenteRes.rows[0]?.id) {
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO empleados (usuario_id, cargo, departamento, salario, descuento_max_porcentaje, descuento_max_monto)
         VALUES ($1, 'Gerente de Tienda', 'Ventas', 3500000, 25.00, 200000.00)
         ON CONFLICT (usuario_id) DO NOTHING;
-      `, [gerenteRes.rows[0].id]);
+      `,
+        [gerenteRes.rows[0].id]
+      );
     }
 
-    const cajeroRes = await client.query(`
+    const cajeroRes = await client.query(
+      `
       INSERT INTO usuarios (nombre, apellido, tipo_identificacion_id, numero_identificacion, email, telefono, password_hash, rol_id, activo)
       VALUES ('Ana', 'Ventas', $1, '10000003', 'ventas1@tumifact.com', '3002223344', $2, $3, true)
       ON CONFLICT (email) DO UPDATE SET password_hash = $2, numero_identificacion = '10000003', activo = true
       RETURNING id;
-    `, [ccId, adminPassHash, empRoleId]);
+    `,
+      [ccId, adminPassHash, empRoleId]
+    );
 
     if (cajeroRes.rows[0]?.id) {
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO empleados (usuario_id, cargo, departamento, salario, descuento_max_porcentaje, descuento_max_monto)
         VALUES ($1, 'Cajero Principal', 'Caja', 1600000, 10.00, 50000.00)
         ON CONFLICT (usuario_id) DO NOTHING;
-      `, [cajeroRes.rows[0].id]);
+      `,
+        [cajeroRes.rows[0].id]
+      );
     }
 
     // Seed Configuración por defecto si está vacía
@@ -497,9 +515,13 @@ export async function runMigrationAndSeed() {
     }
 
     // Asegurar categoría 'Genérico' para productos existentes sin categoría
-    const genCatRow = await client.query("SELECT id FROM categorias_producto WHERE nombre = 'Genérico'");
+    const genCatRow = await client.query(
+      "SELECT id FROM categorias_producto WHERE nombre = 'Genérico'"
+    );
     if (genCatRow.rows[0]?.id) {
-      await client.query("UPDATE productos SET categoria_id = $1 WHERE categoria_id IS NULL", [genCatRow.rows[0].id]);
+      await client.query('UPDATE productos SET categoria_id = $1 WHERE categoria_id IS NULL', [
+        genCatRow.rows[0].id,
+      ]);
     }
 
     await client.query('COMMIT');

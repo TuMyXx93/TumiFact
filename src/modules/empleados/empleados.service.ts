@@ -134,16 +134,26 @@ export class EmpleadosService {
         empUpdates.descuento_max_monto = input.descuento_max_monto.toString();
 
       if (empExists.length > 0) {
-        await tx.update(empleados).set(empUpdates).where(eq(empleados.usuario_id, existing.usuario_id));
+        await tx
+          .update(empleados)
+          .set(empUpdates)
+          .where(eq(empleados.usuario_id, existing.usuario_id));
       } else {
         await tx.insert(empleados).values({
           usuario_id: existing.usuario_id,
           cargo: input.cargo || existing.cargo || 'Vendedor/Cajero',
-          departamento: input.departamento !== undefined ? input.departamento : (existing.departamento || null),
-          salario: (input.salario !== undefined ? input.salario : (existing.salario || 0)).toString(),
+          departamento:
+            input.departamento !== undefined ? input.departamento : existing.departamento || null,
+          salario: (input.salario !== undefined ? input.salario : existing.salario || 0).toString(),
           turno: input.turno || existing.turno || 'completo',
-          descuento_max_porcentaje: (input.descuento_max_porcentaje !== undefined ? input.descuento_max_porcentaje : (existing.descuento_max_porcentaje || 10)).toString(),
-          descuento_max_monto: (input.descuento_max_monto !== undefined ? input.descuento_max_monto : (existing.descuento_max_monto || 50000)).toString(),
+          descuento_max_porcentaje: (input.descuento_max_porcentaje !== undefined
+            ? input.descuento_max_porcentaje
+            : existing.descuento_max_porcentaje || 10
+          ).toString(),
+          descuento_max_monto: (input.descuento_max_monto !== undefined
+            ? input.descuento_max_monto
+            : existing.descuento_max_monto || 50000
+          ).toString(),
         });
       }
     });

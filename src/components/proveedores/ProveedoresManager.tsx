@@ -25,9 +25,7 @@ interface ProveedoresManagerProps {
   initialProveedores?: Proveedor[];
 }
 
-export default function ProveedoresManager({
-  initialProveedores = [],
-}: ProveedoresManagerProps) {
+export default function ProveedoresManager({ initialProveedores = [] }: ProveedoresManagerProps) {
   const [proveedores, setProveedores] = useState<Proveedor[]>(
     initialProveedores.filter((p) => p.activo !== false)
   );
@@ -179,9 +177,7 @@ export default function ProveedoresManager({
 
     setIsSubmitting(true);
     try {
-      const url = editingProveedor
-        ? `/api/proveedores/${editingProveedor.id}`
-        : '/api/proveedores';
+      const url = editingProveedor ? `/api/proveedores/${editingProveedor.id}` : '/api/proveedores';
       const method = editingProveedor ? 'PUT' : 'POST';
 
       const res = await apiFetch(url, {
@@ -587,9 +583,7 @@ export default function ProveedoresManager({
                     type="text"
                     placeholder="Zona Industrial Calle 13 #50-20"
                     value={formData.direccion_texto}
-                    onChange={(e) =>
-                      setFormData({ ...formData, direccion_texto: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, direccion_texto: e.target.value })}
                     className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors"
                   />
                 </div>
@@ -605,7 +599,10 @@ export default function ProveedoresManager({
                     max="365"
                     value={formData.plazo_pago_dias}
                     onChange={(e) =>
-                      setFormData({ ...formData, plazo_pago_dias: parseInt(e.target.value, 10) || 0 })
+                      setFormData({
+                        ...formData,
+                        plazo_pago_dias: parseInt(e.target.value, 10) || 0,
+                      })
                     }
                     className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors"
                   />
@@ -662,8 +659,8 @@ export default function ProveedoresManager({
                   {isSubmitting
                     ? 'Guardando...'
                     : editingProveedor
-                    ? 'Actualizar Proveedor'
-                    : 'Guardar Proveedor'}
+                      ? 'Actualizar Proveedor'
+                      : 'Guardar Proveedor'}
                 </button>
               </div>
             </form>

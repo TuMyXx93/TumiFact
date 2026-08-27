@@ -757,7 +757,8 @@ export default function ProductGrid({
                   <option value="">-- Sin proveedor asignado --</option>
                   {proveedores.map((prov) => (
                     <option key={prov.id} value={prov.id}>
-                      {prov.nombre} {prov.numero_identificacion ? `(${prov.numero_identificacion})` : ''}
+                      {prov.nombre}{' '}
+                      {prov.numero_identificacion ? `(${prov.numero_identificacion})` : ''}
                     </option>
                   ))}
                 </select>
@@ -806,7 +807,8 @@ export default function ProductGrid({
                 </div>
                 <div>
                   <label className="font-semibold text-slate-300 uppercase tracking-wider block mb-1">
-                    Mínimo Mayorista ({currentSelectedCategory?.tipo === 'calzado' ? 'Pares' : 'Uds'})
+                    Mínimo Mayorista (
+                    {currentSelectedCategory?.tipo === 'calzado' ? 'Pares' : 'Uds'})
                   </label>
                   <input
                     type="number"

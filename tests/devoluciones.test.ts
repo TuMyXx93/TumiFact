@@ -1,18 +1,20 @@
 import request from 'supertest';
 import app from '../src/app';
-import { truncateAll } from './helpers';
 import { pool } from '../src/db';
+import { truncateAll } from './helpers';
 
 async function loginAsAdmin() {
   const res = await request(app)
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` } as const;
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { cookie: tokenCookie } as const;
 }
 
@@ -34,7 +36,9 @@ describe('Devoluciones — Stack TS (Vitest + src/app)', () => {
     );
     productoId = pRes.rows[0].id;
 
-    const cRes = await pool.query(`INSERT INTO clientes (nombre) VALUES ('Cliente Dev') RETURNING id`);
+    const cRes = await pool.query(
+      `INSERT INTO clientes (nombre) VALUES ('Cliente Dev') RETURNING id`
+    );
     const fRes = await pool.query(
       `INSERT INTO facturas (cliente_id, usuario_id, subtotal, total, forma_pago, estado) VALUES ($1, 1, 20000, 20000, 'efectivo', 'completada') RETURNING id`,
       [cRes.rows[0].id]
@@ -74,9 +78,9 @@ describe('Devoluciones — Stack TS (Vitest + src/app)', () => {
             cantidad_devuelta: 1,
             precio_unitario: 10000,
             condicion: 'defectuoso',
-            reingresa_inventario: true
-          }
-        ]
+            reingresa_inventario: true,
+          },
+        ],
       });
     if (res.status !== 201) console.log('DEV DEBUG', res.status, JSON.stringify(res.body, null, 2));
     expect([200, 201]).toContain(res.status);
@@ -92,7 +96,7 @@ describe('Devoluciones — Stack TS (Vitest + src/app)', () => {
     const res = await request(app).post('/api/devoluciones').send({
       factura_id: facturaId,
       tipo: 'devolucion_total',
-      motivo: 'test'
+      motivo: 'test',
     });
     expect(res.status).toBe(401);
   });

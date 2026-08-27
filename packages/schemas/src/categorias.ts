@@ -2,15 +2,7 @@ import { z } from 'zod';
 
 export const CreateCategoriaDTO = z.object({
   nombre: z.string().min(1, 'El nombre de categoría es requerido'),
-  tipo: z
-    .enum([
-      'ropa',
-      'calzado',
-      'tecnologia',
-      'articulos',
-    ])
-    .optional()
-    .default('articulos'),
+  tipo: z.enum(['ropa', 'calzado', 'tecnologia', 'articulos']).optional().default('articulos'),
   descripcion: z.string().optional(),
   campos_extra: z
     .array(

@@ -46,7 +46,9 @@ describe('Auth & RBAC — Stack TS (Vitest + src/app)', () => {
   });
 
   it('rechaza token inválido → 401', async () => {
-    const res = await request(app).get('/api/productos').set('Authorization', 'Bearer invalid.token.here');
+    const res = await request(app)
+      .get('/api/productos')
+      .set('Authorization', 'Bearer invalid.token.here');
     expect(res.status).toBe(401);
   });
 

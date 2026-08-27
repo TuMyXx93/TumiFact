@@ -1,18 +1,20 @@
 import request from 'supertest';
 import app from '../src/app';
-import { truncateAll } from './helpers';
 import { pool } from '../src/db';
+import { truncateAll } from './helpers';
 
 async function loginAsAdmin() {
   const res = await request(app)
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` } as const;
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { cookie: tokenCookie } as const;
 }
 
@@ -54,7 +56,7 @@ describe('Inventario — Stack TS (Vitest + src/app)', () => {
         tipo: 'entrada_manual',
         cantidad: 10,
         costo_unitario: 2000,
-        notas: 'Compra proveedor'
+        notas: 'Compra proveedor',
       });
     expect(res.status).toBe(201);
 
@@ -78,7 +80,7 @@ describe('Inventario — Stack TS (Vitest + src/app)', () => {
     const res = await withAuth(request(app).post('/api/inventario/ajuste-rapido'), auth).send({
       producto_id: productoId,
       nuevo_stock: 100,
-      motivo: 'Conteo físico anual'
+      motivo: 'Conteo físico anual',
     });
     expect([200, 201]).toContain(res.status);
     const pRes = await pool.query(`SELECT stock_actual FROM productos WHERE id = $1`, [productoId]);

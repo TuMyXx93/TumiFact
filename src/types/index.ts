@@ -90,12 +90,7 @@ export interface SesionCaja {
 export interface CategoriaProducto {
   id: number;
   nombre: string;
-  tipo:
-    | 'ropa'
-    | 'calzado'
-    | 'tecnologia'
-    | 'articulos'
-    | string;
+  tipo: 'ropa' | 'calzado' | 'tecnologia' | 'articulos' | string;
   descripcion?: string | null;
   campos_extra?: Array<{
     key: string;

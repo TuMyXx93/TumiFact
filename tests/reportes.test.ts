@@ -7,11 +7,13 @@ async function loginAsAdmin() {
     .post('/api/auth/login')
     .set('Accept', 'application/vnd.tumifact.auth+json')
     .send({ credential: 'admin@tumifact.com', password: 'Password*2026' });
-  if (res.status !== 200) throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
+  if (res.status !== 200)
+    throw new Error(`Login failed: ${res.status} ${JSON.stringify(res.body)}`);
   const token = res.body.token as string | undefined;
   if (token) return { authHeader: `Bearer ${token}` } as const;
   const cookies = res.headers['set-cookie'] as unknown as string[] | undefined;
-  const tokenCookie = cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
+  const tokenCookie =
+    cookies?.find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '';
   return { cookie: tokenCookie } as const;
 }
 
@@ -74,7 +76,12 @@ describe('Reportes — Stack TS (Vitest + src/app)', () => {
     const cajeroToken = cajeroLogin.body.token as string | undefined;
     const cajeroAuth = cajeroToken
       ? ({ authHeader: `Bearer ${cajeroToken}` } as const)
-      : ({ cookie: (cajeroLogin.headers['set-cookie'] as unknown as string[]).find((c: string) => c.startsWith('tumifact_token='))?.split(';')[0] || '' } as const);
+      : ({
+          cookie:
+            (cajeroLogin.headers['set-cookie'] as unknown as string[])
+              .find((c: string) => c.startsWith('tumifact_token='))
+              ?.split(';')[0] || '',
+        } as const);
 
     const res = await withAuth(request(app).get('/api/reportes/ventas?format=csv'), cajeroAuth);
     expect(res.status).toBe(403);

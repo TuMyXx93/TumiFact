@@ -1,13 +1,13 @@
-import { defineConfig } from 'vitest/config';
 import path from 'node:path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
     alias: {
       '@tumifact/schemas': path.resolve(__dirname, 'packages/schemas/src/index.ts'),
       '@tumifact/types': path.resolve(__dirname, 'packages/types/src/index.ts'),
-      '@': path.resolve(__dirname, 'src')
-    }
+      '@': path.resolve(__dirname, 'src'),
+    },
   },
   test: {
     environment: 'node',
@@ -40,7 +40,7 @@ export default defineConfig({
         'src/lib/apiClient.ts',
         // BullMQ workers requieren Redis real — cubrir con integration tests dedicados
         'src/jobs/**',
-        'src/lib/queue/**'
+        'src/lib/queue/**',
       ],
       reportsDirectory: 'coverage',
       reporter: ['text', 'lcov', 'html'],
@@ -48,8 +48,8 @@ export default defineConfig({
         lines: 55,
         branches: 35,
         functions: 55,
-        statements: 55
-      }
-    }
-  }
+        statements: 55,
+      },
+    },
+  },
 });

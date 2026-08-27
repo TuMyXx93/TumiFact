@@ -1,5 +1,6 @@
-import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { Pool } from 'pg';
+
 dotenv.config();
 
 const pool = new Pool({
@@ -39,7 +40,9 @@ async function seedModernCatalog() {
     `);
 
     // 2. Obtener IDs de categorías activas
-    const catRows = await client.query("SELECT id, nombre, tipo FROM categorias_producto WHERE activo = true");
+    const catRows = await client.query(
+      'SELECT id, nombre, tipo FROM categorias_producto WHERE activo = true'
+    );
     const catMap: Record<string, number> = {};
     for (const row of catRows.rows) {
       catMap[row.tipo] = row.id;
@@ -63,7 +66,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 12,
         stock_actual: 80,
         stock_minimo: 10,
-        atributos: { talla: 'L', color: 'Azul Marino', genero: 'Hombre', material: '100% Algodón Piqué' },
+        atributos: {
+          talla: 'L',
+          color: 'Azul Marino',
+          genero: 'Hombre',
+          material: '100% Algodón Piqué',
+        },
       },
       {
         codigo: 'ROPA-JEAN-002',
@@ -75,7 +83,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 6,
         stock_actual: 45,
         stock_minimo: 5,
-        atributos: { talla: '32', color: 'Azul Índigo', genero: 'Hombre', material: 'Denim 98% Algodón 2% Elastano' },
+        atributos: {
+          talla: '32',
+          color: 'Azul Índigo',
+          genero: 'Hombre',
+          material: 'Denim 98% Algodón 2% Elastano',
+        },
       },
       {
         codigo: 'ROPA-BLUS-003',
@@ -87,7 +100,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 8,
         stock_actual: 60,
         stock_minimo: 8,
-        atributos: { talla: 'M', color: 'Blanco Perla', genero: 'Mujer', material: 'Seda Poliéster' },
+        atributos: {
+          talla: 'M',
+          color: 'Blanco Perla',
+          genero: 'Mujer',
+          material: 'Seda Poliéster',
+        },
       },
 
       // 2. TECNOLOGÍA
@@ -101,7 +119,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 5,
         stock_actual: 30,
         stock_minimo: 4,
-        atributos: { marca: 'AcousticPro', modelo: 'AU-88 Max', serial: 'SN-AU88-99201', garantia_meses: 12 },
+        atributos: {
+          marca: 'AcousticPro',
+          modelo: 'AU-88 Max',
+          serial: 'SN-AU88-99201',
+          garantia_meses: 12,
+        },
       },
       {
         codigo: 'TEC-CABL-002',
@@ -113,7 +136,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 20,
         stock_actual: 120,
         stock_minimo: 15,
-        atributos: { marca: 'PowerFast', modelo: 'CC-65W-2M', serial: 'CBL-2026-65W', garantia_meses: 6 },
+        atributos: {
+          marca: 'PowerFast',
+          modelo: 'CC-65W-2M',
+          serial: 'CBL-2026-65W',
+          garantia_meses: 6,
+        },
       },
       {
         codigo: 'TEC-MOU-003',
@@ -125,7 +153,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 10,
         stock_actual: 50,
         stock_minimo: 8,
-        atributos: { marca: 'TechPro', modelo: 'M-Silent-Ergo', serial: 'SN-MO24-001', garantia_meses: 12 },
+        atributos: {
+          marca: 'TechPro',
+          modelo: 'M-Silent-Ergo',
+          serial: 'SN-MO24-001',
+          garantia_meses: 12,
+        },
       },
 
       // 3. CALZADO
@@ -139,7 +172,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 6,
         stock_actual: 35,
         stock_minimo: 5,
-        atributos: { talla_calzado: 41, color: 'Negro / Naranja', material: 'Malla transpirable / EVA', genero: 'Hombre' },
+        atributos: {
+          talla_calzado: 41,
+          color: 'Negro / Naranja',
+          material: 'Malla transpirable / EVA',
+          genero: 'Hombre',
+        },
       },
       {
         codigo: 'CALZ-MOCA-002',
@@ -151,7 +189,12 @@ async function seedModernCatalog() {
         cantidad_mayorista: 4,
         stock_actual: 25,
         stock_minimo: 4,
-        atributos: { talla_calzado: 40, color: 'Café Miel', material: 'Cuero Natural', genero: 'Hombre' },
+        atributos: {
+          talla_calzado: 40,
+          color: 'Café Miel',
+          material: 'Cuero Natural',
+          genero: 'Hombre',
+        },
       },
       {
         codigo: 'CALZ-SAND-003',
@@ -163,14 +206,20 @@ async function seedModernCatalog() {
         cantidad_mayorista: 6,
         stock_actual: 40,
         stock_minimo: 6,
-        atributos: { talla_calzado: 37, color: 'Beige Arena', material: 'Sintético Premium', genero: 'Mujer' },
+        atributos: {
+          talla_calzado: 37,
+          color: 'Beige Arena',
+          material: 'Sintético Premium',
+          genero: 'Mujer',
+        },
       },
 
       // 4. ARTÍCULOS (NUEVA FAMILIA)
       {
         codigo: 'ART-TERMO-001',
         nombre: 'Termo Acero Inoxidable 750ml Térmico',
-        descripcion: 'Mantiene bebidas frías por 24h y calientes por 12h, tapa hermética antifugas.',
+        descripcion:
+          'Mantiene bebidas frías por 24h y calientes por 12h, tapa hermética antifugas.',
         categoria_id: artId,
         precio_detal: 45000,
         precio_mayorista: 32000,
@@ -189,7 +238,11 @@ async function seedModernCatalog() {
         cantidad_mayorista: 10,
         stock_actual: 40,
         stock_minimo: 5,
-        atributos: { marca: 'DeskMaster', referencia: 'DM-ORG-4P', presentacion: 'Caja individual' },
+        atributos: {
+          marca: 'DeskMaster',
+          referencia: 'DM-ORG-4P',
+          presentacion: 'Caja individual',
+        },
       },
       {
         codigo: 'ART-LIBRE-003',
@@ -201,7 +254,11 @@ async function seedModernCatalog() {
         cantidad_mayorista: 20,
         stock_actual: 90,
         stock_minimo: 15,
-        atributos: { marca: 'NoteCraft', referencia: 'NC-AG2026-A5', presentacion: 'Empaque retractilado' },
+        atributos: {
+          marca: 'NoteCraft',
+          referencia: 'NC-AG2026-A5',
+          presentacion: 'Empaque retractilado',
+        },
       },
     ];
 
@@ -249,7 +306,9 @@ async function seedModernCatalog() {
     }
 
     await client.query('COMMIT');
-    console.log('✅ Catálogo oficial 2026 sembrado con éxito (Ropa, Tecnología, Calzado, Artículos).');
+    console.log(
+      '✅ Catálogo oficial 2026 sembrado con éxito (Ropa, Tecnología, Calzado, Artículos).'
+    );
   } catch (e) {
     await client.query('ROLLBACK');
     console.error('❌ Error sembrando catálogo:', e);

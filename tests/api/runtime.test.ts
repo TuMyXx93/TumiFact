@@ -1,9 +1,9 @@
-import { before, after, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { after, before, describe, it } from 'node:test';
 import request from 'supertest';
 import app from '../../src/app';
+import { closeRedis, initRedis } from '../../src/config/redis';
 import { pool } from '../../src/db';
-import { initRedis, closeRedis } from '../../src/config/redis';
 
 const api = request(app);
 let oldRefresh = '';
