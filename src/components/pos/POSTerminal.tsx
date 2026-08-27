@@ -287,24 +287,13 @@ export default function POSTerminal({
   }, [searchResults, selectedCategoria]);
 
   // Función para determinar la unidad de medida predeterminada según categoría
-  const getDefaultUnidadForProduct = (producto: any): 'UND' | 'KG' | 'LB' | 'PAR' | 'MTS' => {
+  const getDefaultUnidadForProduct = (producto: any): 'UND' | 'PAR' | 'MTS' => {
     const catTipo = (producto.categoria_tipo || '').toLowerCase();
     const catNombre = (producto.categoria_nombre || '').toLowerCase();
 
     if (catTipo === 'calzado' || catNombre.includes('calzado') || catNombre.includes('zapato')) {
       return 'PAR';
     }
-    if (
-      catTipo === 'perecedero' ||
-      catNombre.includes('perecedero') ||
-      catNombre.includes('fruta') ||
-      catNombre.includes('verdura')
-    ) {
-      if (producto.precio_kg && Number(producto.precio_kg) > 0) return 'KG';
-      if (producto.precio_libra && Number(producto.precio_libra) > 0) return 'LB';
-      return 'UND';
-    }
-    // Para Prendas, Tecnología, Bisutería, Artesanías y Genérico:
     return 'UND';
   };
 
@@ -319,10 +308,8 @@ export default function POSTerminal({
     const unidad = getDefaultUnidadForProduct(producto);
 
     let precioBase = pDetal;
-    if (unidad === 'KG' && producto.precio_kg) precioBase = Number(producto.precio_kg);
-    else if (unidad === 'LB' && producto.precio_libra) precioBase = Number(producto.precio_libra);
-    else if (unidad === 'UND' && producto.precio_unidad)
-      precioBase = Number(producto.precio_unidad);
+    if (producto.precio_detal) precioBase = Number(producto.precio_detal);
+    else if (producto.precio_unidad) precioBase = Number(producto.precio_unidad);
 
     if (forceMayorista && producto.precio_mayorista) {
       precioBase = Number(producto.precio_mayorista);
@@ -1027,7 +1014,7 @@ export default function POSTerminal({
                         )}
                         <span className="text-[10px] text-slate-400 font-normal">
                           {' '}
-                          / {prod.precio_kg ? 'KG' : prod.precio_libra ? 'LB' : 'UND'}
+                          / {prod.categoria_tipo === 'calzado' ? 'PAR' : 'UND'}
                         </span>
                       </p>
                       {prod.precio_mayorista && (

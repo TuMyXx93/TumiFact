@@ -117,6 +117,12 @@ export class EmpleadosService {
 
       await tx.update(usuarios).set(userUpdates).where(eq(usuarios.id, existing.usuario_id));
 
+      const empExists = await tx
+        .select({ id: empleados.id })
+        .from(empleados)
+        .where(eq(empleados.usuario_id, existing.usuario_id))
+        .limit(1);
+
       const empUpdates: any = { updated_at: new Date() };
       if (input.cargo) empUpdates.cargo = input.cargo;
       if (input.departamento !== undefined) empUpdates.departamento = input.departamento;
@@ -127,7 +133,19 @@ export class EmpleadosService {
       if (input.descuento_max_monto !== undefined)
         empUpdates.descuento_max_monto = input.descuento_max_monto.toString();
 
-      await tx.update(empleados).set(empUpdates).where(eq(empleados.id, id));
+      if (empExists.length > 0) {
+        await tx.update(empleados).set(empUpdates).where(eq(empleados.usuario_id, existing.usuario_id));
+      } else {
+        await tx.insert(empleados).values({
+          usuario_id: existing.usuario_id,
+          cargo: input.cargo || existing.cargo || 'Vendedor/Cajero',
+          departamento: input.departamento !== undefined ? input.departamento : (existing.departamento || null),
+          salario: (input.salario !== undefined ? input.salario : (existing.salario || 0)).toString(),
+          turno: input.turno || existing.turno || 'completo',
+          descuento_max_porcentaje: (input.descuento_max_porcentaje !== undefined ? input.descuento_max_porcentaje : (existing.descuento_max_porcentaje || 10)).toString(),
+          descuento_max_monto: (input.descuento_max_monto !== undefined ? input.descuento_max_monto : (existing.descuento_max_monto || 50000)).toString(),
+        });
+      }
     });
 
     // Audit FUERA de la transacción — fire-and-forget
@@ -228,12 +246,12 @@ export class EmpleadosService {
     const [totalesRes, ventasPorEmpleadoRes, turnosRes] = await Promise.all([
       pool.query(`
         SELECT 
-          COUNT(e.id) as total_empleados,
+          COUNT(u.id) as total_empleados,
           COUNT(CASE WHEN u.activo = true THEN 1 END) as activos,
           COUNT(CASE WHEN u.activo = false THEN 1 END) as inactivos,
           COALESCE(AVG(NULLIF(e.salario, 0)), 0) as salario_promedio
-        FROM empleados e
-        JOIN usuarios u ON e.usuario_id = u.id
+        FROM usuarios u
+        LEFT JOIN empleados e ON e.usuario_id = u.id
       `),
       pool.query(`
         SELECT 

@@ -12,7 +12,10 @@ import { usuarios } from '../../db/schema/usuarios';
 import { recordAudit } from '../../shared/utils/audit';
 import type { LoginInput, RegisterUserInput } from './auth.dto';
 
-const JWT_EXPIRES_IN = '15m';
+// BUG FIX: Extender JWT a 4h para evitar expiraciones frecuentes en SSR
+// El middleware Astro no ejecuta refresh automático, por lo que 15m causaba
+// cierres de sesión prematuros durante navegación/recarga de páginas.
+const JWT_EXPIRES_IN = '4h';
 const REFRESH_DAYS = 7;
 
 const hashRefreshToken = (token: string) => createHash('sha256').update(token).digest('hex');

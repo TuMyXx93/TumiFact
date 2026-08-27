@@ -402,15 +402,15 @@ export async function runMigrationAndSeed() {
     // Seed Categorías de Producto
     await client.query(`
       INSERT INTO categorias_producto (nombre, tipo, descripcion, campos_extra) VALUES
-        ('Prendas de Vestir', 'vestimenta', 'Ropa, confecciones y prendas de vestir', '[{"key":"talla","label":"Talla","type":"string"},{"key":"color","label":"Color","type":"string"},{"key":"genero","label":"Género","type":"select","options":["Hombre","Mujer","Unisex","Niño"]}]'::jsonb),
-        ('Tecnología', 'tecnologia', 'Equipos electrónicos, accesorios y gadgets', '[{"key":"serial","label":"Número Serial","type":"string"},{"key":"marca","label":"Marca","type":"string"},{"key":"garantia_dias","label":"Días de Garantía","type":"number"}]'::jsonb),
-        ('Calzado', 'calzado', 'Zapatos, tenis, botas y sandalias', '[{"key":"talla_calzado","label":"Talla de Calzado","type":"number"},{"key":"color","label":"Color","type":"string"},{"key":"material","label":"Material","type":"string"}]'::jsonb),
-        ('Perecederos', 'perecedero', 'Alimentos frescos, frutas, verduras y carnes', '[{"key":"fecha_vencimiento","label":"Fecha de Vencimiento","type":"date"},{"key":"temperatura_conservacion","label":"Temp. Conservación","type":"string"}]'::jsonb),
-        ('Artesanías', 'artesania', 'Productos artesanales hechos a mano', '[{"key":"artesano","label":"Nombre del Artesano","type":"string"},{"key":"origen","label":"Región de Origen","type":"string"},{"key":"material_principal","label":"Material Principal","type":"string"}]'::jsonb),
-        ('Bisutería', 'bisuteria', 'Joyas, collares, aretes, pulseras y accesorios', '[{"key":"material","label":"Material / Baño","type":"string"},{"key":"piedra","label":"Tipo de Piedra","type":"string"}]'::jsonb),
-        ('Genérico', 'generico', 'Productos generales y misceláneos', '[]'::jsonb)
-      ON CONFLICT (nombre) DO NOTHING;
-    `)
+        ('Ropa', 'ropa', 'Prendas de vestir, confección, camisas, pantalones y moda', '[{"key":"talla","label":"Talla","type":"string"},{"key":"color","label":"Color","type":"string"},{"key":"genero","label":"Género","type":"select","options":["Hombre","Mujer","Unisex","Niño","Niña"]},{"key":"material","label":"Material","type":"string"}]'::jsonb),
+        ('Tecnología', 'tecnologia', 'Equipos electrónicos, cómputo, audio y accesorios', '[{"key":"marca","label":"Marca","type":"string"},{"key":"modelo","label":"Modelo","type":"string"},{"key":"serial","label":"Número Serial","type":"string"},{"key":"garantia_meses","label":"Meses de Garantía","type":"number"}]'::jsonb),
+        ('Calzado', 'calzado', 'Zapatos, tenis, botas y sandalias', '[{"key":"talla_calzado","label":"Talla de Calzado","type":"number"},{"key":"color","label":"Color","type":"string"},{"key":"material","label":"Material","type":"string"},{"key":"genero","label":"Género","type":"select","options":["Hombre","Mujer","Unisex","Niño","Niña"]}]'::jsonb),
+        ('Artículos', 'articulos', 'Artículos varios, accesorios y miscelánea general del POS', '[{"key":"marca","label":"Marca","type":"string"},{"key":"referencia","label":"Referencia / Modelo","type":"string"},{"key":"presentacion","label":"Presentación","type":"string"}]'::jsonb)
+      ON CONFLICT (nombre) DO UPDATE SET
+        tipo = EXCLUDED.tipo,
+        descripcion = EXCLUDED.descripcion,
+        campos_extra = EXCLUDED.campos_extra;
+    `);
     
     const adminPassHash = await argon2.hash('Password*2026', {
       type: argon2.argon2id,

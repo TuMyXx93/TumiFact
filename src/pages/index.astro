@@ -9,6 +9,7 @@ let kpis = {
   totalFacturasHoy: 0,
   separadosActivos: 0,
   clientesTotal: 0,
+  proveedoresTotal: 0,
   productosTotal: 0,
   stockCritico: 0,
   ventasEfectivo: 0,
@@ -31,7 +32,7 @@ try {
       )
     : Promise.resolve({ rows: [] } as any);
 
-  const [ventasHoy, sepActivos, totClientes, totProductos, criticos, caja] =
+  const [ventasHoy, sepActivos, totClientes, totProveedores, totProductos, criticos, caja] =
     await Promise.allSettled([
       db.query(
         `
@@ -46,6 +47,7 @@ try {
       ),
       db.query(`SELECT COUNT(*) AS total FROM separados WHERE estado = 'activo'`),
       db.query(`SELECT COUNT(*) AS total FROM clientes WHERE activo = true`),
+      db.query(`SELECT COUNT(*) AS total FROM proveedores WHERE activo = true`),
       db.query(`SELECT COUNT(*) AS total FROM productos WHERE activo = true`),
       db.query(
         `SELECT COUNT(*) AS total FROM productos WHERE activo = true AND stock_actual <= stock_minimo`
@@ -65,6 +67,8 @@ try {
     kpis.separadosActivos = parseInt(sepActivos.value.rows[0]?.total || 0, 10);
   if (totClientes.status === 'fulfilled')
     kpis.clientesTotal = parseInt(totClientes.value.rows[0]?.total || 0, 10);
+  if (totProveedores.status === 'fulfilled')
+    kpis.proveedoresTotal = parseInt(totProveedores.value.rows[0]?.total || 0, 10);
   if (totProductos.status === 'fulfilled')
     kpis.productosTotal = parseInt(totProductos.value.rows[0]?.total || 0, 10);
   if (criticos.status === 'fulfilled')
@@ -275,6 +279,22 @@ const today = new Date().toLocaleDateString('es-CO', {
           </div>
           <span class="text-[10px] font-semibold text-cyan-400 uppercase tracking-wider">Ver Clientes →</span>
         </a>
+
+        <!-- Proveedores (Exclusivo Admin / Gerente) -->
+        {(currentUser?.rol_nombre === 'admin' || currentUser?.rol_nombre === 'gerente') && (
+          <a href="/proveedores" class="group bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 transition-all shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-0.5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="h-10 w-10 min-w-10 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20 flex items-center justify-center transition-colors shrink-0">
+                <svg class="h-5 w-5 shrink-0 block" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              </div>
+              <div>
+                <h3 class="font-bold text-white group-hover:text-indigo-300 transition-colors">Directorio Proveedores</h3>
+                <p class="text-xs text-slate-400">{kpis.proveedoresTotal} proveedores mayoristas (3NF)</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">Ver Proveedores →</span>
+          </a>
+        )}
 
         <!-- Empleados (Exclusivo Admin / Gerente) -->
         {(currentUser?.rol_nombre === 'admin' || currentUser?.rol_nombre === 'gerente') && (

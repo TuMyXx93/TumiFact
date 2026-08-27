@@ -190,6 +190,12 @@ export async function resolveApiBaseUrl(force = false): Promise<string | null> {
     return normalizeBase(ENV_API_BASE);
   }
 
+  // BUG FIX: En desarrollo sin PUBLIC_API_BASE_URL configurada, usar rutas relativas
+  // para que el proxy Vite (astro.config.mjs) las redirija correctamente
+  if (!ENV_API_BASE && ENV_API_AUTO_DISCOVERY === 'false') {
+    return ''; // Ruta relativa → /api/... se maneja por el proxy
+  }
+
   if (!force && cachedApiBase) return cachedApiBase;
 
   const candidates = getCandidateBases();

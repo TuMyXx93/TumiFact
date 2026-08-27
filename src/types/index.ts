@@ -91,13 +91,10 @@ export interface CategoriaProducto {
   id: number;
   nombre: string;
   tipo:
-    | 'perecedero'
-    | 'vestimenta'
+    | 'ropa'
     | 'calzado'
     | 'tecnologia'
-    | 'artesania'
-    | 'bisuteria'
-    | 'generico'
+    | 'articulos'
     | string;
   descripcion?: string | null;
   campos_extra?: Array<{

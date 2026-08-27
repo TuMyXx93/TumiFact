@@ -4,16 +4,13 @@ export const CreateCategoriaDTO = z.object({
   nombre: z.string().min(1, 'El nombre de categoría es requerido'),
   tipo: z
     .enum([
-      'perecedero',
-      'vestimenta',
+      'ropa',
       'calzado',
       'tecnologia',
-      'artesania',
-      'bisuteria',
-      'generico',
+      'articulos',
     ])
     .optional()
-    .default('generico'),
+    .default('articulos'),
   descripcion: z.string().optional(),
   campos_extra: z
     .array(

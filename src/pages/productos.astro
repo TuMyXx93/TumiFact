@@ -5,18 +5,23 @@ import db from '../lib/db.js';
 
 let productos = [];
 let categorias = [];
+let proveedores = [];
 try {
-  const [prodRes, catRes] = await Promise.all([
+  const [prodRes, catRes, provRes] = await Promise.all([
     db.query(`
-      SELECT p.*, c.nombre as categoria_nombre, c.tipo as categoria_tipo
+      SELECT p.*, c.nombre as categoria_nombre, c.tipo as categoria_tipo,
+             pv.nombre as proveedor_nombre
       FROM productos p
       LEFT JOIN categorias_producto c ON p.categoria_id = c.id
+      LEFT JOIN proveedores pv ON p.proveedor_id = pv.id
       ORDER BY p.id DESC
     `),
     db.query('SELECT * FROM categorias_producto WHERE activo = true ORDER BY id ASC'),
+    db.query('SELECT id, nombre, numero_identificacion, activo FROM proveedores WHERE activo = true ORDER BY nombre ASC'),
   ]);
   productos = prodRes.rows || [];
   categorias = catRes.rows || [];
+  proveedores = provRes.rows || [];
 } catch (e) {
   console.error('Error al consultar productos SSR:', e);
 }
@@ -35,12 +40,17 @@ try {
           Catálogo & Familias de Productos
         </h1>
         <p class="text-slate-400 text-xs sm:text-sm mt-1">
-          Gestión integral de prendas, calzado, tecnología, perecederos, artesanías y bisutería con precios al detal y mayorista.
+          Gestión integral de ropa, tecnología, calzado y artículos varios con precios al detal y mayorista.
         </p>
       </div>
     </div>
 
     <!-- React Island de Gestión de Productos Multi-Categoría -->
-    <ProductGrid client:load initialProductos={productos} initialCategorias={categorias} />
+    <ProductGrid
+      client:load
+      initialProductos={productos}
+      initialCategorias={categorias}
+      initialProveedores={proveedores}
+    />
   </div>
 </Layout>

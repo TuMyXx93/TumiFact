@@ -3,7 +3,7 @@ import { boolean, jsonb, pgTable, serial, text, timestamp, varchar } from 'drizz
 export const categoriasProducto = pgTable('categorias_producto', {
   id: serial('id').primaryKey(),
   nombre: varchar('nombre', { length: 100 }).notNull().unique(),
-  tipo: varchar('tipo', { length: 50 }).notNull().default('generico'), // 'perecedero', 'vestimenta', 'calzado', 'tecnologia', 'artesania', 'bisuteria', 'generico'
+  tipo: varchar('tipo', { length: 50 }).notNull().default('articulos'), // 'ropa', 'calzado', 'tecnologia', 'articulos'
   descripcion: text('descripcion'),
   campos_extra: jsonb('campos_extra').default([]).notNull(),
   aplica_inventario: boolean('aplica_inventario').default(true).notNull(),

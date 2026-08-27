@@ -18,8 +18,8 @@ try {
   const [empRes, rolesRes, tiposRes] = await Promise.all([
     db.query(`
       SELECT 
-        e.id,
-        e.usuario_id,
+        COALESCE(e.id, u.id) as id,
+        u.id as usuario_id,
         u.nombre,
         u.apellido,
         u.email,
@@ -29,20 +29,20 @@ try {
         u.tipo_identificacion_id,
         u.rol_id,
         r.nombre as rol_nombre,
-        e.cargo,
-        e.departamento,
-        e.salario,
-        e.turno,
-        e.descuento_max_porcentaje,
-        e.descuento_max_monto,
+        COALESCE(e.cargo, CASE WHEN r.nombre = 'admin' THEN 'Administrador General' WHEN r.nombre = 'gerente' THEN 'Gerente de Tienda' ELSE 'Vendedor/Cajero' END) as cargo,
+        COALESCE(e.departamento, CASE WHEN r.nombre = 'admin' THEN 'Dirección' WHEN r.nombre = 'gerente' THEN 'Operaciones' ELSE 'Ventas' END) as departamento,
+        COALESCE(e.salario, 0) as salario,
+        COALESCE(e.turno, 'completo') as turno,
+        COALESCE(e.descuento_max_porcentaje, CASE WHEN r.nombre = 'admin' THEN 100.00 WHEN r.nombre = 'gerente' THEN 30.00 ELSE 10.00 END) as descuento_max_porcentaje,
+        COALESCE(e.descuento_max_monto, CASE WHEN r.nombre = 'admin' THEN 99999999.00 WHEN r.nombre = 'gerente' THEN 500000.00 ELSE 50000.00 END) as descuento_max_monto,
         u.activo,
         u.ultimo_login,
-        e.created_at
-      FROM empleados e
-      INNER JOIN usuarios u ON e.usuario_id = u.id
+        COALESCE(e.created_at, u.created_at) as created_at
+      FROM usuarios u
+      LEFT JOIN empleados e ON e.usuario_id = u.id
       LEFT JOIN roles r ON u.rol_id = r.id
       LEFT JOIN tipos_identificacion ti ON u.tipo_identificacion_id = ti.id
-      ORDER BY e.id ASC
+      ORDER BY u.id ASC
     `),
     db.query('SELECT * FROM roles ORDER BY id ASC'),
     db.query('SELECT * FROM tipos_identificacion ORDER BY id ASC'),

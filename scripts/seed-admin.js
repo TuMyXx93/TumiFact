@@ -92,6 +92,91 @@ async function seedAdmin() {
   console.log(
     '   💳 Cajero:  ventas1@tumifact.com / 10000003 (clave definida por SEED_ADMIN_PASSWORD)'
   );
+
+  // BUG FIX (RF#3): seed de categorías, producto demo, configuración y perfiles empleados.
+  // Sin esto, la BD queda vacía y el componente Productos defaultea a id=1
+  // inexistente (FK violation 23503).
+  console.log('🌱 Seed de catálogo demo (categorías, producto, configuración, empleados)...');
+
+  await db.query(`
+    INSERT INTO tipos_identificacion (codigo, nombre, aplica_a) VALUES
+      ('NIT', 'Número de Identificación Tributaria', 'empresa')
+    ON CONFLICT (codigo) DO NOTHING;
+  `);
+
+  const nitRow = await db.query("SELECT id FROM tipos_identificacion WHERE codigo = 'NIT' LIMIT 1");
+  const nitId = nitRow.rows[0]?.id || null;
+
+  // Categorías (idempotente via ON CONFLICT por nombre)
+  await db.query(`
+    INSERT INTO categorias_producto (nombre, tipo, descripcion, campos_extra, activo) VALUES
+      ('Ropa', 'ropa', 'Prendas de vestir, confección, camisas, pantalones y moda', '[]'::jsonb, true),
+      ('Tecnología', 'tecnologia', 'Equipos electrónicos, cómputo, audio y accesorios', '[]'::jsonb, true),
+      ('Calzado', 'calzado', 'Zapatos, tenis, botas y sandalias', '[]'::jsonb, true),
+      ('Artículos', 'articulos', 'Artículos varios, accesorios y miscelánea general del POS', '[]'::jsonb, true)
+    ON CONFLICT (nombre) DO UPDATE SET
+      tipo = EXCLUDED.tipo,
+      descripcion = EXCLUDED.descripcion,
+      activo = EXCLUDED.activo;
+  `);
+
+  const catArtRow = await db.query("SELECT id FROM categorias_producto WHERE nombre = 'Artículos' LIMIT 1");
+  const catArtId = catArtRow.rows[0]?.id || null;
+
+  // Producto demo (idempotente por codigo)
+  if (catGenId) {
+    await db.query(
+      `INSERT INTO productos (codigo, nombre, descripcion, categoria_id, precio_kg, precio_unidad, precio_libra, precio_detal, precio_mayorista, cantidad_mayorista, stock_actual, stock_minimo, atributos, activo)
+       VALUES ('DEMO-001', 'Producto Demo', 'Producto demo creado por seed-admin.js para validar el flujo POS', $1, 1000, 1000, 500, 1000, 800, 12, 100, 5, '{}'::jsonb, true)
+       ON CONFLICT (codigo) DO NOTHING`,
+      [catGenId]
+    );
+  }
+
+  // Configuración de impresión por defecto (idempotente via single-row constraint)
+  await db.query(`
+    INSERT INTO configuracion_impresion (
+      nombre_negocio, direccion, telefono, nit, pie_pagina, ancho_papel, font_size,
+      esquema_colores, mensaje_bienvenida, mensaje_pie, dias_plazo_separado_default
+    ) VALUES (
+      'TumiFact Store', 'Calle 100 #15-20, Bogotá', '+57 300 123 4567', '900.123.456-7',
+      '¡Gracias por su compra! Guarde este comprobante.', 80, 1,
+      '{"primary":"#2563eb","secondary":"#0891b2","accent":"#10b981","background":"#0b0f19","surface":"#0f172a"}'::jsonb,
+      '¡Bienvenido a TumiFact Store!', '¡Esperamos verle pronto!', 30
+    ) ON CONFLICT (id) DO NOTHING;
+  `);
+
+  // Crear perfiles empleados para los usuarios semilla (admin, gerente, cajero)
+  const adminUser = await db.query("SELECT id FROM usuarios WHERE email = 'admin@tumifact.com' LIMIT 1");
+  const gerenteUser = await db.query("SELECT id FROM usuarios WHERE email = 'gerente@tumifact.com' LIMIT 1");
+  const cajeroUser = await db.query("SELECT id FROM usuarios WHERE email = 'ventas1@tumifact.com' LIMIT 1");
+
+  if (adminUser.rows[0]?.id) {
+    await db.query(`
+      INSERT INTO empleados (usuario_id, cargo, departamento, salario, turno, descuento_max_porcentaje, descuento_max_monto)
+      VALUES ($1, 'Administrador General', 'Dirección', 5000000, 'completo', 100, 99999999)
+      ON CONFLICT (usuario_id) DO NOTHING
+    `, [adminUser.rows[0].id]);
+  }
+
+  if (gerenteUser.rows[0]?.id) {
+    await db.query(`
+      INSERT INTO empleados (usuario_id, cargo, departamento, salario, turno, descuento_max_porcentaje, descuento_max_monto)
+      VALUES ($1, 'Gerente de Tienda', 'Operaciones', 3500000, 'completo', 30, 500000)
+      ON CONFLICT (usuario_id) DO NOTHING
+    `, [gerenteUser.rows[0].id]);
+  }
+
+  if (cajeroUser.rows[0]?.id) {
+    await db.query(`
+      INSERT INTO empleados (usuario_id, cargo, departamento, salario, turno, descuento_max_porcentaje, descuento_max_monto)
+      VALUES ($1, 'Cajero POS', 'Ventas', 1500000, 'rotativo', 10, 50000)
+      ON CONFLICT (usuario_id) DO NOTHING
+    `, [cajeroUser.rows[0].id]);
+  }
+
+  console.log('   ✅ Catálogo demo sembrado: 7 categorías + producto DEMO-001 + configuración + perfiles empleados');
+
   await db.end();
   process.exit(0);
 }

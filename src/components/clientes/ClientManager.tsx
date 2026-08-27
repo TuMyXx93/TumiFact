@@ -23,7 +23,10 @@ interface ClientManagerProps {
 }
 
 export default function ClientManager({ initialClientes = [] }: ClientManagerProps) {
-  const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
+  // BUG FIX: Filtrar solo clientes activos para consistencia con SSR
+  const [clientes, setClientes] = useState<Cliente[]>(
+    initialClientes.filter((c) => c.activo !== false)
+  );
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
@@ -83,22 +86,26 @@ export default function ClientManager({ initialClientes = [] }: ClientManagerPro
       } catch (_) {}
 
       if (res.ok) {
+        // BUG FIX: Soft-delete - remover del estado local inmediatamente
         setClientes(clientes.filter((c) => c.id !== id));
         setStatusMessage({
           type: 'success',
           text: data.message || 'Cliente eliminado exitosamente',
         });
+        setTimeout(() => setStatusMessage(null), 3000);
       } else {
         setStatusMessage({
           type: 'error',
           text: data.error || `Error ${res.status} al eliminar el cliente`,
         });
+        setTimeout(() => setStatusMessage(null), 5000);
       }
     } catch (err) {
       setStatusMessage({
         type: 'error',
         text: 'No se pudo conectar con el servidor para eliminar el cliente',
       });
+      setTimeout(() => setStatusMessage(null), 5000);
     }
   };
 

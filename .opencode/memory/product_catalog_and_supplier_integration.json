@@ -1,0 +1,6 @@
+{
+  "title": "OPTIMIZE product catalog families and supplier relationship integration",
+  "type": "architecture",
+  "topic_key": "tumifact/catalog-suppliers-integration",
+  "content": "**What**: Consolidated and hardened product categories into 4 official families: 'Ropa', 'Tecnología', 'Calzado', and 'Artículos' (new generic articles reference), eliminating deprecated categories. Fully integrated supplier (proveedor) relationship management in `ProductGrid`, allowing optional/manual supplier assignment without pre-selection, visual supplier identification badges, and SSR supplier data preloading in `productos.astro`.\n**Why**: Ensures consistent categorization across POS and Inventory modules, prevents erroneous default supplier assignments, and provides flexible supplier management for both supplied and self-manufactured products.\n**Where**: `src/components/productos/ProductGrid.tsx`, `src/pages/productos.astro`, `packages/schemas/src/categorias.ts`, `src/db/schema/categorias.ts`, `tests/productos.test.ts`, `tests/helpers.ts`.\n**Learned**: Decoupling the supplier association from required product creation fields while ensuring responsive SSR loading and instant React state updates keeps product catalog management intuitive and robust."
+}
