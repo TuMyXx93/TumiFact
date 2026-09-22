@@ -2,6 +2,11 @@
   "name": "tumifact",
   "version": "1.0.0",
   "description": "Sistema de Facturación TumiFact",
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=22.0.0 <25.0.0",
+    "pnpm": ">=11.0.0"
+  },
   "scripts": {
     "start": "node dist-api/server.mjs",
     "start:api": "node dist-api/server.mjs",
@@ -26,15 +31,15 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "@astrojs/node": "^11.1.4",
-    "@astrojs/react": "^6.0.4",
+    "@astrojs/node": "^11.1.5",
+    "@astrojs/react": "^6.0.5",
     "@tailwindcss/vite": "^4.3.3",
     "@types/cookie-parser": "^1.4.10",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/pdfkit": "^0.17.6",
     "@types/uuid": "^11.0.0",
     "argon2": "^0.45.1",
-    "astro": "^7.2.7",
+    "astro": "^7.3.2",
     "bullmq": "^6.1.2",
     "close-with-grace": "^2.5.0",
     "cookie-parser": "^1.4.7",
@@ -46,7 +51,7 @@
     "jose": "^6.2.8",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.27.0",
-    "multer": "^2.2.0",
+    "multer": "^2.4.0",
     "pdfkit": "^0.19.1",
     "pg": "^8.22.0",
     "pino": "^10.3.1",

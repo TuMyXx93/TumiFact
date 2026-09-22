@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { createClient, type RedisClientType } from 'redis';
 
-const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6380';
 const redisConnectTimeoutMs = Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 1000);
 export const redisClient: RedisClientType = createClient({
   url: redisUrl,
