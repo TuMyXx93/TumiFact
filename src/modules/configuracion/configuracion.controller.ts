@@ -38,7 +38,7 @@ configuracionRouter.post(
       const logoFile = files?.logo ? files.logo[0] : undefined;
       const qrFile = files?.qr ? files.qr[0] : undefined;
 
-      await service.saveConfiguracion(req.body, logoFile, qrFile);
+      await service.saveConfiguracion(req.body, logoFile, qrFile, req);
       res.json({ message: 'Configuración guardada exitosamente' });
     } catch (error: any) {
       res.status(500).json({ error: 'Error interno del servidor' });
