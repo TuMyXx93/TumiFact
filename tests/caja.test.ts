@@ -68,4 +68,26 @@ describe('Caja (Sesiones de Caja) — Stack TS (Vitest + src/app)', () => {
     const res = await request(app).get('/api/caja/estado');
     expect(res.status).toBe(401);
   });
+
+  it('rechaza abrir una segunda caja mientras la primera sigue abierta', async () => {
+    const auth = await loginAsAdmin();
+    await withAuth(request(app).post('/api/caja/abrir'), auth).send({ monto_apertura: 100000 });
+    const second = await withAuth(request(app).post('/api/caja/abrir'), auth).send({
+      monto_apertura: 50000,
+    });
+    expect(second.status).toBe(400);
+  });
+
+  it('rechaza cerrar dos veces la misma caja', async () => {
+    const auth = await loginAsAdmin();
+    await withAuth(request(app).post('/api/caja/abrir'), auth).send({ monto_apertura: 100000 });
+    const firstClose = await withAuth(request(app).post('/api/caja/cerrar'), auth).send({
+      monto_cierre_declarado: 100000,
+    });
+    expect(firstClose.status).toBe(200);
+    const secondClose = await withAuth(request(app).post('/api/caja/cerrar'), auth).send({
+      monto_cierre_declarado: 100000,
+    });
+    expect(secondClose.status).toBe(400);
+  });
 });

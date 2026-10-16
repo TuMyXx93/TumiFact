@@ -6,37 +6,35 @@ import { devoluciones } from '../../db/schema/devoluciones';
 import { facturas } from '../../db/schema/facturas';
 import { recordAudit } from '../../shared/utils/audit';
 import type { AbrirCajaInput, CerrarCajaInput } from './caja.dto';
-import { CajaRepository } from './caja.repository';
+import { CajaRepository, CajaSessionAlreadyOpenError } from './caja.repository';
 
 export class CajaService {
   constructor(private repo: CajaRepository = new CajaRepository()) {}
 
   async abrirCaja(userId: number, input: AbrirCajaInput, req?: Request) {
-    const active = await this.repo.findActiveByUserId(userId);
-    if (active) {
-      const error: any = new Error('Ya tiene una sesión de caja abierta actualmente.');
-      error.statusCode = 400;
+    try {
+      return await this.repo.createSessionAtomically(
+        userId,
+        {
+          usuario_id: userId,
+          estado: 'abierta',
+          monto_apertura: input.monto_apertura.toString(),
+          notas: input.notas || null,
+        },
+        {
+          usuarioId: userId,
+          datosNuevos: { monto_apertura: input.monto_apertura },
+          req,
+        }
+      );
+    } catch (error) {
+      if (error instanceof CajaSessionAlreadyOpenError) {
+        const err: any = new Error(error.message);
+        err.statusCode = 400;
+        throw err;
+      }
       throw error;
     }
-
-    const session = await this.repo.create({
-      usuario_id: userId,
-      estado: 'abierta',
-      monto_apertura: input.monto_apertura.toString(),
-      notas: input.notas || null,
-    });
-
-    await recordAudit({
-      usuarioId: userId,
-      sesionCajaId: session.id,
-      accion: 'CAJA_ABIERTA',
-      entidad: 'sesiones_caja',
-      entidadId: session.id,
-      datosNuevos: { monto_apertura: input.monto_apertura },
-      req,
-    });
-
-    return session;
   }
 
   async getActiveSession(userId: number) {
@@ -130,7 +128,7 @@ export class CajaService {
     const montoCalculado = active.efectivo_esperado;
     const diferencia = Math.round((montoDeclarado - montoCalculado) * 100) / 100;
 
-    const closed = await this.repo.update(active.id, {
+    const closed = await this.repo.closeSessionAtomically(active.id, {
       estado: 'cerrada',
       monto_cierre_declarado: montoDeclarado.toString(),
       monto_cierre_calculado: montoCalculado.toString(),
@@ -145,6 +143,12 @@ export class CajaService {
       cerrada_at: new Date(),
       notas: input.notas || active.notas,
     });
+
+    if (!closed) {
+      const error: any = new Error('No tiene una sesión de caja abierta para cerrar.');
+      error.statusCode = 400;
+      throw error;
+    }
 
     await recordAudit({
       usuarioId: userId,

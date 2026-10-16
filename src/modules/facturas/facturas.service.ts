@@ -1,6 +1,8 @@
+import { and, eq } from 'drizzle-orm';
 import type { Request } from 'express';
 import { db } from '../../db';
 import { configuracionImpresion } from '../../db/schema/configuracion';
+import { sesionesCaja } from '../../db/schema/sesiones_caja';
 import type { CreateFacturaInput } from './facturas.dto';
 import { FacturasRepository, isIdempotencyConflict } from './facturas.repository';
 
@@ -36,6 +38,26 @@ export class FacturasService {
             })),
           };
         }
+      }
+    }
+
+    if (sesionCajaId != null && userId != null) {
+      const sessionRows = await db
+        .select({ id: sesionesCaja.id })
+        .from(sesionesCaja)
+        .where(
+          and(
+            eq(sesionesCaja.id, sesionCajaId),
+            eq(sesionesCaja.usuario_id, userId),
+            eq(sesionesCaja.estado, 'abierta')
+          )
+        )
+        .limit(1);
+
+      if (!sessionRows[0]) {
+        const error: any = new Error('La sesión de caja indicada no existe o no está abierta.');
+        error.statusCode = 400;
+        throw error;
       }
     }
 

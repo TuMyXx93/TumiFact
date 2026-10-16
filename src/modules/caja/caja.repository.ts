@@ -1,8 +1,17 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import type { NewSesionCaja, SesionCajaItem } from '../../db/schema/sesiones_caja';
 import { sesionesCaja } from '../../db/schema/sesiones_caja';
 import { usuarios } from '../../db/schema/usuarios';
+import { recordAuditInTransaction } from '../../shared/utils/audit';
+
+export class CajaSessionAlreadyOpenError extends Error {
+  readonly statusCode = 400;
+  constructor() {
+    super('Ya tiene una sesión de caja abierta actualmente.');
+    this.name = 'CajaSessionAlreadyOpenError';
+  }
+}
 
 export class CajaRepository {
   async findActiveByUserId(userId: number): Promise<SesionCajaItem | null> {
@@ -71,6 +80,61 @@ export class CajaRepository {
   async create(data: NewSesionCaja): Promise<SesionCajaItem> {
     const rows = await db.insert(sesionesCaja).values(data).returning();
     return rows[0];
+  }
+
+  async createSessionAtomically(
+    userId: number,
+    data: NewSesionCaja,
+    auditContext?: {
+      usuarioId?: number | null;
+      sesionCajaId?: number | null;
+      datosNuevos?: Record<string, unknown>;
+      req?: any;
+    }
+  ): Promise<SesionCajaItem> {
+    return await db.transaction(async (tx) => {
+      // Serializa operaciones de apertura por usuario.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${userId})`);
+
+      const active = await tx
+        .select()
+        .from(sesionesCaja)
+        .where(and(eq(sesionesCaja.usuario_id, userId), eq(sesionesCaja.estado, 'abierta')))
+        .limit(1);
+
+      if (active[0]) {
+        throw new CajaSessionAlreadyOpenError();
+      }
+
+      const rows = await tx.insert(sesionesCaja).values(data).returning();
+      const session = rows[0];
+
+      if (auditContext) {
+        await recordAuditInTransaction(tx, {
+          usuarioId: auditContext.usuarioId ?? userId,
+          sesionCajaId: session.id,
+          accion: 'CAJA_ABIERTA',
+          entidad: 'sesiones_caja',
+          entidadId: session.id,
+          datosNuevos: auditContext.datosNuevos,
+          req: auditContext.req,
+        });
+      }
+
+      return session;
+    });
+  }
+
+  async closeSessionAtomically(
+    id: number,
+    data: Partial<NewSesionCaja>
+  ): Promise<SesionCajaItem | null> {
+    const rows = await db
+      .update(sesionesCaja)
+      .set(data)
+      .where(and(eq(sesionesCaja.id, id), eq(sesionesCaja.estado, 'abierta')))
+      .returning();
+    return rows[0] || null;
   }
 
   async update(id: number, data: Partial<NewSesionCaja>): Promise<SesionCajaItem | null> {

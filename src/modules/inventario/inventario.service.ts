@@ -1,9 +1,9 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { Request } from 'express';
 import { db } from '../../db';
 import { movimientosInventario } from '../../db/schema/inventario';
 import { productos } from '../../db/schema/productos';
-import { recordAudit } from '../../shared/utils/audit';
+import { recordAuditInTransaction } from '../../shared/utils/audit';
 import type { AjusteStockRapidoInput, MovimientoInventarioInput } from './inventario.dto';
 import { InventarioRepository } from './inventario.repository';
 
@@ -19,7 +19,7 @@ export class InventarioService {
   }
 
   async registrarMovimiento(input: MovimientoInventarioInput, userId?: number, req?: Request) {
-    // Idempotency check
+    // Check idempotencia previa
     if (input.idempotency_key) {
       const existing = await this.repo.findByIdempotencyKey(input.idempotency_key);
       if (existing) {
@@ -30,7 +30,112 @@ export class InventarioService {
       }
     }
 
+    try {
+      return await db.transaction(async (tx) => {
+        // Serializa mutaciones por producto.
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(${input.producto_id})`);
+
+        const prodRows = await tx
+          .select()
+          .from(productos)
+          .where(eq(productos.id, input.producto_id))
+          .limit(1);
+        const prod = prodRows[0];
+        if (!prod) {
+          const error: any = new Error('Producto no encontrado');
+          error.statusCode = 404;
+          throw error;
+        }
+
+        const stockActual = parseFloat(prod.stock_actual);
+        let cantidadDelta = input.cantidad;
+        let nuevoStock = stockActual;
+
+        if (['salida_manual', 'ajuste_negativo', 'perdida'].includes(input.tipo)) {
+          if (stockActual < cantidadDelta) {
+            const error: any = new Error('Stock insuficiente para el movimiento solicitado');
+            error.statusCode = 409;
+            error.code = 'INSUFFICIENT_STOCK';
+            throw error;
+          }
+          nuevoStock = stockActual - cantidadDelta;
+          cantidadDelta = -cantidadDelta;
+        } else {
+          nuevoStock = stockActual + cantidadDelta;
+        }
+
+        // Actualizar stock en productos
+        await tx
+          .update(productos)
+          .set({
+            stock_actual: nuevoStock.toString(),
+            updated_at: new Date(),
+          })
+          .where(eq(productos.id, prod.id));
+
+        // Insertar movimiento
+        const movRows = await tx
+          .insert(movimientosInventario)
+          .values({
+            idempotency_key: input.idempotency_key || null,
+            producto_id: prod.id,
+            usuario_id: userId || null,
+            tipo: input.tipo,
+            cantidad: input.cantidad.toString(),
+            stock_anterior: stockActual.toString(),
+            stock_nuevo: nuevoStock.toString(),
+            costo_unitario: input.costo_unitario?.toString() || null,
+            referencia_tipo: 'manual',
+            notas: input.notas || null,
+          })
+          .returning();
+
+        await recordAuditInTransaction(tx, {
+          usuarioId: userId || null,
+          accion: 'INVENTARIO_MOVIMIENTO',
+          entidad: 'productos',
+          entidadId: prod.id,
+          datosPrevios: { stock: stockActual },
+          datosNuevos: {
+            stock: nuevoStock,
+            delta: cantidadDelta,
+            tipo: input.tipo,
+          },
+          req,
+        });
+
+        return {
+          message: 'Movimiento de inventario registrado exitosamente',
+          movimiento: movRows[0],
+          producto: {
+            id: prod.id,
+            nombre: prod.nombre,
+            stock_anterior: stockActual,
+            stock_nuevo: nuevoStock,
+          },
+        };
+      });
+    } catch (error) {
+      const err = error as any;
+      const code = err?.code || err?.cause?.code;
+      const isUnique = code === '23505' && String(err?.message || '').includes('idempotency');
+      if (input.idempotency_key && isUnique) {
+        const existing = await this.repo.findByIdempotencyKey(input.idempotency_key);
+        if (existing) {
+          return {
+            idempotent: true,
+            movimiento: existing,
+          };
+        }
+      }
+      throw error;
+    }
+  }
+
+  async ajusteStockRapido(input: AjusteStockRapidoInput, userId?: number, req?: Request) {
     return await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(${input.producto_id})`);
+
       const prodRows = await tx
         .select()
         .from(productos)
@@ -43,81 +148,9 @@ export class InventarioService {
         throw error;
       }
 
-      const stockActual = parseFloat(prod.stock_actual);
-      let cantidadDelta = input.cantidad;
-      let nuevoStock = stockActual;
-
-      if (['salida_manual', 'ajuste_negativo', 'perdida'].includes(input.tipo)) {
-        nuevoStock = Math.max(0, stockActual - cantidadDelta);
-        cantidadDelta = -cantidadDelta;
-      } else {
-        nuevoStock = stockActual + cantidadDelta;
-      }
-
-      // Actualizar stock en productos
-      await tx
-        .update(productos)
-        .set({
-          stock_actual: nuevoStock.toString(),
-          updated_at: new Date(),
-        })
-        .where(eq(productos.id, prod.id));
-
-      // Insertar movimiento
-      const movRows = await tx
-        .insert(movimientosInventario)
-        .values({
-          idempotency_key: input.idempotency_key || null,
-          producto_id: prod.id,
-          usuario_id: userId || null,
-          tipo: input.tipo,
-          cantidad: input.cantidad.toString(),
-          stock_anterior: stockActual.toString(),
-          stock_nuevo: nuevoStock.toString(),
-          costo_unitario: input.costo_unitario?.toString() || null,
-          referencia_tipo: 'manual',
-          notas: input.notas || null,
-        })
-        .returning();
-
-      await recordAudit({
-        usuarioId: userId,
-        accion: 'INVENTARIO_MOVIMIENTO',
-        entidad: 'productos',
-        entidadId: prod.id,
-        datosPrevios: { stock: stockActual },
-        datosNuevos: {
-          stock: nuevoStock,
-          delta: cantidadDelta,
-          tipo: input.tipo,
-        },
-        req,
-      });
-
-      return {
-        message: 'Movimiento de inventario registrado exitosamente',
-        movimiento: movRows[0],
-        producto: {
-          id: prod.id,
-          nombre: prod.nombre,
-          stock_anterior: stockActual,
-          stock_nuevo: nuevoStock,
-        },
-      };
-    });
-  }
-
-  async ajusteStockRapido(input: AjusteStockRapidoInput, userId?: number, req?: Request) {
-    return await db.transaction(async (tx) => {
-      const prodRows = await tx
-        .select()
-        .from(productos)
-        .where(eq(productos.id, input.producto_id))
-        .limit(1);
-      const prod = prodRows[0];
-      if (!prod) {
-        const error: any = new Error('Producto no encontrado');
-        error.statusCode = 404;
+      if (input.nuevo_stock < 0) {
+        const error: any = new Error('El stock no puede ser negativo');
+        error.statusCode = 400;
         throw error;
       }
 
@@ -148,8 +181,8 @@ export class InventarioService {
         })
         .returning();
 
-      await recordAudit({
-        usuarioId: userId,
+      await recordAuditInTransaction(tx, {
+        usuarioId: userId || null,
         accion: 'INVENTARIO_AJUSTE_RAPIDO',
         entidad: 'productos',
         entidadId: prod.id,

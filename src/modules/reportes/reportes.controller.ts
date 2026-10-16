@@ -13,6 +13,9 @@ reportesRouter.get(
   async (req, res, next) => {
     try {
       const format = (req.query.format as string)?.toLowerCase() || 'json';
+      if (!['json', 'csv', 'pdf'].includes(format)) {
+        return res.status(400).json({ error: 'Formato de reporte no soportado' });
+      }
       const filtros = {
         desde: req.query.desde as string,
         hasta: req.query.hasta as string,
