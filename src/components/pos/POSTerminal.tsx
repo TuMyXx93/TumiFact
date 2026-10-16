@@ -627,21 +627,21 @@ export default function POSTerminal({
       payload = {
         idempotency_key: idempotencyKey,
         cliente_id: Number(selectedClienteId),
-        sesion_caja_id: cajaActiva.id,
-        total: totalFactura,
-        subtotal: subtotalBruto,
-        descuento_total: totalDescuentosItems + montoDescuentoGlobal,
+        sesion_caja_id: Number(cajaActiva.id),
+        total: Number(totalFactura) || 0,
+        subtotal: Number(subtotalBruto) || 0,
+        descuento_total: Number(totalDescuentosItems + montoDescuentoGlobal) || 0,
         forma_pago: formaPago,
         observaciones: observaciones.trim() || undefined,
         productos: cart.map((item) => ({
-          producto_id: item.producto_id,
-          cantidad: Number(item.cantidad),
-          precio: Number(item.precio),
-          unidad: item.unidad,
+          producto_id: Number(item.producto_id),
+          cantidad: Number(item.cantidad) || 1,
+          precio: Number(item.precio) || 0,
+          unidad: item.unidad || 'KG',
           descuento_inline_tipo: item.descuento_porcentaje ? 'porcentaje' : null,
-          descuento_inline_valor: item.descuento_porcentaje || 0,
-          descuento_aplicado: item.descuento_aplicado || 0,
-          subtotal: Number(item.subtotal),
+          descuento_inline_valor: Number(item.descuento_porcentaje || 0),
+          descuento_aplicado: Number(item.descuento_aplicado || 0),
+          subtotal: Number(item.subtotal) || 0,
         })),
       };
 
@@ -688,9 +688,16 @@ export default function POSTerminal({
           setDescuentoGlobal(0);
           setObservaciones('');
         } else {
+          const detailText = data.details
+            ? Object.entries(data.details)
+                .map(([field, message]) => `${field}: ${message}`)
+                .join('; ')
+            : '';
           setStatusMessage({
             type: 'error',
-            text: data.error || `Error ${res.status} al procesar la factura`,
+            text: `${data.error || `Error ${res.status} al procesar la factura`}${
+              detailText ? ` (${detailText})` : ''
+            }`,
           });
         }
       }
