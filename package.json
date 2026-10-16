@@ -1,7 +1,7 @@
 {
   "name": "tumifact",
   "version": "1.0.0",
-  "description": "Sistema de Facturación TumiFact",
+  "description": "Sistema de Facturaci\u00f3n TumiFact",
   "packageManager": "pnpm@12.5.1",
   "engines": {
     "node": ">=22.0.0 <25.0.0",
@@ -85,7 +85,6 @@
     "drizzle-kit": "^0.31.11",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
-    "nodemon": "^2.0.22",
     "supertest": "^7.2.2",
     "tsup": "^8.5.1",
     "tsx": "^4.23.1",
