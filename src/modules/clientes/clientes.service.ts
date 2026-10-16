@@ -32,6 +32,20 @@ export class ClientesService {
   }
 
   async createCliente(input: CreateClienteInput, req?: Request) {
+    if (input.tipo_identificacion_id && input.numero_identificacion) {
+      const existing = await this.repo.findByTipoYNumero(
+        input.tipo_identificacion_id,
+        input.numero_identificacion
+      );
+      if (existing) {
+        const error: any = new Error(
+          'Ya existe un cliente con el mismo tipo y número de documento.'
+        );
+        error.statusCode = 409;
+        throw error;
+      }
+    }
+
     const created = await this.repo.create({
       nombre: input.nombre,
       apellido: input.apellido || null,
@@ -61,6 +75,20 @@ export class ClientesService {
   async updateCliente(id: number, input: UpdateClienteInput, req?: Request) {
     const existing = await this.repo.findById(id);
     if (!existing) return null;
+
+    if (input.tipo_identificacion_id && input.numero_identificacion) {
+      const duplicate = await this.repo.findByTipoYNumero(
+        input.tipo_identificacion_id,
+        input.numero_identificacion
+      );
+      if (duplicate && duplicate.id !== id) {
+        const error: any = new Error(
+          'Ya existe un cliente con el mismo tipo y número de documento.'
+        );
+        error.statusCode = 409;
+        throw error;
+      }
+    }
 
     const updated = await this.repo.update(id, input as any);
 

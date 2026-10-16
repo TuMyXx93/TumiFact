@@ -1,4 +1,4 @@
-import { desc, eq, ilike, or } from 'drizzle-orm';
+import { and, desc, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db';
 import type { ClienteItem, NewCliente } from '../../db/schema/clientes';
 import { clientes } from '../../db/schema/clientes';
@@ -108,6 +108,17 @@ export class ClientesRepository {
       .set({ ...data, updated_at: new Date() })
       .where(eq(clientes.id, id))
       .returning();
+    return rows[0] || null;
+  }
+
+  async findByTipoYNumero(tipoId: number, numero: string): Promise<ClienteItem | null> {
+    const rows = await db
+      .select()
+      .from(clientes)
+      .where(
+        and(eq(clientes.tipo_identificacion_id, tipoId), eq(clientes.numero_identificacion, numero))
+      )
+      .limit(1);
     return rows[0] || null;
   }
 
