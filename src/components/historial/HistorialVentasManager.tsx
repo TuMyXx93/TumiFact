@@ -61,7 +61,7 @@ export default function HistorialVentasManager() {
       if (desde) queryParams.append('desde', desde);
       if (hasta) queryParams.append('hasta', hasta);
 
-      const res = await apiFetch(`/ventas?${queryParams.toString()}`);
+      const res = await apiFetch(`/api/ventas?${queryParams.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setVentas(data);
