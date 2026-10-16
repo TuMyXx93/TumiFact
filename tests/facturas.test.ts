@@ -203,4 +203,99 @@ describe('Facturas — Stack TS (Vitest + src/app)', () => {
     );
     expect(response.status).toBe(404);
   });
+
+  it('repetir la misma Idempotency-Key devuelve 200 y no duplica factura', async () => {
+    const auth = await loginAsAdmin();
+    const cliRes = await withAuth(request(app).post('/api/clientes'), auth).send({
+      nombre: 'Cliente Idempotente',
+    });
+    const prodRes = await withAuth(request(app).post('/api/productos'), auth).send({
+      codigo: 'TEST-IDEMPOTENT',
+      nombre: 'Producto Idempotente',
+      precio_kg: 1000,
+      stock_actual: 10,
+    });
+    const key = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const first = await withAuth(request(app).post('/api/facturas'), auth)
+      .set('Idempotency-Key', key)
+      .send({
+        idempotency_key: key,
+        cliente_id: cliRes.body.id,
+        total: 1000,
+        forma_pago: 'efectivo',
+        productos: [{ producto_id: prodRes.body.id, cantidad: 1, precio: 1000, unidad: 'KG' }],
+      });
+    expect(first.status).toBe(201);
+
+    const repeat = await withAuth(request(app).post('/api/facturas'), auth)
+      .set('Idempotency-Key', key)
+      .send({
+        idempotency_key: key,
+        cliente_id: cliRes.body.id,
+        total: 1000,
+        forma_pago: 'efectivo',
+        productos: [{ producto_id: prodRes.body.id, cantidad: 1, precio: 1000, unidad: 'KG' }],
+      });
+    expect(repeat.status).toBe(200);
+    expect(repeat.body.id).toBe(first.body.id);
+    expect(repeat.body.idempotent).toBe(true);
+
+    const invoices = await pool.query('SELECT COUNT(*)::int AS count FROM facturas');
+    const stock = await pool.query('SELECT stock_actual FROM productos WHERE id = $1', [
+      prodRes.body.id,
+    ]);
+    expect(invoices.rows[0].count).toBe(1);
+    expect(Number(stock.rows[0].stock_actual)).toBe(9);
+  });
+
+  it('dos requests simultáneos con la misma clave crean una sola factura', async () => {
+    const auth = await loginAsAdmin();
+    const cliRes = await withAuth(request(app).post('/api/clientes'), auth).send({
+      nombre: 'Cliente Concurrente Idempotente',
+    });
+    const prodRes = await withAuth(request(app).post('/api/productos'), auth).send({
+      codigo: 'TEST-IDEMPOTENT-CONCURRENT',
+      nombre: 'Producto Concurrente Idempotente',
+      precio_kg: 1000,
+      stock_actual: 10,
+    });
+    const key = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const makeSale = () =>
+      withAuth(request(app).post('/api/facturas'), auth)
+        .set('Idempotency-Key', key)
+        .send({
+          idempotency_key: key,
+          cliente_id: cliRes.body.id,
+          total: 1000,
+          forma_pago: 'efectivo',
+          productos: [{ producto_id: prodRes.body.id, cantidad: 1, precio: 1000, unidad: 'KG' }],
+        });
+
+    const responses = await Promise.all([makeSale(), makeSale()]);
+    expect(responses.map((r) => r.status).sort()).toEqual([200, 201]);
+
+    const invoices = await pool.query('SELECT COUNT(*)::int AS count FROM facturas');
+    expect(invoices.rows[0].count).toBe(1);
+  });
+
+  it('genera Idempotency-Key si no se envía y la retorna en el header', async () => {
+    const auth = await loginAsAdmin();
+    const cliRes = await withAuth(request(app).post('/api/clientes'), auth).send({
+      nombre: 'Cliente Key Server',
+    });
+    const prodRes = await withAuth(request(app).post('/api/productos'), auth).send({
+      codigo: 'TEST-KEY-SERVER',
+      nombre: 'Producto Key Server',
+      precio_kg: 1000,
+      stock_actual: 10,
+    });
+    const res = await withAuth(request(app).post('/api/facturas'), auth).send({
+      cliente_id: cliRes.body.id,
+      total: 1000,
+      forma_pago: 'efectivo',
+      productos: [{ producto_id: prodRes.body.id, cantidad: 1, precio: 1000, unidad: 'KG' }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.headers['idempotency-key']).toMatch(/^[0-9a-f-]{36}$/i);
+  });
 });

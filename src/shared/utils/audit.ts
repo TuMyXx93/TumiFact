@@ -1,5 +1,6 @@
 import type { Request } from 'express';
 import { pool } from '../../db';
+import { auditLog } from '../../db/schema/audit_log';
 
 export interface RecordAuditParams {
   usuarioId?: number | null;
@@ -14,13 +15,6 @@ export interface RecordAuditParams {
   req?: Request;
 }
 
-/**
-/**
- * Registra un evento de auditoría — FIRE AND FORGET.
- * Retorna void de forma SÍNCRONA. El INSERT real corre en background.
- * Esto garantiza que NUNCA bloquea ni participa en transacciones padre.
- * Compatible con: await recordAudit(...) y recordAudit(...) sin await.
- */
 export function recordAudit(params: RecordAuditParams): Promise<void> {
   const work = async () => {
     try {
@@ -55,13 +49,40 @@ export function recordAudit(params: RecordAuditParams): Promise<void> {
         ]
       );
     } catch (err) {
-      // El audit NUNCA debe romper ni bloquear la operación de negocio
       console.error('⚠️ [Audit] Error (operación no afectada):', (err as Error).message);
     }
   };
 
-  // Disparar en background — el caller puede usar await o no, ambos son seguros
   const p = work();
-  p.catch(() => {}); // evita unhandledPromiseRejection
+  p.catch(() => {});
   return p;
+}
+
+export function extractRequestAuditMeta(req?: Request) {
+  let ip = '127.0.0.1';
+  let userAgent = 'Unknown';
+  if (req) {
+    const forwarded = req.headers['x-forwarded-for'] as string;
+    const rawIp = forwarded?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    ip = rawIp === '::1' || rawIp.startsWith('::ffff:') ? '127.0.0.1' : rawIp;
+    userAgent = (req.headers['user-agent'] || 'Unknown').slice(0, 500);
+  }
+  return { ip, userAgent };
+}
+
+export async function recordAuditInTransaction(tx: any, params: RecordAuditParams): Promise<void> {
+  const { ip, userAgent } = extractRequestAuditMeta(params.req);
+  await tx.insert(auditLog).values({
+    usuario_id: params.usuarioId || null,
+    sesion_caja_id: params.sesionCajaId || null,
+    accion: params.accion,
+    entidad: params.entidad || null,
+    entidad_id: params.entidadId || null,
+    datos_previos: params.datosPrevios ?? null,
+    datos_nuevos: params.datosNuevos ?? null,
+    ip_address: ip,
+    user_agent: userAgent,
+    resultado: params.resultado || 'ok',
+    mensaje_error: params.mensajeError || null,
+  });
 }

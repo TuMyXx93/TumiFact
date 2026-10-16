@@ -1,0 +1,9 @@
+#!/bin/sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec biome check src/ packages/
+  pnpm build
+else
+  echo "[husky][pre-push] pnpm not found. Skipping."
+fi

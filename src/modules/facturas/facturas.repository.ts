@@ -9,6 +9,43 @@ import { movimientosInventario } from '../../db/schema/inventario';
 import { productos } from '../../db/schema/productos';
 import { usuarios } from '../../db/schema/usuarios';
 
+export class IdempotencyConflictError extends Error {
+  readonly code = 'IDEMPOTENCY_CONFLICT';
+  readonly statusCode = 409;
+  constructor(public readonly idempotencyKey: string) {
+    super(`Conflicto de idempotencia para la clave ${idempotencyKey}`);
+    this.name = 'IdempotencyConflictError';
+  }
+}
+
+export function isIdempotencyConflict(
+  error: unknown
+): error is IdempotencyConflictError | { code?: string; constraint?: string } {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as {
+    code?: string;
+    constraint?: string;
+    name?: string;
+    message?: string;
+    cause?: any;
+  };
+  const code = err.code || err.cause?.code;
+  const constraint = err.constraint || err.cause?.constraint;
+  const message = String(err.message || err.cause?.message || '');
+  return (
+    err.name === 'IdempotencyConflictError' ||
+    (code === '23505' &&
+      (String(constraint || '').includes('idempotency_key') || message.includes('idempotency_key')))
+  );
+}
+
+export interface CreateFacturaAuditContext {
+  usuarioId?: number | null;
+  sesionCajaId?: number | null;
+  datosNuevos?: Record<string, unknown>;
+  req?: any;
+}
+
 export class FacturasRepository {
   async createWithDetails(
     facturaData: NewFactura,
@@ -23,14 +60,28 @@ export class FacturasRepository {
       descuento_aplicado?: number;
       unidad_medida: string;
       subtotal: number;
-    }>
+    }>,
+    auditContext?: CreateFacturaAuditContext
   ): Promise<{ factura: FacturaItem; detalles: DetalleFacturaItem[] }> {
     return await db.transaction(async (tx) => {
+      // Verificación temprana dentro de la transacción para mejorar diagnóstico.
+      if (facturaData.idempotency_key) {
+        const existing = await tx
+          .select({ id: facturas.id })
+          .from(facturas)
+          .where(eq(facturas.idempotency_key, facturaData.idempotency_key))
+          .limit(1);
+
+        if (existing[0]) {
+          throw new IdempotencyConflictError(facturaData.idempotency_key);
+        }
+      }
+
       // 1. Insertar Factura
       const insertedFacturas = await tx.insert(facturas).values(facturaData).returning();
       const newFactura = insertedFacturas[0];
 
-      // 2. Insertar Detalles de Factura y Actualizar Stock en Inventario
+      // 2. Insertar Detalles y actualizar stock
       const detailsToInsert = [];
 
       for (const item of items) {
@@ -48,8 +99,6 @@ export class FacturasRepository {
           subtotal: item.subtotal.toString(),
         });
 
-        // Decrementar stock de forma atómica. El predicado evita que dos
-        // ventas concurrentes consuman las mismas existencias.
         const updatedProducts = await tx
           .update(productos)
           .set({
@@ -68,7 +117,6 @@ export class FacturasRepository {
           const newStock = parseFloat(updatedProducts[0].stock_actual);
           const currentStock = newStock + item.cantidad;
 
-          // Registrar movimiento de inventario
           await tx.insert(movimientosInventario).values({
             producto_id: item.producto_id,
             usuario_id: facturaData.usuario_id || null,
@@ -108,6 +156,20 @@ export class FacturasRepository {
             updated_at: new Date(),
           })
           .where(eq(clientes.id, facturaData.cliente_id));
+      }
+
+      // 4. Auditoría transaccional para mutación crítica
+      if (auditContext && facturaData.idempotency_key) {
+        const { recordAuditInTransaction } = await import('../../shared/utils/audit');
+        await recordAuditInTransaction(tx, {
+          usuarioId: auditContext.usuarioId ?? facturaData.usuario_id ?? null,
+          sesionCajaId: auditContext.sesionCajaId ?? facturaData.sesion_caja_id ?? null,
+          accion: 'FACTURA_CREADA',
+          entidad: 'facturas',
+          entidadId: newFactura.id,
+          datosNuevos: auditContext.datosNuevos,
+          req: auditContext.req,
+        });
       }
 
       return { factura: newFactura, detalles: insertedDetails };

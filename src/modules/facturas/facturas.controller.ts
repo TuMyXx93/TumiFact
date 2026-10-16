@@ -22,7 +22,8 @@ facturasRouter.post(
       const activeCaja = await cajaService.getActiveSession(userId);
 
       const result = await service.createFactura(req.body, userId, activeCaja?.id, req);
-      res.status(201).json(result);
+      const status = (result as any)?.idempotent ? 200 : 201;
+      res.status(status).json(result);
     } catch (error) {
       next(error);
     }

@@ -1,9 +1,8 @@
 import type { Request } from 'express';
 import { db } from '../../db';
 import { configuracionImpresion } from '../../db/schema/configuracion';
-import { recordAudit } from '../../shared/utils/audit';
 import type { CreateFacturaInput } from './facturas.dto';
-import { FacturasRepository } from './facturas.repository';
+import { FacturasRepository, isIdempotencyConflict } from './facturas.repository';
 
 export class FacturasService {
   constructor(private repo: FacturasRepository = new FacturasRepository()) {}
@@ -19,11 +18,24 @@ export class FacturasService {
       const existing = await this.repo.findByIdempotencyKey(input.idempotency_key);
       if (existing) {
         const full = await this.getFacturaWithDetails(existing.id);
-        return {
-          idempotent: true,
-          message: 'Factura recuperada exitosamente (Idempotente)',
-          ...full,
-        };
+        if (full) {
+          return {
+            idempotent: true,
+            message: 'Factura recuperada exitosamente (Idempotente)',
+            id: full.factura.id,
+            cliente_id: full.factura.cliente_id,
+            subtotal: parseFloat(String(full.factura.subtotal ?? '0')),
+            descuento_total: parseFloat(String(full.factura.descuento_total ?? '0')),
+            total: parseFloat(String(full.factura.total ?? '0')),
+            forma_pago: full.factura.forma_pago,
+            fecha: full.factura.fecha,
+            tipo: full.factura.tipo,
+            detalles: (full.detalles || []).map((d: any) => ({
+              ...d,
+              subtotal: parseFloat(String(d.subtotal ?? '0')),
+            })),
+          };
+        }
       }
     }
 
@@ -81,38 +93,78 @@ export class FacturasService {
       throw error;
     }
 
-    const { factura, detalles } = await this.repo.createWithDetails(
-      {
-        idempotency_key: input.idempotency_key || null,
-        cliente_id: input.cliente_id,
-        usuario_id: userId || null,
-        sesion_caja_id: sesionCajaId || null,
-        subtotal: calculatedSubtotal.toString(),
-        descuento_total: totalDescuentos.toString(),
-        descuento_detalle: input.descuento_detalle || [],
-        total: calculatedTotal.toString(),
-        forma_pago: input.forma_pago || 'efectivo',
-        tipo: input.tipo || 'contado',
-        estado: 'completada',
-      },
-      itemCalculations
-    );
+    let created: { factura: any; detalles: any[] };
 
-    await recordAudit({
-      usuarioId: userId || null,
-      sesionCajaId: sesionCajaId || null,
-      accion: 'FACTURA_CREADA',
-      entidad: 'facturas',
-      entidadId: factura.id,
-      datosNuevos: {
-        total: calculatedTotal,
-        cliente_id: input.cliente_id,
-        forma_pago: input.forma_pago,
-      },
-      req,
-    });
+    try {
+      created = await this.repo.createWithDetails(
+        {
+          idempotency_key: input.idempotency_key || null,
+          cliente_id: input.cliente_id,
+          usuario_id: userId || null,
+          sesion_caja_id: sesionCajaId || null,
+          subtotal: calculatedSubtotal.toString(),
+          descuento_total: totalDescuentos.toString(),
+          descuento_detalle: input.descuento_detalle || [],
+          total: calculatedTotal.toString(),
+          forma_pago: input.forma_pago || 'efectivo',
+          tipo: input.tipo || 'contado',
+          estado: 'completada',
+        },
+        itemCalculations,
+        {
+          usuarioId: userId || null,
+          sesionCajaId: sesionCajaId || null,
+          datosNuevos: {
+            total: calculatedTotal,
+            cliente_id: input.cliente_id,
+            forma_pago: input.forma_pago,
+          },
+          req,
+        }
+      );
+    } catch (error) {
+      if (!input.idempotency_key || !isIdempotencyConflict(error)) {
+        throw error;
+      }
+
+      // Reintento/concurrencia: hidratar la factura ya confirmada.
+      let replay = await this.getFacturaWithDetailsByIdempotency(input.idempotency_key);
+      if (!replay) {
+        // Pequeño retry por carrera de commit/lectura.
+        for (let i = 0; i < 3; i += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 25));
+          replay = await this.getFacturaWithDetailsByIdempotency(input.idempotency_key);
+          if (replay) break;
+        }
+      }
+
+      if (!replay) {
+        throw error;
+      }
+
+      const detalles = replay.detalles || [];
+      return {
+        idempotent: true,
+        message: 'Factura recuperada exitosamente (Idempotente)',
+        id: replay.factura.id,
+        cliente_id: replay.factura.cliente_id,
+        subtotal: parseFloat(String(replay.factura.subtotal ?? '0')),
+        descuento_total: parseFloat(String(replay.factura.descuento_total ?? '0')),
+        total: parseFloat(String(replay.factura.total ?? '0')),
+        forma_pago: replay.factura.forma_pago,
+        fecha: replay.factura.fecha,
+        tipo: replay.factura.tipo,
+        detalles: detalles.map((d: any) => ({
+          ...d,
+          subtotal: parseFloat(String(d.subtotal ?? '0')),
+        })),
+      };
+    }
+
+    const { factura, detalles } = created;
 
     return {
+      idempotent: false,
       message: 'Factura creada exitosamente',
       id: factura.id,
       cliente_id: factura.cliente_id,
@@ -127,6 +179,12 @@ export class FacturasService {
         subtotal: parseFloat(d.subtotal),
       })),
     };
+  }
+
+  async getFacturaWithDetailsByIdempotency(key: string) {
+    const existing = await this.repo.findByIdempotencyKey(key);
+    if (!existing) return null;
+    return this.getFacturaWithDetails(existing.id);
   }
 
   async getFacturaWithDetails(id: number) {
@@ -157,7 +215,7 @@ export class FacturasService {
         precio_unitario: parseFloat(d.precio_unitario),
         precio_original: parseFloat(d.precio_original || d.precio_unitario),
         descuento_aplicado: parseFloat(d.descuento_aplicado || '0'),
-        subtotal: parseFloat(d.subtotal || '0'),
+        subtotal: parseFloat(String(d.subtotal ?? '0')),
       })),
       config: configData,
     };
@@ -171,7 +229,7 @@ export class FacturasService {
       factura: data.factura,
       productos: data.detalles.map((d) => ({
         ...d,
-        subtotal: parseFloat(d.subtotal || '0'),
+        subtotal: parseFloat(String(d.subtotal ?? '0')),
         precio_unitario: parseFloat(d.precio_unitario || '0'),
         cantidad: parseFloat(d.cantidad || '0'),
       })),

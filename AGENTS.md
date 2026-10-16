@@ -37,10 +37,11 @@ Runtime: Node.js 22+ LTS, ESM/TypeScript, pnpm 10+/11+.
 
 ## Quality Baseline
 
-- **Testing:** Jest + Supertest (`/tests`) con base de datos de pruebas dedicada
-- **Coverage Minimum:** 40% inicial (meta 70%+ en refactorización continua)
-- **Hooks & CI:** Validation Gate, Audit, Tests automatizados, SAST Semgrep, SBOM y Astro Build en GitHub Actions
+- **Testing:** Vitest + Supertest (`/tests`) con base de datos de pruebas dedicada (`tumifact_test`)
+- **Coverage Minimum:** 40% inicial (meta 55%+/70%+ en refactorización continua)
+- **Hooks & CI:** Validation Gate, Audit, Tests automatizados Vitest, Biome, SAST Semgrep, SBOM y Astro Build en GitHub Actions
 - **Seguridad:** Encriptación de secrets en `.env`, sanitización con Zod DTOs y hash Argon2id
+- **Specs:** SDD spec-anchored (`specs/`). Toda feature nueva requiere spec antes de código. Commits `feat`/`fix` con `Refs: specs/features/NNN-slug`.
 
 ## Agent Orchestration
 
