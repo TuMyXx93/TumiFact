@@ -1,0 +1,461 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model abonos_separado {
+  id              Int            @id @default(autoincrement())
+  idempotency_key String?        @unique @db.Uuid
+  separado_id     Int
+  usuario_id      Int
+  sesion_caja_id  Int?
+  numero_abono    Int
+  monto           Decimal        @db.Decimal(12, 2)
+  forma_pago      String         @default("efectivo") @db.VarChar(30)
+  referencia_pago String?        @db.VarChar(100)
+  notas           String?
+  es_abono_final  Boolean        @default(false)
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  separados       separados      @relation(fields: [separado_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sesiones_caja   sesiones_caja? @relation(fields: [sesion_caja_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios        usuarios       @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model audit_log {
+  id             BigInt         @id @default(autoincrement())
+  usuario_id     Int?
+  sesion_caja_id Int?
+  accion         String         @db.VarChar(100)
+  entidad        String?        @db.VarChar(50)
+  entidad_id     Int?
+  datos_previos  Json?
+  datos_nuevos   Json?
+  ip_address     String?        @db.Inet
+  user_agent     String?
+  resultado      String         @default("ok") @db.VarChar(20)
+  mensaje_error  String?
+  created_at     DateTime       @default(now()) @db.Timestamp(6)
+  sesiones_caja  sesiones_caja? @relation(fields: [sesion_caja_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios       usuarios?      @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model auth_sessions {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id   Int
+  token_hash   String    @unique @db.VarChar(64)
+  family_id    String    @db.Uuid
+  expires_at   DateTime  @db.Timestamp(6)
+  revoked_at   DateTime? @db.Timestamp(6)
+  replaced_by  String?   @db.Uuid
+  ip_address   String?   @db.VarChar(64)
+  user_agent   String?   @db.VarChar(512)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  last_used_at DateTime? @db.Timestamp(6)
+  usuarios     usuarios  @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([family_id], map: "auth_sessions_family_idx")
+  @@index([usuario_id, revoked_at, expires_at], map: "auth_sessions_user_active_idx")
+}
+
+model categorias_producto {
+  id                Int         @id @default(autoincrement())
+  nombre            String      @unique @db.VarChar(100)
+  tipo              String      @default("generico") @db.VarChar(50)
+  descripcion       String?
+  campos_extra      Json        @default("[]")
+  aplica_inventario Boolean     @default(true)
+  activo            Boolean     @default(true)
+  created_at        DateTime    @default(now()) @db.Timestamp(6)
+  productos         productos[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model clientes {
+  id                     Int                   @id @default(autoincrement())
+  nombre                 String                @db.VarChar(100)
+  direccion              String?
+  telefono               String?               @db.VarChar(20)
+  created_at             DateTime?             @default(now()) @db.Timestamp(6)
+  apellido               String?               @db.VarChar(80)
+  tipo_identificacion_id Int?
+  numero_identificacion  String?               @db.VarChar(30)
+  email                  String?               @db.VarChar(150)
+  telefono_secundario    String?               @db.VarChar(20)
+  direccion_id           Int?
+  direccion_texto        String?
+  tipo_cliente           String?               @default("detal") @db.VarChar(20)
+  notas                  String?
+  total_compras          Decimal?              @default(0) @db.Decimal(14, 2)
+  numero_facturas        Int?                  @default(0)
+  ultima_compra          DateTime?             @db.Timestamp(6)
+  activo                 Boolean?              @default(true)
+  updated_at             DateTime?             @default(now()) @db.Timestamp(6)
+  direcciones            direcciones?          @relation(fields: [direccion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tipos_identificacion   tipos_identificacion? @relation(fields: [tipo_identificacion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  facturas               facturas[]
+  separados              separados[]
+
+  @@index([nombre], map: "idx_clientes_nombre")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model configuracion_impresion {
+  id                          Int       @id @default(autoincrement())
+  nombre_negocio              String    @db.VarChar(100)
+  direccion                   String?
+  telefono                    String?   @db.VarChar(20)
+  nit                         String?   @db.VarChar(50)
+  pie_pagina                  String?
+  ancho_papel                 Int?      @default(80)
+  font_size                   Int?      @default(1)
+  created_at                  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime? @default(now()) @db.Timestamp(6)
+  logo_data                   Bytes?
+  logo_tipo                   String?   @db.VarChar(50)
+  qr_data                     Bytes?
+  qr_tipo                     String?   @db.VarChar(50)
+  esquema_colores             Json?     @default("{\"accent\": \"#10b981\", \"primary\": \"#2563eb\", \"surface\": \"#0f172a\", \"secondary\": \"#0891b2\", \"background\": \"#0b0f19\"}")
+  mensaje_bienvenida          String?   @default("¡Gracias por su compra!") @db.VarChar(200)
+  mensaje_pie                 String?   @default("¡Vuelva pronto!")
+  politica_devolucion         String?   @default("Cambios y devoluciones dentro de los 30 días con el comprobante de compra.")
+  politica_separados          String?   @default("Plazo máximo de separado: 30 a 45 días. Abonos no reembolsables si vence el plazo.")
+  dias_plazo_separado_default Int?      @default(30)
+  redes_sociales              Json?     @default("{}")
+}
+
+model descuentos {
+  id                  Int               @id @default(autoincrement())
+  nombre              String            @db.VarChar(100)
+  descripcion         String?
+  tipo                String            @db.VarChar(30)
+  valor               Decimal           @db.Decimal(10, 2)
+  aplica_a            String            @default("total") @db.VarChar(20)
+  requiere_aprobacion Boolean           @default(false)
+  activo              Boolean           @default(true)
+  vigencia_desde      DateTime?         @db.Date
+  vigencia_hasta      DateTime?         @db.Date
+  created_at          DateTime          @default(now()) @db.Timestamp(6)
+  updated_at          DateTime          @default(now()) @db.Timestamp(6)
+  detalle_factura     detalle_factura[]
+}
+
+model detalle_devolucion {
+  id                   Int              @id @default(autoincrement())
+  devolucion_id        Int
+  detalle_factura_id   Int?
+  producto_id          Int
+  cantidad_devuelta    Decimal          @db.Decimal(10, 2)
+  precio_unitario      Decimal          @db.Decimal(10, 2)
+  subtotal_devuelto    Decimal          @db.Decimal(10, 2)
+  motivo_item          String?
+  condicion            String           @default("bueno") @db.VarChar(30)
+  reingresa_inventario Boolean          @default(true)
+  detalle_factura      detalle_factura? @relation(fields: [detalle_factura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  devoluciones         devoluciones     @relation(fields: [devolucion_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productos            productos        @relation(fields: [producto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model detalle_factura {
+  id                     Int                  @id @default(autoincrement())
+  factura_id             Int
+  producto_id            Int
+  cantidad               Decimal              @db.Decimal(10, 2)
+  precio_unitario        Decimal              @db.Decimal(10, 2)
+  unidad_medida          String               @default("KG") @db.VarChar(10)
+  subtotal               Decimal              @db.Decimal(10, 2)
+  created_at             DateTime?            @default(now()) @db.Timestamp(6)
+  idempotency_key        String?              @db.Uuid
+  descuento_id           Int?
+  descuento_inline_tipo  String?              @db.VarChar(20)
+  descuento_inline_valor Decimal?             @default(0) @db.Decimal(10, 2)
+  descuento_aplicado     Decimal?             @default(0) @db.Decimal(10, 2)
+  precio_original        Decimal?             @db.Decimal(10, 2)
+  detalle_devolucion     detalle_devolucion[]
+  descuentos             descuentos?          @relation(fields: [descuento_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  facturas               facturas             @relation(fields: [factura_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_detalle_factura")
+  productos              productos            @relation(fields: [producto_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_producto")
+
+  @@index([factura_id], map: "idx_detalle_factura_id")
+  @@index([producto_id], map: "idx_detalle_producto_id")
+}
+
+model devoluciones {
+  id                                                     Int                  @id @default(autoincrement())
+  idempotency_key                                        String?              @unique @db.Uuid
+  factura_id                                             Int
+  usuario_solicitante_id                                 Int
+  usuario_aprobador_id                                   Int?
+  sesion_caja_id                                         Int?
+  tipo                                                   String               @db.VarChar(25)
+  motivo                                                 String               @db.VarChar(100)
+  descripcion_detallada                                  String?
+  monto_devuelto                                         Decimal              @default(0) @db.Decimal(12, 2)
+  forma_devolucion                                       String               @default("efectivo") @db.VarChar(30)
+  estado                                                 String               @default("aprobada") @db.VarChar(20)
+  fecha_aprobacion                                       DateTime?            @db.Timestamp(6)
+  notas_aprobador                                        String?
+  created_at                                             DateTime             @default(now()) @db.Timestamp(6)
+  detalle_devolucion                                     detalle_devolucion[]
+  facturas                                               facturas             @relation(fields: [factura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sesiones_caja                                          sesiones_caja?       @relation(fields: [sesion_caja_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios_devoluciones_usuario_aprobador_idTousuarios   usuarios?            @relation("devoluciones_usuario_aprobador_idTousuarios", fields: [usuario_aprobador_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios_devoluciones_usuario_solicitante_idTousuarios usuarios             @relation("devoluciones_usuario_solicitante_idTousuarios", fields: [usuario_solicitante_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model direcciones {
+  id            Int           @id @default(autoincrement())
+  calle         String?
+  barrio        String?       @db.VarChar(100)
+  ciudad        String        @default("Ciudad") @db.VarChar(100)
+  departamento  String?       @db.VarChar(100)
+  pais          String        @default("Colombia") @db.VarChar(60)
+  codigo_postal String?       @db.VarChar(20)
+  referencia    String?
+  created_at    DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?     @default(now()) @db.Timestamp(6)
+  clientes      clientes[]
+  proveedores   proveedores[]
+  usuarios      usuarios[]
+}
+
+model empleados {
+  id                       Int       @id @default(autoincrement())
+  usuario_id               Int       @unique
+  cargo                    String    @default("Vendedor/Cajero") @db.VarChar(100)
+  departamento             String?   @db.VarChar(100)
+  salario                  Decimal?  @default(0) @db.Decimal(12, 2)
+  fecha_ingreso            DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
+  turno                    String?   @default("completo") @db.VarChar(20)
+  descuento_max_porcentaje Decimal   @default(10.00) @db.Decimal(5, 2)
+  descuento_max_monto      Decimal   @default(50000.00) @db.Decimal(10, 2)
+  created_at               DateTime? @default(now()) @db.Timestamp(6)
+  updated_at               DateTime? @default(now()) @db.Timestamp(6)
+  usuarios                 usuarios  @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model facturas {
+  id                Int               @id @default(autoincrement())
+  cliente_id        Int?
+  fecha             DateTime?         @default(now()) @db.Timestamp(6)
+  total             Decimal           @db.Decimal(10, 2)
+  forma_pago        String            @default("efectivo") @db.VarChar(50)
+  created_at        DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?         @default(now()) @db.Timestamp(6)
+  idempotency_key   String?           @unique @db.Uuid
+  usuario_id        Int?
+  sesion_caja_id    Int?
+  subtotal          Decimal?          @default(0) @db.Decimal(12, 2)
+  descuento_total   Decimal?          @default(0) @db.Decimal(12, 2)
+  descuento_detalle Json?             @default("[]")
+  tipo              String?           @default("contado") @db.VarChar(20)
+  estado            String?           @default("completada") @db.VarChar(30)
+  detalle_factura   detalle_factura[]
+  devoluciones      devoluciones[]
+  sesiones_caja     sesiones_caja?    @relation(fields: [sesion_caja_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios          usuarios?         @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  clientes          clientes?         @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_facturas_cliente")
+  separados         separados[]
+
+  @@index([cliente_id], map: "idx_facturas_cliente_id")
+  @@index([fecha], map: "idx_facturas_fecha")
+}
+
+model movimientos_inventario {
+  id              BigInt         @id @default(autoincrement())
+  idempotency_key String?        @unique @db.Uuid
+  producto_id     Int
+  usuario_id      Int?
+  sesion_caja_id  Int?
+  tipo            String         @db.VarChar(40)
+  cantidad        Decimal        @db.Decimal(10, 2)
+  stock_anterior  Decimal        @db.Decimal(10, 2)
+  stock_nuevo     Decimal        @db.Decimal(10, 2)
+  costo_unitario  Decimal?       @db.Decimal(10, 2)
+  referencia_tipo String?        @db.VarChar(30)
+  referencia_id   Int?
+  notas           String?
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  productos       productos      @relation(fields: [producto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sesiones_caja   sesiones_caja? @relation(fields: [sesion_caja_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios        usuarios?      @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model productos {
+  id                     Int                      @id @default(autoincrement())
+  codigo                 String                   @unique @db.VarChar(50)
+  nombre                 String                   @db.VarChar(100)
+  precio_kg              Decimal                  @default(0) @db.Decimal(10, 2)
+  precio_unidad          Decimal                  @default(0) @db.Decimal(10, 2)
+  precio_libra           Decimal                  @default(0) @db.Decimal(10, 2)
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  descripcion            String?
+  categoria_id           Int?
+  proveedor_id           Int?
+  precio_detal           Decimal?                 @default(0) @db.Decimal(10, 2)
+  precio_mayorista       Decimal?                 @default(0) @db.Decimal(10, 2)
+  cantidad_mayorista     Int?                     @default(10)
+  stock_actual           Decimal?                 @default(0) @db.Decimal(10, 2)
+  stock_minimo           Decimal?                 @default(5) @db.Decimal(10, 2)
+  atributos              Json?                    @default("{}")
+  activo                 Boolean?                 @default(true)
+  detalle_devolucion     detalle_devolucion[]
+  detalle_factura        detalle_factura[]
+  movimientos_inventario movimientos_inventario[]
+  categorias_producto    categorias_producto?     @relation(fields: [categoria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proveedores            proveedores?             @relation(fields: [proveedor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  separados_productos    separados_productos[]
+
+  @@index([codigo], map: "idx_productos_codigo")
+}
+
+model proveedores {
+  id                     Int                   @id @default(autoincrement())
+  nombre                 String                @db.VarChar(150)
+  razon_social           String?               @db.VarChar(150)
+  tipo_identificacion_id Int?
+  numero_identificacion  String?               @db.VarChar(30)
+  contacto_nombre        String?               @db.VarChar(100)
+  email                  String?               @db.VarChar(150)
+  telefono               String?               @db.VarChar(20)
+  telefono_secundario    String?               @db.VarChar(20)
+  website                String?               @db.VarChar(200)
+  direccion_id           Int?
+  plazo_pago_dias        Int                   @default(30)
+  moneda                 String                @default("COP") @db.VarChar(10)
+  notas                  String?
+  activo                 Boolean               @default(true)
+  created_at             DateTime              @default(now()) @db.Timestamp(6)
+  updated_at             DateTime              @default(now()) @db.Timestamp(6)
+  productos              productos[]
+  direcciones            direcciones?          @relation(fields: [direccion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tipos_identificacion   tipos_identificacion? @relation(fields: [tipo_identificacion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model roles {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique @db.VarChar(50)
+  descripcion String?
+  permisos    Json       @default("{}")
+  created_at  DateTime?  @default(now()) @db.Timestamp(6)
+  usuarios    usuarios[]
+}
+
+model separados {
+  id                  Int                   @id @default(autoincrement())
+  idempotency_key     String?               @unique @db.Uuid
+  cliente_id          Int
+  usuario_apertura_id Int
+  sesion_caja_id      Int?
+  descripcion         String
+  observaciones       String?
+  valor_total         Decimal               @db.Decimal(12, 2)
+  abono_inicial       Decimal               @db.Decimal(12, 2)
+  total_abonado       Decimal               @default(0) @db.Decimal(12, 2)
+  saldo_pendiente     Decimal               @db.Decimal(12, 2)
+  fecha_inicio        DateTime              @default(dbgenerated("CURRENT_DATE")) @db.Date
+  fecha_limite        DateTime              @db.Date
+  dias_plazo          Int                   @default(30)
+  estado              String                @default("activo") @db.VarChar(30)
+  factura_id          Int?
+  created_at          DateTime              @default(now()) @db.Timestamp(6)
+  updated_at          DateTime              @default(now()) @db.Timestamp(6)
+  abonos_separado     abonos_separado[]
+  clientes            clientes              @relation(fields: [cliente_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  facturas            facturas?             @relation(fields: [factura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sesiones_caja       sesiones_caja?        @relation(fields: [sesion_caja_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios            usuarios              @relation(fields: [usuario_apertura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  separados_productos separados_productos[]
+}
+
+model separados_productos {
+  id                 Int       @id @default(autoincrement())
+  separado_id        Int
+  producto_id        Int
+  cantidad           Decimal   @db.Decimal(10, 2)
+  precio_unitario    Decimal   @db.Decimal(10, 2)
+  unidad_medida      String    @default("UND") @db.VarChar(10)
+  subtotal           Decimal   @db.Decimal(10, 2)
+  descuento_aplicado Decimal   @default(0) @db.Decimal(10, 2)
+  productos          productos @relation(fields: [producto_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  separados          separados @relation(fields: [separado_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model sesiones_caja {
+  id                     Int                      @id @default(autoincrement())
+  usuario_id             Int
+  estado                 String                   @default("abierta") @db.VarChar(20)
+  monto_apertura         Decimal                  @default(0) @db.Decimal(12, 2)
+  monto_cierre_declarado Decimal?                 @db.Decimal(12, 2)
+  monto_cierre_calculado Decimal?                 @default(0) @db.Decimal(12, 2)
+  diferencia_caja        Decimal?                 @default(0) @db.Decimal(12, 2)
+  ventas_efectivo        Decimal                  @default(0) @db.Decimal(12, 2)
+  ventas_transferencia   Decimal                  @default(0) @db.Decimal(12, 2)
+  ventas_tarjeta         Decimal                  @default(0) @db.Decimal(12, 2)
+  total_ventas           Decimal                  @default(0) @db.Decimal(12, 2)
+  total_devoluciones     Decimal                  @default(0) @db.Decimal(12, 2)
+  total_separados_abonos Decimal                  @default(0) @db.Decimal(12, 2)
+  numero_transacciones   Int                      @default(0)
+  notas                  String?
+  abierta_at             DateTime                 @default(now()) @db.Timestamp(6)
+  cerrada_at             DateTime?                @db.Timestamp(6)
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  abonos_separado        abonos_separado[]
+  audit_log              audit_log[]
+  devoluciones           devoluciones[]
+  facturas               facturas[]
+  movimientos_inventario movimientos_inventario[]
+  separados              separados[]
+  usuarios               usuarios                 @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model tipos_identificacion {
+  id          Int           @id @default(autoincrement())
+  codigo      String        @unique @db.VarChar(10)
+  nombre      String        @db.VarChar(100)
+  aplica_a    String        @default("todos") @db.VarChar(20)
+  clientes    clientes[]
+  proveedores proveedores[]
+  usuarios    usuarios[]
+}
+
+model usuarios {
+  id                                                         Int                      @id @default(autoincrement())
+  nombre                                                     String                   @db.VarChar(80)
+  apellido                                                   String                   @db.VarChar(80)
+  tipo_identificacion_id                                     Int?
+  numero_identificacion                                      String?                  @unique @db.VarChar(30)
+  email                                                      String                   @unique @db.VarChar(150)
+  telefono                                                   String?                  @db.VarChar(20)
+  direccion_id                                               Int?
+  password_hash                                              String                   @db.VarChar(255)
+  rol_id                                                     Int
+  activo                                                     Boolean                  @default(true)
+  ultimo_login                                               DateTime?                @db.Timestamp(6)
+  intentos_fallidos                                          Int                      @default(0)
+  bloqueado_hasta                                            DateTime?                @db.Timestamp(6)
+  created_at                                                 DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at                                                 DateTime?                @default(now()) @db.Timestamp(6)
+  abonos_separado                                            abonos_separado[]
+  audit_log                                                  audit_log[]
+  auth_sessions                                              auth_sessions[]
+  devoluciones_devoluciones_usuario_aprobador_idTousuarios   devoluciones[]           @relation("devoluciones_usuario_aprobador_idTousuarios")
+  devoluciones_devoluciones_usuario_solicitante_idTousuarios devoluciones[]           @relation("devoluciones_usuario_solicitante_idTousuarios")
+  empleados                                                  empleados?
+  facturas                                                   facturas[]
+  movimientos_inventario                                     movimientos_inventario[]
+  separados                                                  separados[]
+  sesiones_caja                                              sesiones_caja[]
+  direcciones                                                direcciones?             @relation(fields: [direccion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles                                                      roles                    @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tipos_identificacion                                       tipos_identificacion?    @relation(fields: [tipo_identificacion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
