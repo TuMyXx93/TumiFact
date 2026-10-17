@@ -1,11 +1,13 @@
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { SearchInput } from '../../components/ui/SearchInput';
 
 export function PosShell() {
   return (
     <div className="grid min-h-screen grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_360px]">
       <Card className="flex min-h-[70vh] flex-col">
         <h2 className="text-lg font-bold">Catálogo</h2>
+        <SearchInput className="mt-3" />
         <p className="mt-2 text-sm text-slate-400">Búsqueda y productos</p>
       </Card>
 
