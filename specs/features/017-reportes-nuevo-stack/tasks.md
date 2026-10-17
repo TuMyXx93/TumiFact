@@ -15,7 +15,7 @@ status: pending
 | T-005 | Validar exportación controlada | R-003 | done |
 | T-006 | Implementar paginación | R-004 | done |
 | T-007 | Añadir tests integration | R-001..R-005 | done |
-| T-008 | Ejecutar `/analyze`, CI, trazabilidad | todos | pending |
+| T-008 | Ejecutar `/analyze`, CI, trazabilidad | todos | done |
 
 ## Notas
 
