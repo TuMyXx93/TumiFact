@@ -14,7 +14,7 @@ status: pending
 | T-004 | Validar sesión abierta en sales | R-005 | done |
 | T-005 | Emitir eventos Socket.io | R-006 | done |
 | T-006 | Añadir pruebas integration | R-001..R-006 | done |
-| T-007 | Ejecutar `/analyze`, CI, trazabilidad | todos | pending |
+| T-007 | Ejecutar `/analyze`, CI, trazabilidad | todos | done |
 
 ## Notas
 
