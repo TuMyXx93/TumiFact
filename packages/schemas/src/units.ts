@@ -39,3 +39,11 @@ export function convertirABase(cantidadPresentacion: number, factorConversion: n
   if (factorConversion <= 0) return cantidadPresentacion;
   return Math.round(cantidadPresentacion * factorConversion * 100) / 100;
 }
+
+export interface VarianteProducto {
+  sku: string;
+  precio: number;
+  stock: number;
+  atributos: Record<string, string | number>;
+  imagenUrl?: string;
+}
