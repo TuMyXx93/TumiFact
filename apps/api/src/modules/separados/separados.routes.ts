@@ -92,4 +92,66 @@ export async function separadosRoutes(app: FastifyInstance) {
     const list = await prisma.separados.findMany({ orderBy: { created_at: 'desc' }, take: 50 });
     return reply.send({ data: list });
   });
+
+  app.post('/separados/:id/abonos', async (request, reply) => {
+    const separadoId = Number((request.params as any).id);
+    const body = request.body as any;
+    const monto = Number(body?.monto || 0);
+    if (!Number.isFinite(monto) || monto <= 0) {
+      return reply.status(400).send({ error: 'Monto de abono inválido' });
+    }
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${separadoId})`);
+
+        const sep = await tx.separados.findUnique({ where: { id: separadoId } });
+        if (!sep) throw Object.assign(new Error('Separado no encontrado'), { statusCode: 404 });
+        if (sep.estado !== 'activo')
+          throw Object.assign(new Error('El separado no está activo'), { statusCode: 400 });
+
+        const saldo = Number(sep.saldo_pendiente);
+        if (monto > saldo + 0.01) {
+          throw Object.assign(
+            new Error('El monto del abono no puede superar el saldo pendiente.'),
+            { statusCode: 400 }
+          );
+        }
+
+        const totalAbonado = Number(sep.total_abonado) + monto;
+        const nuevoSaldo = Math.max(0, Number(sep.valor_total) - totalAbonado);
+        const completado = nuevoSaldo <= 0.01;
+
+        const abono = await tx.abonos_separado.create({
+          data: {
+            separado_id: separadoId,
+            usuario_id: 1,
+            numero_abono:
+              (await tx.abonos_separado.count({ where: { separado_id: separadoId } })) + 1,
+            monto,
+            forma_pago: body?.forma_pago || 'efectivo',
+            es_abono_final: completado,
+          },
+        });
+
+        await tx.separados.update({
+          where: { id: separadoId },
+          data: {
+            total_abonado: totalAbonado,
+            saldo_pendiente: nuevoSaldo,
+            estado: completado ? 'completado' : 'activo',
+            updated_at: new Date(),
+          },
+        });
+
+        return { abono, completado, saldo: nuevoSaldo };
+      });
+
+      return reply.status(201).send(result);
+    } catch (error: any) {
+      return reply
+        .status(error.statusCode || 500)
+        .send({ error: error.message || 'Error interno' });
+    }
+  });
 }
