@@ -15,7 +15,7 @@ status: pending
 | T-005 | Generar factura final única | R-002, R-005 | done |
 | T-006 | Auditar mutaciones | R-005 | done |
 | T-007 | Añadir tests integration/concurrency | R-001..R-005 | done |
-| T-008 | Ejecutar `/analyze`, CI, trazabilidad | todos | pending |
+| T-008 | Ejecutar `/analyze`, CI, trazabilidad | todos | done |
 
 ## Notas
 
