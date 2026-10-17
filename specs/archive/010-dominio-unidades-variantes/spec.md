@@ -1,7 +1,7 @@
 ---
 id: 010-dominio-unidades-variantes
 version: 0.1.0
-status: approved
+status: done
 type: greenfield
 risk: medium
 financial-impact: true
