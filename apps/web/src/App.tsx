@@ -1,5 +1,5 @@
-import { PosShell } from './features/pos/PosShell';
+import { PosPage } from './features/pos/PosPage';
 
 export default function App() {
-  return <PosShell />;
+  return <PosPage />;
 }
