@@ -14,7 +14,7 @@ status: pending
 | T-004 | Implementar soft delete | R-003 | done |
 | T-005 | Auditar mutaciones | R-005 | done |
 | T-006 | Añadir tests integration | R-001..R-005 | done |
-| T-007 | Ejecutar `/analyze`, CI, trazabilidad | todos | pending |
+| T-007 | Ejecutar `/analyze`, CI, trazabilidad | todos | done |
 
 ## Notas
 
