@@ -35,15 +35,17 @@ export async function reportsRoutes(app: FastifyInstance) {
       take: limit,
     });
 
-    const totalRecaudado = ventas.reduce((sum, v) => sum + Number(v.total), 0);
-    const totalDescuentos = ventas.reduce((sum, v) => sum + Number(v.descuento_total || 0), 0);
+    const aggregate = await prisma.facturas.aggregate({
+      _sum: { total: true, descuento_total: true },
+      _count: { id: true },
+    });
 
     return reply.send({
       data: ventas,
       meta: {
-        count: ventas.length,
-        totalRecaudado: Math.round(totalRecaudado * 100) / 100,
-        totalDescuentos: Math.round(totalDescuentos * 100) / 100,
+        count: aggregate._count.id,
+        totalRecaudado: Math.round(Number(aggregate._sum.total || 0) * 100) / 100,
+        totalDescuentos: Math.round(Number(aggregate._sum.descuento_total || 0) * 100) / 100,
       },
     });
   });
