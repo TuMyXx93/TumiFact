@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { enqueueSale } from '../../lib/offlineQueue';
 
 interface Product {
   id: number;
@@ -31,17 +32,23 @@ export function PosPage() {
       })),
     };
 
-    const res = await fetch('/api/v1/sales', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setStatus(`Venta creada #${data.sale?.id}`);
+    try {
+      const res = await fetch('/api/v1/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus(`Venta creada #${data.sale?.id}`);
+        setCart([]);
+      } else {
+        setStatus(data.error || 'Error al vender');
+      }
+    } catch {
+      enqueueSale(payload);
+      setStatus('Sin conexión: venta encolada para sincronización.');
       setCart([]);
-    } else {
-      setStatus(data.error || 'Error al vender');
     }
   };
 
