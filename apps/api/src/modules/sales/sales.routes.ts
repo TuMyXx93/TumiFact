@@ -12,6 +12,7 @@ const saleSchema = z.object({
   cliente_id: z.coerce.number().int().positive().optional(),
   idempotency_key: z.string().uuid().optional(),
   forma_pago: z.string().optional(),
+  sesion_caja_id: z.coerce.number().int().positive().optional(),
   productos: z.array(itemSchema).min(1),
 });
 
@@ -26,6 +27,17 @@ export async function salesRoutes(app: FastifyInstance) {
 
     const input = parsed.data;
     const key = (request.headers['idempotency-key'] as string) || input.idempotency_key;
+
+    if (input.sesion_caja_id) {
+      const session = await prisma.sesiones_caja.findUnique({
+        where: { id: input.sesion_caja_id },
+      });
+      if (!session || session.estado !== 'abierta') {
+        return reply
+          .status(400)
+          .send({ error: 'La sesión de caja indicada no existe o no está abierta.' });
+      }
+    }
 
     if (key) {
       const existing = await prisma.facturas.findUnique({ where: { idempotency_key: key } });
@@ -56,6 +68,7 @@ export async function salesRoutes(app: FastifyInstance) {
         const sale = await tx.facturas.create({
           data: {
             cliente_id: input.cliente_id ?? null,
+            sesion_caja_id: input.sesion_caja_id ?? null,
             forma_pago: input.forma_pago || 'efectivo',
             total,
             subtotal: total,
