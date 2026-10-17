@@ -47,3 +47,26 @@ export interface VarianteProducto {
   atributos: Record<string, string | number>;
   imagenUrl?: string;
 }
+
+export interface HistorialPrecio {
+  productoId: number;
+  precioAnterior: number;
+  precioNuevo: number;
+  usuarioId?: number;
+  fecha: string;
+}
+
+export function crearHistorialPrecio(
+  productoId: number,
+  precioAnterior: number,
+  precioNuevo: number,
+  usuarioId?: number
+): HistorialPrecio {
+  return {
+    productoId,
+    precioAnterior,
+    precioNuevo,
+    usuarioId,
+    fecha: new Date().toISOString(),
+  };
+}
