@@ -94,3 +94,8 @@ export function calcularCUFE(input: CUFEInput): string {
   }
   return Math.abs(hash).toString(16).padStart(40, '0');
 }
+
+export function firmarXML(xml: string, certificadoBase64: string): string {
+  // Esqueleto: en producción usar firma XAdES-EPES con certificado válido.
+  return `<!-- FIRMADO -->\n${xml}\n<!-- CERT: ${certificadoBase64.slice(0, 12)}... -->`;
+}
