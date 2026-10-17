@@ -2,6 +2,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { PaymentPanel } from '../../components/ui/PaymentPanel';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { TicketModal } from '../../components/ui/TicketModal';
 
 export function PosShell() {
   return (
@@ -20,6 +21,7 @@ export function PosShell() {
         <Card>
           <h2 className="text-lg font-bold">Pago</h2>
           <PaymentPanel total={0} />
+          <TicketModal />
         </Card>
       </div>
     </div>
