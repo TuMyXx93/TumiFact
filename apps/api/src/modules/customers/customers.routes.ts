@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { recordAudit } from '../../lib/audit';
 import { prisma } from '../../lib/prisma';
 
 const createSchema = z.object({
@@ -65,6 +66,13 @@ export async function customersRoutes(app: FastifyInstance) {
       },
     });
 
+    await recordAudit({
+      usuarioId: 1,
+      accion: 'CLIENTE_CREADO',
+      entidad: 'clientes',
+      entidadId: cliente.id,
+      datosNuevos: input,
+    });
     return reply.status(201).send({ data: cliente });
   });
 
@@ -78,6 +86,12 @@ export async function customersRoutes(app: FastifyInstance) {
       .catch(() => null);
 
     if (!updated) return reply.status(404).send({ error: 'Cliente no encontrado' });
+    await recordAudit({
+      usuarioId: 1,
+      accion: 'CLIENTE_ELIMINADO',
+      entidad: 'clientes',
+      entidadId: id,
+    });
     return reply.send({ message: 'Cliente inactivado', data: updated });
   });
 }
