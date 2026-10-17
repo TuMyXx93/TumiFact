@@ -3,8 +3,10 @@ import { Card } from '../../components/ui/Card';
 import { PaymentPanel } from '../../components/ui/PaymentPanel';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { TicketModal } from '../../components/ui/TicketModal';
+import { usePosShortcuts } from './usePosShortcuts';
 
 export function PosShell() {
+  usePosShortcuts({});
   return (
     <div className="grid min-h-screen grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_360px]">
       <Card className="flex min-h-[70vh] flex-col">
