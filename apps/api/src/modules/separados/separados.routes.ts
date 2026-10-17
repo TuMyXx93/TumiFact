@@ -134,17 +134,45 @@ export async function separadosRoutes(app: FastifyInstance) {
           },
         });
 
+        let facturaId: number | null = null;
+        if (completado) {
+          const sepProducts = await tx.separados_productos.findMany({
+            where: { separado_id: separadoId },
+          });
+          const factura = await tx.facturas.create({
+            data: {
+              cliente_id: sep.cliente_id,
+              usuario_id: 1,
+              subtotal: Number(sep.valor_total),
+              total: Number(sep.valor_total),
+              forma_pago: body?.forma_pago || 'efectivo',
+              tipo: 'separado_final',
+              estado: 'completada',
+              detalle_factura: {
+                create: sepProducts.map((p) => ({
+                  producto_id: p.producto_id,
+                  cantidad: Number(p.cantidad),
+                  precio_unitario: Number(p.precio_unitario),
+                  subtotal: Number(p.subtotal),
+                })),
+              },
+            },
+          });
+          facturaId = factura.id;
+        }
+
         await tx.separados.update({
           where: { id: separadoId },
           data: {
             total_abonado: totalAbonado,
             saldo_pendiente: nuevoSaldo,
             estado: completado ? 'completado' : 'activo',
+            factura_id: facturaId,
             updated_at: new Date(),
           },
         });
 
-        return { abono, completado, saldo: nuevoSaldo };
+        return { abono, completado, saldo: nuevoSaldo, factura_id: facturaId };
       });
 
       return reply.status(201).send(result);

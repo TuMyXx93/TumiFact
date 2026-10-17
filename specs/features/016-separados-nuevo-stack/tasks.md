@@ -12,7 +12,7 @@ status: pending
 | T-002 | Implementar separados en Fastify | R-001..R-005 | done |
 | T-003 | Serializar abonos por separado | R-003 | done |
 | T-004 | Validar saldo y estado | R-004 | done |
-| T-005 | Generar factura final única | R-002, R-005 | pending |
+| T-005 | Generar factura final única | R-002, R-005 | done |
 | T-006 | Auditar mutaciones | R-005 | pending |
 | T-007 | Añadir tests integration/concurrency | R-001..R-005 | pending |
 | T-008 | Ejecutar `/analyze`, CI, trazabilidad | todos | pending |
