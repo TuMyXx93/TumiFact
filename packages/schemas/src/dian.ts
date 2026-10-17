@@ -1,0 +1,18 @@
+import { z } from 'zod';
+
+export const ConfiguracionFiscalDTO = z.object({
+  nit: z.string().min(1),
+  razon_social: z.string().min(1),
+  resolucion_numero: z.string().min(1),
+  prefijo: z.string().min(1),
+  rango_desde: z.coerce.number().int().positive(),
+  rango_hasta: z.coerce.number().int().positive(),
+  fecha_vigencia_desde: z.string(),
+  fecha_vigencia_hasta: z.string(),
+  ambiente: z.enum(['habilitacion', 'produccion']).default('habilitacion'),
+});
+
+export type ConfiguracionFiscalInput = z.infer<typeof ConfiguracionFiscalDTO>;
+
+export const DocumentoElectronicoEstado = z.enum(['pendiente', 'validado', 'rechazado']);
+export type DocumentoElectronicoEstado = z.infer<typeof DocumentoElectronicoEstado>;

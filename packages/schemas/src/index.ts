@@ -6,6 +6,7 @@ export * from './clientes';
 export * from './configuracion';
 export * from './descuentos';
 export * from './devoluciones';
+export * from './dian';
 export * from './empleados';
 export * from './facturas';
 export * from './inventario';

@@ -5,7 +5,6 @@ import {
   convertirAPresentacion,
   crearHistorialPrecio,
   UNIDADES_BASE,
-  validarAtributos,
 } from './units';
 
 describe('units', () => {
