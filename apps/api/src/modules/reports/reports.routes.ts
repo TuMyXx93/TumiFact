@@ -29,10 +29,12 @@ export async function reportsRoutes(app: FastifyInstance) {
 
     const query = request.query as any;
     const limit = Math.min(Number(query?.limit || 100), 500);
+    const offset = Math.max(Number(query?.offset || 0), 0);
 
     const ventas = await prisma.facturas.findMany({
       orderBy: { fecha: 'desc' },
       take: limit,
+      skip: offset,
     });
 
     const aggregate = await prisma.facturas.aggregate({
