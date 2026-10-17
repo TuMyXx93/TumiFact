@@ -1,5 +1,6 @@
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { PaymentPanel } from '../../components/ui/PaymentPanel';
 import { SearchInput } from '../../components/ui/SearchInput';
 
 export function PosShell() {
@@ -18,7 +19,7 @@ export function PosShell() {
         </Card>
         <Card>
           <h2 className="text-lg font-bold">Pago</h2>
-          <Button className="mt-3 w-full">Cobrar</Button>
+          <PaymentPanel total={0} />
         </Card>
       </div>
     </div>
