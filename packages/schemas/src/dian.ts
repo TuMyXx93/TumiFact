@@ -30,3 +30,31 @@ export function crearDocumentoElectronicoPendiente(ventaId: number): DocumentoEl
     creadoEn: new Date().toISOString(),
   };
 }
+
+export interface UBLInvoiceInput {
+  id: string;
+  fecha: string;
+  nitEmisor: string;
+  nitReceptor: string;
+  total: number;
+}
+
+export function generarUBL21(input: UBLInvoiceInput): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:ID>${input.id}</cbc:ID>
+  <cbc:IssueDate>${input.fecha}</cbc:IssueDate>
+  <cbc:InvoiceTypeCode>01</cbc:InvoiceTypeCode>
+  <cac:AccountingSupplierParty>
+    <cac:Party><cac:PartyIdentification><cbc:ID>${input.nitEmisor}</cbc:ID></cac:PartyIdentification></cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party><cac:PartyIdentification><cbc:ID>${input.nitReceptor}</cbc:ID></cac:PartyIdentification></cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:LegalMonetaryTotal>
+    <cbc:PayableAmount currencyID="COP">${input.total.toFixed(2)}</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+</Invoice>`;
+}
