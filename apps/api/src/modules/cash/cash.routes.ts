@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
+import { emitEvent } from '../../lib/socket';
 
 const abrirSchema = z.object({
   monto_apertura: z.coerce.number().min(0),
@@ -37,6 +38,7 @@ export async function cashRoutes(app: FastifyInstance) {
       },
     });
 
+    emitEvent('cash:opened', { id: session.id, usuario_id: session.usuario_id });
     return reply.status(201).send({ message: 'Caja abierta', sesion: session });
   });
 
@@ -83,6 +85,7 @@ export async function cashRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'La sesión ya fue cerrada.' });
     }
 
+    emitEvent('cash:closed', { id: updated.id, usuario_id: updated.usuario_id });
     return reply.send({ message: 'Caja cerrada exitosamente', reporte: updated });
   });
 

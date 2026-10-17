@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
+import { emitEvent } from '../../lib/socket';
 
 const movimientoSchema = z.object({
   producto_id: z.coerce.number().int().positive(),
@@ -88,6 +89,10 @@ export async function inventoryRoutes(app: FastifyInstance) {
         return { movimiento, stockAnterior: stockActual, stockNuevo: nuevoStock };
       });
 
+      emitEvent('stock:updated', {
+        producto_id: input.producto_id,
+        stock_nuevo: result.stockNuevo,
+      });
       return reply.status(201).send(result);
     } catch (error: any) {
       return reply

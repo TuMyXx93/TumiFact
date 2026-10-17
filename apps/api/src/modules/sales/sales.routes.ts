@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
+import { emitEvent } from '../../lib/socket';
 
 const itemSchema = z.object({
   producto_id: z.coerce.number().int().positive(),
@@ -95,6 +96,7 @@ export async function salesRoutes(app: FastifyInstance) {
         return sale;
       });
 
+      emitEvent('sale:created', { id: result.id, total: result.total });
       return reply.status(201).send({ idempotent: false, sale: result });
     } catch (error: any) {
       return reply

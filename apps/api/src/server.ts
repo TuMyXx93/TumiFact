@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import { initSocketIO } from './lib/socket';
 import { authRoutes } from './modules/auth/auth.routes';
 import { cashRoutes } from './modules/cash/cash.routes';
 import { inventoryRoutes } from './modules/inventory/inventory.routes';
@@ -17,6 +18,8 @@ await app.register(cashRoutes, { prefix: '/api/v1' });
 
 app.get('/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
 app.get('/api/v1/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
+
+initSocketIO(app.server);
 
 const start = async () => {
   try {
