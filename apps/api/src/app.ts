@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import { initSocketIO } from './lib/socket';
 import { authRoutes } from './modules/auth/auth.routes';
 import { cashRoutes } from './modules/cash/cash.routes';
+import { customersRoutes } from './modules/customers/customers.routes';
 import { inventoryRoutes } from './modules/inventory/inventory.routes';
 import { productsRoutes } from './modules/products/products.routes';
 import { salesRoutes } from './modules/sales/sales.routes';
@@ -16,6 +17,7 @@ export async function buildApp() {
   await app.register(salesRoutes, { prefix: '/api/v1' });
   await app.register(inventoryRoutes, { prefix: '/api/v1' });
   await app.register(cashRoutes, { prefix: '/api/v1' });
+  await app.register(customersRoutes, { prefix: '/api/v1' });
 
   app.get('/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
   app.get('/api/v1/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
