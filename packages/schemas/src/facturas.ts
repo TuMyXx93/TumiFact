@@ -6,7 +6,7 @@ export const DetalleFacturaDTO = z.object({
   cantidad: z.coerce.number().positive('cantidad debe ser mayor a 0'),
   precio: z.coerce.number().min(0, 'precio debe ser numérico >= 0'),
   precio_original: z.coerce.number().min(0).optional(),
-  unidad: z.enum(['KG', 'UND', 'LB']).optional().default('KG'),
+  unidad: z.enum(['KG', 'UND', 'LB', 'PAR', 'MTS']).optional().default('KG'),
   descuento_id: z.coerce.number().int().optional().nullable(),
   descuento_inline_tipo: z.enum(['porcentaje', 'monto_fijo']).optional().nullable(),
   descuento_inline_valor: z.coerce.number().min(0).optional().default(0),
