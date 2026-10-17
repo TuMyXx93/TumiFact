@@ -10,7 +10,7 @@ status: pending
 | --- | --- | --- | --- |
 | T-001 | Crear ADR-0013 de DIAN adapter | todos | done |
 | T-002 | Modelar configuración fiscal | R-001 | done |
-| T-003 | Crear documento electrónico pendiente | R-002, R-007 | pending |
+| T-003 | Crear documento electrónico pendiente | R-002, R-007 | done |
 | T-004 | Implementar generación UBL 2.1 | R-003 | pending |
 | T-005 | Calcular CUFE | R-003 | pending |
 | T-006 | Firmar XML | R-003 | pending |

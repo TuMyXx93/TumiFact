@@ -16,3 +16,17 @@ export type ConfiguracionFiscalInput = z.infer<typeof ConfiguracionFiscalDTO>;
 
 export const DocumentoElectronicoEstado = z.enum(['pendiente', 'validado', 'rechazado']);
 export type DocumentoElectronicoEstado = z.infer<typeof DocumentoElectronicoEstado>;
+
+export interface DocumentoElectronicoPendiente {
+  ventaId: number;
+  estado: 'pendiente';
+  creadoEn: string;
+}
+
+export function crearDocumentoElectronicoPendiente(ventaId: number): DocumentoElectronicoPendiente {
+  return {
+    ventaId,
+    estado: 'pendiente',
+    creadoEn: new Date().toISOString(),
+  };
+}
