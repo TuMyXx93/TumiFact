@@ -8,8 +8,8 @@ status: pending
 
 | ID | Tarea | Requisito | Estado |
 | --- | --- | --- | --- |
-| T-001 | Crear ADR-0012 de POS minimalista | todos | pending |
-| T-002 | Crear design system base | R-007 | pending |
+| T-001 | Crear ADR-0012 de POS minimalista | todos | done |
+| T-002 | Crear design system base | R-007 | done |
 | T-003 | Implementar layout POS 3 zonas | R-001 | pending |
 | T-004 | Implementar búsqueda instantánea | R-002 | pending |
 | T-005 | Implementar pago unificado | R-004 | pending |
