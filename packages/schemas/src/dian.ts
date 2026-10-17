@@ -99,3 +99,19 @@ export function firmarXML(xml: string, certificadoBase64: string): string {
   // Esqueleto: en producción usar firma XAdES-EPES con certificado válido.
   return `<!-- FIRMADO -->\n${xml}\n<!-- CERT: ${certificadoBase64.slice(0, 12)}... -->`;
 }
+
+export type EstadoDIAN = 'pendiente' | 'validado' | 'rechazado';
+
+export interface ResultadoDIAN {
+  estado: EstadoDIAN;
+  cufe?: string;
+  mensaje: string;
+}
+
+export async function enviarADIAN(xmlFirmado: string): Promise<ResultadoDIAN> {
+  // Esqueleto: integrar HTTP client real hacia proveedor/DIAN.
+  if (!xmlFirmado) {
+    return { estado: 'rechazado', mensaje: 'XML vacío' };
+  }
+  return { estado: 'pendiente', mensaje: 'Enviado (simulado)' };
+}
