@@ -1,3 +1,4 @@
+export * from './attributes';
 export * from './auth';
 export * from './caja';
 export * from './categorias';
