@@ -24,3 +24,18 @@ export const PRESENTACIONES_COMUNES: Record<string, Presentacion[]> = {
   caja: [{ nombre: 'Caja x12', factorConversion: 12 }],
   blister: [{ nombre: 'Blister x3', factorConversion: 3 }],
 };
+
+export interface ConversionPresentacion {
+  cantidad: number;
+  presentacion: Presentacion;
+}
+
+export function convertirAPresentacion(cantidadBase: number, factorConversion: number): number {
+  if (factorConversion <= 0) return cantidadBase;
+  return Math.round((cantidadBase / factorConversion) * 100) / 100;
+}
+
+export function convertirABase(cantidadPresentacion: number, factorConversion: number): number {
+  if (factorConversion <= 0) return cantidadPresentacion;
+  return Math.round(cantidadPresentacion * factorConversion * 100) / 100;
+}
