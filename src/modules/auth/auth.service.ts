@@ -9,6 +9,7 @@ import { authSessions } from '../../db/schema/auth_sessions';
 import { empleados } from '../../db/schema/empleados';
 import { roles } from '../../db/schema/roles';
 import { usuarios } from '../../db/schema/usuarios';
+import { emitEvent } from '../../server/socket';
 import { recordAudit } from '../../shared/utils/audit';
 import type { LoginInput, RegisterUserInput } from './auth.dto';
 
@@ -199,6 +200,13 @@ export class AuthService {
       entidadId: user.id,
       resultado: 'ok',
       req,
+    });
+
+    emitEvent('usuario:conectado', {
+      usuario_id: user.id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      rol_nombre: user.rol_nombre,
     });
 
     return {

@@ -327,6 +327,7 @@ export default function EmpleadoManager({
     const interval = setInterval(() => {
       if (activeTab === 'metricas') fetchMetricas();
       if (activeTab === 'auditoria') fetchAuditoria(auditFilterUser);
+      if (activeTab === 'directorio') fetchEmpleados();
     }, 6000);
 
     return () => {
