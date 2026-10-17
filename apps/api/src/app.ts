@@ -6,6 +6,7 @@ import { customersRoutes } from './modules/customers/customers.routes';
 import { inventoryRoutes } from './modules/inventory/inventory.routes';
 import { productsRoutes } from './modules/products/products.routes';
 import { salesRoutes } from './modules/sales/sales.routes';
+import { separadosRoutes } from './modules/separados/separados.routes';
 import { idempotencyPlugin } from './plugins/idempotency';
 
 export async function buildApp() {
@@ -18,6 +19,7 @@ export async function buildApp() {
   await app.register(inventoryRoutes, { prefix: '/api/v1' });
   await app.register(cashRoutes, { prefix: '/api/v1' });
   await app.register(customersRoutes, { prefix: '/api/v1' });
+  await app.register(separadosRoutes, { prefix: '/api/v1' });
 
   app.get('/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
   app.get('/api/v1/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
