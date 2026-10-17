@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { recordAudit } from '../../lib/audit';
 import { prisma } from '../../lib/prisma';
 
 const itemSchema = z.object({
@@ -82,6 +83,13 @@ export async function separadosRoutes(app: FastifyInstance) {
         return separado;
       });
 
+      await recordAudit({
+        usuarioId: 1,
+        accion: 'SEPARADO_CREADO',
+        entidad: 'separados',
+        entidadId: result.id,
+        datosNuevos: { valor_total: input.valor_total },
+      });
       return reply.status(201).send({ data: result });
     } catch (error: any) {
       return reply.status(500).send({ error: error.message || 'Error interno' });
@@ -175,6 +183,13 @@ export async function separadosRoutes(app: FastifyInstance) {
         return { abono, completado, saldo: nuevoSaldo, factura_id: facturaId };
       });
 
+      await recordAudit({
+        usuarioId: 1,
+        accion: result.completado ? 'SEPARADO_COMPLETADO' : 'SEPARADO_ABONO_REGISTRADO',
+        entidad: 'separados',
+        entidadId: separadoId,
+        datosNuevos: { monto, saldo: result.saldo },
+      });
       return reply.status(201).send(result);
     } catch (error: any) {
       return reply
