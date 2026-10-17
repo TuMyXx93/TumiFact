@@ -12,7 +12,7 @@ status: pending
 | T-002 | Modelar configuración fiscal | R-001 | done |
 | T-003 | Crear documento electrónico pendiente | R-002, R-007 | done |
 | T-004 | Implementar generación UBL 2.1 | R-003 | done |
-| T-005 | Calcular CUFE | R-003 | pending |
+| T-005 | Calcular CUFE | R-003 | done |
 | T-006 | Firmar XML | R-003 | pending |
 | T-007 | Enviar y guardar estado DIAN | R-004, R-005 | pending |
 | T-008 | Exponer consulta XML/PDF/estado | R-006 | pending |

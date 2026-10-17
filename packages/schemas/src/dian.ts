@@ -58,3 +58,39 @@ export function generarUBL21(input: UBLInvoiceInput): string {
   </cac:LegalMonetaryTotal>
 </Invoice>`;
 }
+
+export interface CUFEInput {
+  numeroFactura: string;
+  fecha: string;
+  hora: string;
+  valorBruto: number;
+  codigoImpuesto: string;
+  valorImpuesto: number;
+  valorTotal: number;
+  nitEmisor: string;
+  nitReceptor: string;
+  claveTecnica: string;
+}
+
+export function calcularCUFE(input: CUFEInput): string {
+  const base = [
+    input.numeroFactura,
+    input.fecha,
+    input.hora,
+    input.valorBruto.toFixed(2),
+    input.codigoImpuesto,
+    input.valorImpuesto.toFixed(2),
+    input.valorTotal.toFixed(2),
+    input.nitEmisor,
+    input.nitReceptor,
+    input.claveTecnica,
+  ].join('');
+
+  // Hash simple reproducible para esqueleto; en producción usar SHA-384/SHA-256 según DIAN.
+  let hash = 0;
+  for (let i = 0; i < base.length; i += 1) {
+    hash = (hash << 5) - hash + base.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16).padStart(40, '0');
+}
