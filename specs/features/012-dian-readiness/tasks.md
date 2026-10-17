@@ -17,4 +17,4 @@ status: pending
 | T-007 | Enviar y guardar estado DIAN | R-004, R-005 | done |
 | T-008 | Exponer consulta XML/PDF/estado | R-006 | done |
 | T-009 | Pruebas de contingencia | R-005, R-007 | done |
-| T-010 | Ejecutar `/analyze`, CI, trazabilidad | todos | pending |
+| T-010 | Ejecutar `/analyze`, CI, trazabilidad | todos | done |
