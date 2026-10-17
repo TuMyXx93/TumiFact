@@ -15,4 +15,4 @@ status: pending
 | T-005 | Validar atributos por categoría | R-004 | done |
 | T-006 | Registrar historial de precios | R-005 | done |
 | T-007 | Añadir tests unitarios | R-001..R-005 | done |
-| T-008 | Ejecutar `/analyze`, CI, trazabilidad | todos | pending |
+| T-008 | Ejecutar `/analyze`, CI, trazabilidad | todos | done |
