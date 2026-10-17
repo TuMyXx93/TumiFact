@@ -281,6 +281,7 @@ export async function apiFetch(
     ...restInit,
     headers,
     credentials: restInit.credentials || 'include',
+    cache: 'no-store',
     signal: controller.signal,
   };
 
