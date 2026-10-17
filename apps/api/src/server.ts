@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { authRoutes } from './modules/auth/auth.routes';
 import { productsRoutes } from './modules/products/products.routes';
+import { salesRoutes } from './modules/sales/sales.routes';
 import { idempotencyPlugin } from './plugins/idempotency';
 
 const app = Fastify({ logger: true });
@@ -8,6 +9,7 @@ const app = Fastify({ logger: true });
 await app.register(idempotencyPlugin);
 await app.register(authRoutes, { prefix: '/api/v1' });
 await app.register(productsRoutes, { prefix: '/api/v1' });
+await app.register(salesRoutes, { prefix: '/api/v1' });
 
 app.get('/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
 app.get('/api/v1/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
