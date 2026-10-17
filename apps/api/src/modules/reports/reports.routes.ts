@@ -54,11 +54,15 @@ export async function reportsRoutes(app: FastifyInstance) {
     const user = authorize(request, reply, ['gerente', 'admin']);
     if (!user) return;
 
-    const ventas = await prisma.facturas.findMany({ orderBy: { fecha: 'desc' }, take: 1000 });
-    const headers = ['id', 'fecha', 'total', 'forma_pago', 'estado'];
-    const rows = ventas.map((v) => [v.id, v.fecha, v.total, v.forma_pago, v.estado].join(','));
-    const csv = [headers.join(','), ...rows].join('\n');
-    reply.header('Content-Type', 'text/csv');
-    return reply.send(csv);
+    try {
+      const ventas = await prisma.facturas.findMany({ orderBy: { fecha: 'desc' }, take: 1000 });
+      const headers = ['id', 'fecha', 'total', 'forma_pago', 'estado'];
+      const rows = ventas.map((v) => [v.id, v.fecha, v.total, v.forma_pago, v.estado].join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      reply.header('Content-Type', 'text/csv');
+      return reply.send(csv);
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message || 'Error al exportar CSV' });
+    }
   });
 }
