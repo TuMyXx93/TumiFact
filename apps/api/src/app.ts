@@ -8,12 +8,14 @@ import { productsRoutes } from './modules/products/products.routes';
 import { reportsRoutes } from './modules/reports/reports.routes';
 import { salesRoutes } from './modules/sales/sales.routes';
 import { separadosRoutes } from './modules/separados/separados.routes';
+import { authPlugin } from './plugins/auth';
 import { idempotencyPlugin } from './plugins/idempotency';
 
 export async function buildApp() {
   const app = Fastify({ logger: false });
 
   await app.register(idempotencyPlugin);
+  await app.register(authPlugin);
   await app.register(authRoutes, { prefix: '/api/v1' });
   await app.register(productsRoutes, { prefix: '/api/v1' });
   await app.register(salesRoutes, { prefix: '/api/v1' });
