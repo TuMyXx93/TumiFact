@@ -115,3 +115,19 @@ export async function enviarADIAN(xmlFirmado: string): Promise<ResultadoDIAN> {
   }
   return { estado: 'pendiente', mensaje: 'Enviado (simulado)' };
 }
+
+export interface ConsultaDocumentoDIAN {
+  id: string;
+  estado: EstadoDIAN;
+  cufe?: string;
+  xml?: string;
+  pdfUrl?: string;
+}
+
+export function crearConsultaDocumentoDIAN(
+  id: string,
+  estado: EstadoDIAN,
+  cufe?: string
+): ConsultaDocumentoDIAN {
+  return { id, estado, cufe };
+}
