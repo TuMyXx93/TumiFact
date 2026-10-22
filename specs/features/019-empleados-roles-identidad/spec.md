@@ -1,7 +1,7 @@
 ---
 id: 019-empleados-roles-identidad
 version: 0.1.0
-status: draft
+status: approved
 type: greenfield
 risk: high
 financial-impact: true

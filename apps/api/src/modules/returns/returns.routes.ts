@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { recordAudit } from '../../lib/audit';
+import { authenticate, requireActor } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
 import { emitEvent } from '../../lib/socket';
 
@@ -34,7 +35,7 @@ const returnSchema = z.object({
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
 export async function returnsRoutes(app: FastifyInstance) {
-  app.post('/returns', async (request, reply) => {
+  app.post('/returns', { preHandler: [authenticate] }, async (request, reply) => {
     const parsed = returnSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply
@@ -43,6 +44,7 @@ export async function returnsRoutes(app: FastifyInstance) {
     }
 
     const input = parsed.data;
+    const actor = requireActor(request);
     const key = (request.headers['idempotency-key'] as string) || input.idempotency_key;
 
     if (key) {
@@ -135,7 +137,7 @@ export async function returnsRoutes(app: FastifyInstance) {
           data: {
             idempotency_key: key ?? null,
             factura_id: input.factura_id,
-            usuario_solicitante_id: 1,
+            usuario_solicitante_id: actor.id,
             sesion_caja_id: input.sesion_caja_id ?? null,
             tipo: input.tipo,
             motivo: input.motivo,
@@ -175,7 +177,7 @@ export async function returnsRoutes(app: FastifyInstance) {
               await tx.movimientos_inventario.create({
                 data: {
                   producto_id: linea.producto_id,
-                  usuario_id: 1,
+                  usuario_id: actor.id,
                   sesion_caja_id: input.sesion_caja_id ?? null,
                   tipo: 'devolucion_entrada',
                   cantidad: linea.cantidad_devuelta,
@@ -196,7 +198,7 @@ export async function returnsRoutes(app: FastifyInstance) {
           const facturaCambio = await tx.facturas.create({
             data: {
               cliente_id: factura.cliente_id,
-              usuario_id: 1,
+              usuario_id: actor.id,
               sesion_caja_id: input.sesion_caja_id ?? null,
               subtotal: totalCambio,
               total: totalCambio,
@@ -227,7 +229,7 @@ export async function returnsRoutes(app: FastifyInstance) {
             await tx.movimientos_inventario.create({
               data: {
                 producto_id: cambio.producto_id,
-                usuario_id: 1,
+                usuario_id: actor.id,
                 sesion_caja_id: input.sesion_caja_id ?? null,
                 tipo: 'salida_venta',
                 cantidad: cambio.cantidad,
@@ -268,7 +270,7 @@ export async function returnsRoutes(app: FastifyInstance) {
       });
 
       await recordAudit({
-        usuarioId: 1,
+        usuarioId: actor.id,
         accion: result.devolucion.tipo === 'cambio' ? 'CAMBIO_CREADO' : 'DEVOLUCION_CREADA',
         entidad: 'devoluciones',
         entidadId: result.devolucion.id,
@@ -294,7 +296,7 @@ export async function returnsRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get('/returns', async (_request, reply) => {
+  app.get('/returns', { preHandler: [authenticate] }, async (_request, reply) => {
     const list = await prisma.devoluciones.findMany({
       orderBy: { created_at: 'desc' },
       take: 100,

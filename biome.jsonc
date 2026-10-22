@@ -9,7 +9,8 @@
       "!!**/coverage",
       "!!**/.turbo",
       "!!**/.engram",
-      "!!**/drizzle"
+      "!!**/drizzle",
+      "!!**/apps/api/src/generated"
     ]
   },
   "linter": {

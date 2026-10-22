@@ -1,8 +1,9 @@
 import type { FastifyInstance } from 'fastify';
+import { authenticate } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
 
 export async function productsRoutes(app: FastifyInstance) {
-  app.get('/products', async (_request, reply) => {
+  app.get('/products', { preHandler: [authenticate] }, async (_request, reply) => {
     const products = await prisma.productos.findMany({
       where: { activo: true },
       orderBy: { nombre: 'asc' },
@@ -11,7 +12,7 @@ export async function productsRoutes(app: FastifyInstance) {
     return reply.send({ data: products });
   });
 
-  app.get('/products/:id', async (request, reply) => {
+  app.get('/products/:id', { preHandler: [authenticate] }, async (request, reply) => {
     const id = Number((request.params as any).id);
     const product = await prisma.productos.findUnique({ where: { id } });
     if (!product) return reply.status(404).send({ error: 'Producto no encontrado' });

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { authenticate, requireActor } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
 import { emitEvent } from '../../lib/socket';
 
@@ -17,7 +18,7 @@ const movimientoSchema = z.object({
 });
 
 export async function inventoryRoutes(app: FastifyInstance) {
-  app.get('/inventory/movements', async (request, reply) => {
+  app.get('/inventory/movements', { preHandler: [authenticate] }, async (request, reply) => {
     const limit = Number((request.query as any)?.limit || 50);
     const productoId = (request.query as any)?.producto_id
       ? Number((request.query as any).producto_id)
@@ -32,7 +33,7 @@ export async function inventoryRoutes(app: FastifyInstance) {
     return reply.send({ data: movimientos });
   });
 
-  app.get('/inventory/stock-critical', async (_request, reply) => {
+  app.get('/inventory/stock-critical', { preHandler: [authenticate] }, async (_request, reply) => {
     const productos = await prisma.productos.findMany({
       where: { activo: true },
     });
@@ -40,7 +41,7 @@ export async function inventoryRoutes(app: FastifyInstance) {
     return reply.send({ data: criticos });
   });
 
-  app.post('/inventory/movements', async (request, reply) => {
+  app.post('/inventory/movements', { preHandler: [authenticate] }, async (request, reply) => {
     const parsed = movimientoSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply
@@ -49,6 +50,7 @@ export async function inventoryRoutes(app: FastifyInstance) {
     }
 
     const input = parsed.data;
+    const actor = requireActor(request);
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -78,6 +80,7 @@ export async function inventoryRoutes(app: FastifyInstance) {
         const movimiento = await tx.movimientos_inventario.create({
           data: {
             producto_id: product.id,
+            usuario_id: actor.id,
             tipo: input.tipo,
             cantidad: input.cantidad,
             stock_anterior: stockActual,

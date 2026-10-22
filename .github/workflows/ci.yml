@@ -100,6 +100,68 @@ jobs:
           path: coverage/
           retention-days: 7
 
+  new-stack-api:
+    name: New Stack API (Fastify + Prisma)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_USER: tumifact_user
+          POSTGRES_PASSWORD: tumifact_password
+          POSTGRES_DB: tumifact_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tumifact_user -d tumifact_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize dedicated test database (tumifact_test_api)
+        run: |
+          PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d postgres -c "CREATE DATABASE tumifact_test_api OWNER tumifact_user;" || true
+          for f in drizzle/0000_baseline.sql drizzle/0001_add_direccion_backcompat.sql drizzle/0002_fix_facturas_estado_len.sql; do
+            PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d tumifact_test_api -v ON_ERROR_STOP=1 -f "$f"
+          done
+          PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d tumifact_test_api -v ON_ERROR_STOP=1 -f apps/api/prisma/migrations/0002_expandir_formas_pago_y_tipos/migration.sql
+
+      - name: Prisma generate + build API
+        run: |
+          pnpm --filter @tumifact/api exec prisma generate
+          pnpm --filter @tumifact/api build
+
+      - name: Run new stack integration tests
+        run: pnpm --filter @tumifact/api test
+
+      - name: Build new stack web
+        run: pnpm --filter @tumifact/web build
+
+      - name: Verify no hardcoded actor in new stack
+        run: |
+          if grep -rn "usuario_id: 1\|usuario_apertura_id: 1\|usuario_solicitante_id: 1" apps/api/src --exclude-dir=test; then
+            echo "::error::Identidad hardcodeada detectada en el nuevo stack"
+            exit 1
+          fi
+          echo "OK: sin usuario_id hardcodeado"
+
   security-audit:
     name: Dependency Security Audit
     runs-on: ubuntu-latest

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { authenticate, getActor, requireRole } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
 import { emitEvent } from '../../lib/socket';
 
@@ -14,14 +15,16 @@ const cerrarSchema = z.object({
 });
 
 export async function cashRoutes(app: FastifyInstance) {
-  app.post('/cash/open', async (request, reply) => {
+  app.post('/cash/open', { preHandler: [authenticate] }, async (request, reply) => {
     const parsed = abrirSchema.safeParse(request.body);
     if (!parsed.success)
       return reply
         .status(400)
         .send({ error: 'Validación DTO fallida', details: parsed.error.flatten() });
 
-    const userId = (request as any).user?.id || 1;
+    const actor = getActor(request);
+    const userId = actor?.id;
+    if (!userId) return reply.status(401).send({ error: 'No autorizado' });
     const active = await prisma.sesiones_caja.findFirst({
       where: { usuario_id: userId, estado: 'abierta' },
     });
@@ -42,8 +45,10 @@ export async function cashRoutes(app: FastifyInstance) {
     return reply.status(201).send({ message: 'Caja abierta', sesion: session });
   });
 
-  app.get('/cash/state', async (request, reply) => {
-    const userId = (request as any).user?.id || 1;
+  app.get('/cash/state', { preHandler: [authenticate] }, async (request, reply) => {
+    const actor = getActor(request);
+    const userId = actor?.id;
+    if (!userId) return reply.status(401).send({ error: 'No autorizado' });
     const session = await prisma.sesiones_caja.findFirst({
       where: { usuario_id: userId, estado: 'abierta' },
       orderBy: { abierta_at: 'desc' },
@@ -51,14 +56,16 @@ export async function cashRoutes(app: FastifyInstance) {
     return reply.send({ abierta: !!session, sesion: session });
   });
 
-  app.post('/cash/close', async (request, reply) => {
+  app.post('/cash/close', { preHandler: [authenticate] }, async (request, reply) => {
     const parsed = cerrarSchema.safeParse(request.body);
     if (!parsed.success)
       return reply
         .status(400)
         .send({ error: 'Validación DTO fallida', details: parsed.error.flatten() });
 
-    const userId = (request as any).user?.id || 1;
+    const actor = getActor(request);
+    const userId = actor?.id;
+    if (!userId) return reply.status(401).send({ error: 'No autorizado' });
     const active = await prisma.sesiones_caja.findFirst({
       where: { usuario_id: userId, estado: 'abierta' },
       orderBy: { abierta_at: 'desc' },
@@ -89,12 +96,16 @@ export async function cashRoutes(app: FastifyInstance) {
     return reply.send({ message: 'Caja cerrada exitosamente', reporte: updated });
   });
 
-  app.get('/cash/active', async (_request, reply) => {
-    const sessions = await prisma.sesiones_caja.findMany({
-      where: { estado: 'abierta' },
-      include: { usuarios: true },
-      orderBy: { abierta_at: 'desc' },
-    });
-    return reply.send(sessions);
-  });
+  app.get(
+    '/cash/active',
+    { preHandler: [authenticate, requireRole(['gerente', 'admin'])] },
+    async (_request, reply) => {
+      const sessions = await prisma.sesiones_caja.findMany({
+        where: { estado: 'abierta' },
+        include: { usuarios: true },
+        orderBy: { abierta_at: 'desc' },
+      });
+      return reply.send(sessions);
+    }
+  );
 }

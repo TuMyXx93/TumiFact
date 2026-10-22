@@ -1,20 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../app';
+import { loginAs } from './helpers';
 
 describe('reports', () => {
   it('returns sales report with auth', async () => {
     const app = await buildApp();
-    const login = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { credential: 'admin@tumifact.com', password: 'Password*2026' },
-    });
-    const token = login.json().token;
+    const auth = await loginAs(app);
 
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/reports/sales',
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: auth.authorization },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().meta).toBeDefined();

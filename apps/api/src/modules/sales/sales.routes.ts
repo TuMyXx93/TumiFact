@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { authenticate, requireActor } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
 import { emitEvent } from '../../lib/socket';
 
@@ -18,7 +19,7 @@ const saleSchema = z.object({
 });
 
 export async function salesRoutes(app: FastifyInstance) {
-  app.post('/sales', async (request, reply) => {
+  app.post('/sales', { preHandler: [authenticate] }, async (request, reply) => {
     const parsed = saleSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply
@@ -27,13 +28,14 @@ export async function salesRoutes(app: FastifyInstance) {
     }
 
     const input = parsed.data;
+    const actor = requireActor(request);
     const key = (request.headers['idempotency-key'] as string) || input.idempotency_key;
 
     if (input.sesion_caja_id) {
       const session = await prisma.sesiones_caja.findUnique({
         where: { id: input.sesion_caja_id },
       });
-      if (!session || session.estado !== 'abierta') {
+      if (session?.estado !== 'abierta') {
         return reply
           .status(400)
           .send({ error: 'La sesión de caja indicada no existe o no está abierta.' });
@@ -69,6 +71,7 @@ export async function salesRoutes(app: FastifyInstance) {
         const sale = await tx.facturas.create({
           data: {
             cliente_id: input.cliente_id ?? null,
+            usuario_id: actor.id,
             sesion_caja_id: input.sesion_caja_id ?? null,
             forma_pago: input.forma_pago || 'efectivo',
             total,
@@ -87,9 +90,25 @@ export async function salesRoutes(app: FastifyInstance) {
         });
 
         for (const item of items) {
+          const stockAnterior = Number(item.product.stock_actual);
+          const stockNuevo = stockAnterior - item.cantidad;
           await tx.productos.update({
             where: { id: item.producto_id },
-            data: { stock_actual: Number(item.product.stock_actual) - item.cantidad },
+            data: { stock_actual: stockNuevo },
+          });
+          await tx.movimientos_inventario.create({
+            data: {
+              producto_id: item.producto_id,
+              usuario_id: actor.id,
+              sesion_caja_id: input.sesion_caja_id ?? null,
+              tipo: 'salida_venta',
+              cantidad: item.cantidad,
+              stock_anterior: stockAnterior,
+              stock_nuevo: stockNuevo,
+              referencia_tipo: 'factura',
+              referencia_id: sale.id,
+              notas: `Venta POS en Factura #${sale.id}`,
+            },
           });
         }
 

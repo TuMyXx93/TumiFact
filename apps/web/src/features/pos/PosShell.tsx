@@ -1,4 +1,3 @@
-import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { PaymentPanel } from '../../components/ui/PaymentPanel';
 import { SearchInput } from '../../components/ui/SearchInput';

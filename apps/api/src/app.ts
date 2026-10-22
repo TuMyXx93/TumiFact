@@ -3,26 +3,26 @@ import { initSocketIO } from './lib/socket';
 import { authRoutes } from './modules/auth/auth.routes';
 import { cashRoutes } from './modules/cash/cash.routes';
 import { customersRoutes } from './modules/customers/customers.routes';
+import { employeesRoutes } from './modules/employees/employees.routes';
 import { inventoryRoutes } from './modules/inventory/inventory.routes';
 import { productsRoutes } from './modules/products/products.routes';
 import { reportsRoutes } from './modules/reports/reports.routes';
 import { returnsRoutes } from './modules/returns/returns.routes';
 import { salesRoutes } from './modules/sales/sales.routes';
 import { separadosRoutes } from './modules/separados/separados.routes';
-import { authPlugin } from './plugins/auth';
 import { idempotencyPlugin } from './plugins/idempotency';
 
 export async function buildApp() {
   const app = Fastify({ logger: false });
 
   await app.register(idempotencyPlugin);
-  await app.register(authPlugin);
   await app.register(authRoutes, { prefix: '/api/v1' });
   await app.register(productsRoutes, { prefix: '/api/v1' });
   await app.register(salesRoutes, { prefix: '/api/v1' });
   await app.register(inventoryRoutes, { prefix: '/api/v1' });
   await app.register(cashRoutes, { prefix: '/api/v1' });
   await app.register(customersRoutes, { prefix: '/api/v1' });
+  await app.register(employeesRoutes, { prefix: '/api/v1' });
   await app.register(separadosRoutes, { prefix: '/api/v1' });
   await app.register(reportsRoutes, { prefix: '/api/v1' });
   await app.register(returnsRoutes, { prefix: '/api/v1' });

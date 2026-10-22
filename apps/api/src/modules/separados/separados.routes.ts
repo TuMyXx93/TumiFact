@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { recordAudit } from '../../lib/audit';
+import { authenticate, requireActor } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
 
 const itemSchema = z.object({
@@ -20,7 +21,7 @@ const createSchema = z.object({
 });
 
 export async function separadosRoutes(app: FastifyInstance) {
-  app.post('/separados', async (request, reply) => {
+  app.post('/separados', { preHandler: [authenticate] }, async (request, reply) => {
     const parsed = createSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply
@@ -29,6 +30,7 @@ export async function separadosRoutes(app: FastifyInstance) {
     }
 
     const input = parsed.data;
+    const actor = requireActor(request);
     const fechaLimite = new Date();
     fechaLimite.setDate(fechaLimite.getDate() + input.dias_plazo);
 
@@ -37,7 +39,7 @@ export async function separadosRoutes(app: FastifyInstance) {
         const separado = await tx.separados.create({
           data: {
             cliente_id: input.cliente_id,
-            usuario_apertura_id: 1,
+            usuario_apertura_id: actor.id,
             descripcion: input.descripcion,
             valor_total: input.valor_total,
             abono_inicial: input.abono_inicial,
@@ -72,7 +74,7 @@ export async function separadosRoutes(app: FastifyInstance) {
         await tx.abonos_separado.create({
           data: {
             separado_id: separado.id,
-            usuario_id: 1,
+            usuario_id: actor.id,
             numero_abono: 1,
             monto: input.abono_inicial,
             forma_pago: 'efectivo',
@@ -84,7 +86,7 @@ export async function separadosRoutes(app: FastifyInstance) {
       });
 
       await recordAudit({
-        usuarioId: 1,
+        usuarioId: actor.id,
         accion: 'SEPARADO_CREADO',
         entidad: 'separados',
         entidadId: result.id,
@@ -96,14 +98,15 @@ export async function separadosRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get('/separados', async (_request, reply) => {
+  app.get('/separados', { preHandler: [authenticate] }, async (_request, reply) => {
     const list = await prisma.separados.findMany({ orderBy: { created_at: 'desc' }, take: 50 });
     return reply.send({ data: list });
   });
 
-  app.post('/separados/:id/abonos', async (request, reply) => {
+  app.post('/separados/:id/abonos', { preHandler: [authenticate] }, async (request, reply) => {
     const separadoId = Number((request.params as any).id);
     const body = request.body as any;
+    const actor = requireActor(request);
     const monto = Number(body?.monto || 0);
     if (!Number.isFinite(monto) || monto <= 0) {
       return reply.status(400).send({ error: 'Monto de abono inválido' });
@@ -133,7 +136,7 @@ export async function separadosRoutes(app: FastifyInstance) {
         const abono = await tx.abonos_separado.create({
           data: {
             separado_id: separadoId,
-            usuario_id: 1,
+            usuario_id: actor.id,
             numero_abono:
               (await tx.abonos_separado.count({ where: { separado_id: separadoId } })) + 1,
             monto,
@@ -150,7 +153,7 @@ export async function separadosRoutes(app: FastifyInstance) {
           const factura = await tx.facturas.create({
             data: {
               cliente_id: sep.cliente_id,
-              usuario_id: 1,
+              usuario_id: actor.id,
               subtotal: Number(sep.valor_total),
               total: Number(sep.valor_total),
               forma_pago: body?.forma_pago || 'efectivo',
@@ -184,7 +187,7 @@ export async function separadosRoutes(app: FastifyInstance) {
       });
 
       await recordAudit({
-        usuarioId: 1,
+        usuarioId: actor.id,
         accion: result.completado ? 'SEPARADO_COMPLETADO' : 'SEPARADO_ABONO_REGISTRADO',
         entidad: 'separados',
         entidadId: separadoId,

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { recordAudit } from '../../lib/audit';
+import { authenticate, requireActor } from '../../lib/auth';
 import { prisma } from '../../lib/prisma';
 
 const createSchema = z.object({
@@ -14,7 +15,7 @@ const createSchema = z.object({
 });
 
 export async function customersRoutes(app: FastifyInstance) {
-  app.get('/customers', async (_request, reply) => {
+  app.get('/customers', { preHandler: [authenticate] }, async (_request, reply) => {
     const clientes = await prisma.clientes.findMany({
       where: { activo: true },
       orderBy: { nombre: 'asc' },
@@ -23,14 +24,14 @@ export async function customersRoutes(app: FastifyInstance) {
     return reply.send({ data: clientes });
   });
 
-  app.get('/customers/:id', async (request, reply) => {
+  app.get('/customers/:id', { preHandler: [authenticate] }, async (request, reply) => {
     const id = Number((request.params as any).id);
     const cliente = await prisma.clientes.findUnique({ where: { id } });
     if (!cliente) return reply.status(404).send({ error: 'Cliente no encontrado' });
     return reply.send({ data: cliente });
   });
 
-  app.post('/customers', async (request, reply) => {
+  app.post('/customers', { preHandler: [authenticate] }, async (request, reply) => {
     const parsed = createSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply
@@ -39,6 +40,7 @@ export async function customersRoutes(app: FastifyInstance) {
     }
 
     const input = parsed.data;
+    const actor = requireActor(request);
 
     if (input.tipo_identificacion_id && input.numero_identificacion) {
       const existing = await prisma.clientes.findFirst({
@@ -67,7 +69,7 @@ export async function customersRoutes(app: FastifyInstance) {
     });
 
     await recordAudit({
-      usuarioId: 1,
+      usuarioId: actor.id,
       accion: 'CLIENTE_CREADO',
       entidad: 'clientes',
       entidadId: cliente.id,
@@ -76,8 +78,9 @@ export async function customersRoutes(app: FastifyInstance) {
     return reply.status(201).send({ data: cliente });
   });
 
-  app.delete('/customers/:id', async (request, reply) => {
+  app.delete('/customers/:id', { preHandler: [authenticate] }, async (request, reply) => {
     const id = Number((request.params as any).id);
+    const actor = requireActor(request);
     const updated = await prisma.clientes
       .update({
         where: { id },
@@ -87,7 +90,7 @@ export async function customersRoutes(app: FastifyInstance) {
 
     if (!updated) return reply.status(404).send({ error: 'Cliente no encontrado' });
     await recordAudit({
-      usuarioId: 1,
+      usuarioId: actor.id,
       accion: 'CLIENTE_ELIMINADO',
       entidad: 'clientes',
       entidadId: id,
