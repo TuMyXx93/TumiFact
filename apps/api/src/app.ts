@@ -6,6 +6,7 @@ import { customersRoutes } from './modules/customers/customers.routes';
 import { inventoryRoutes } from './modules/inventory/inventory.routes';
 import { productsRoutes } from './modules/products/products.routes';
 import { reportsRoutes } from './modules/reports/reports.routes';
+import { returnsRoutes } from './modules/returns/returns.routes';
 import { salesRoutes } from './modules/sales/sales.routes';
 import { separadosRoutes } from './modules/separados/separados.routes';
 import { authPlugin } from './plugins/auth';
@@ -24,6 +25,7 @@ export async function buildApp() {
   await app.register(customersRoutes, { prefix: '/api/v1' });
   await app.register(separadosRoutes, { prefix: '/api/v1' });
   await app.register(reportsRoutes, { prefix: '/api/v1' });
+  await app.register(returnsRoutes, { prefix: '/api/v1' });
 
   app.get('/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
   app.get('/api/v1/health', async () => ({ status: 'ok', service: 'tumifact-api' }));
