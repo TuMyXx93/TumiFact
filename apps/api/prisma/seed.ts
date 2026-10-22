@@ -10,7 +10,14 @@ const ROLES = [
   {
     nombre: 'gerente',
     descripcion: 'Gestión de tienda, reportes y aprobaciones',
-    permisos: { reportes: true, empleados: true, cajas: true, devoluciones: true },
+    permisos: {
+      reportes: true,
+      empleados: true,
+      cajas: true,
+      devoluciones: true,
+      'descuentos:aprobar': true,
+      'descuentos:gestionar': true,
+    },
   },
   {
     nombre: 'empleado',
@@ -80,6 +87,37 @@ async function main() {
       activo: true,
     },
   });
+
+  // 4) Catálogo de descuentos de ejemplo
+  const descuentos = [
+    {
+      nombre: 'Promo línea 10%',
+      tipo: 'porcentaje',
+      valor: 10,
+      aplica_a: 'linea',
+      requiere_aprobacion: false,
+    },
+    {
+      nombre: 'Promo total 5%',
+      tipo: 'porcentaje',
+      valor: 5,
+      aplica_a: 'total',
+      requiere_aprobacion: false,
+    },
+    {
+      nombre: 'Cupon 20000',
+      tipo: 'monto_fijo',
+      valor: 20000,
+      aplica_a: 'total',
+      requiere_aprobacion: true,
+    },
+  ];
+  for (const d of descuentos) {
+    const existente = await prisma.descuentos.findFirst({ where: { nombre: d.nombre } });
+    if (!existente) {
+      await prisma.descuentos.create({ data: { ...d, activo: true } });
+    }
+  }
 
   console.log(`Seed sintético completado (admin id=${admin.id}, roles=${ROLES.length})`);
 }

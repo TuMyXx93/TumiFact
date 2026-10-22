@@ -151,6 +151,9 @@ jobs:
       - name: Run new stack integration tests
         run: pnpm --filter @tumifact/api test
 
+      - name: Run shared discount engine unit tests
+        run: pnpm --filter @tumifact/discounts test
+
       - name: Build new stack web
         run: pnpm --filter @tumifact/web build
 

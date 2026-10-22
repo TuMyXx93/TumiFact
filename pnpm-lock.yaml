@@ -355,6 +355,9 @@ importers:
       '@prisma/client':
         specifier: ^7.4.2
         version: 7.10.1(prisma@7.10.1(@types/node@26.1.2)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(magicast@0.5.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2))(typescript@7.0.2)
+      '@tumifact/discounts':
+        specifier: workspace:*
+        version: link:../../packages/discounts
       argon2:
         specifier: ^0.45.1
         version: 0.45.1
@@ -395,6 +398,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@tumifact/discounts':
+        specifier: workspace:*
+        version: link:../../packages/discounts
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -420,6 +426,15 @@ importers:
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@26.1.2)(@vitest/coverage-v8@4.1.11)(vite@7.3.7(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.1)(yaml@2.9.1))
+
+  packages/discounts:
+    devDependencies:
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@types/node@26.1.2)(@vitest/coverage-v8@4.1.11)(vite@8.3.4(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.1))
 
   packages/schemas:
     dependencies:

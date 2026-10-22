@@ -13,6 +13,11 @@ export interface Actor {
   nombre: string;
   apellido: string;
   email: string;
+  /** `roles.permisos` verificado contra la BD (JSONB). */
+  permisos: Record<string, unknown>;
+  /** Límites de descuento del perfil de empleado. */
+  descuento_max_porcentaje: number;
+  descuento_max_monto: number;
 }
 
 /** SHA-256 del token: nunca almacenamos el JWT en claro. */
@@ -66,9 +71,11 @@ export async function resolveActor(request: FastifyRequest): Promise<Actor | nul
 
   const user = await prisma.usuarios.findUnique({
     where: { id: payload.id },
-    include: { roles: true },
+    include: { roles: true, empleados: true },
   });
   if (!user || !user.activo) return null;
+
+  const perfil = user.empleados;
 
   return {
     id: user.id,
@@ -77,6 +84,9 @@ export async function resolveActor(request: FastifyRequest): Promise<Actor | nul
     nombre: user.nombre,
     apellido: user.apellido,
     email: user.email,
+    permisos: (user.roles?.permisos as Record<string, unknown>) || {},
+    descuento_max_porcentaje: Number(perfil?.descuento_max_porcentaje ?? 0),
+    descuento_max_monto: Number(perfil?.descuento_max_monto ?? 0),
   };
 }
 

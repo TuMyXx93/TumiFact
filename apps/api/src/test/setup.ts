@@ -8,7 +8,16 @@ const prisma = new PrismaClient({
 
 const ROLES = [
   { nombre: 'admin', descripcion: 'Administrador', permisos: { admin: true } },
-  { nombre: 'gerente', descripcion: 'Gerente', permisos: { ventas: true, reportes: true } },
+  {
+    nombre: 'gerente',
+    descripcion: 'Gerente',
+    permisos: {
+      ventas: true,
+      reportes: true,
+      'descuentos:aprobar': true,
+      'descuentos:gestionar': true,
+    },
+  },
   { nombre: 'empleado', descripcion: 'Empleado', permisos: { caja: true, ventas: true } },
 ];
 
@@ -70,14 +79,18 @@ export async function resetDatabase(): Promise<void> {
         activo: true,
       },
     });
+    const esGerente = usuario.rol === 'gerente';
+    const esAdmin = usuario.rol === 'admin';
     await prisma.empleados.upsert({
       where: { usuario_id: usuario.id },
       update: {},
       create: {
         usuario_id: usuario.id,
-        cargo: usuario.rol === 'admin' ? 'Administrador General' : 'Vendedor/Cajero',
+        cargo: esAdmin ? 'Administrador General' : esGerente ? 'Gerente de Tienda' : 'Cajero POS',
         departamento: 'Caja',
         turno: 'completo',
+        descuento_max_porcentaje: esAdmin ? 100 : esGerente ? 50 : 5,
+        descuento_max_monto: esAdmin ? 99999999 : esGerente ? 500000 : 50000,
       },
     });
   }
@@ -88,6 +101,37 @@ export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
     `SELECT setval('empleados_id_seq', (SELECT MAX(id) FROM empleados))`
   );
+
+  // Catálogo de descuentos: el motor necesita descuentos vigentes.
+  const descuentos = [
+    {
+      nombre: 'Promo linea 10%',
+      tipo: 'porcentaje',
+      valor: 10,
+      aplica_a: 'linea',
+      requiere_aprobacion: false,
+    },
+    {
+      nombre: 'Promo total 5%',
+      tipo: 'porcentaje',
+      valor: 5,
+      aplica_a: 'total',
+      requiere_aprobacion: false,
+    },
+    {
+      nombre: 'Cupon 20000',
+      tipo: 'monto_fijo',
+      valor: 20000,
+      aplica_a: 'total',
+      requiere_aprobacion: true,
+    },
+  ];
+  for (const d of descuentos) {
+    const existente = await prisma.descuentos.findFirst({ where: { nombre: d.nombre } });
+    if (!existente) {
+      await prisma.descuentos.create({ data: { ...d, activo: true } });
+    }
+  }
 
   // Cliente base: ventas y separados exigen un cliente válido.
   await prisma.clientes.upsert({

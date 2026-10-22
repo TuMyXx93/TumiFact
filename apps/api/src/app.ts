@@ -3,6 +3,7 @@ import { initSocketIO } from './lib/socket';
 import { authRoutes } from './modules/auth/auth.routes';
 import { cashRoutes } from './modules/cash/cash.routes';
 import { customersRoutes } from './modules/customers/customers.routes';
+import { discountsRoutes } from './modules/discounts/discounts.routes';
 import { employeesRoutes } from './modules/employees/employees.routes';
 import { inventoryRoutes } from './modules/inventory/inventory.routes';
 import { productsRoutes } from './modules/products/products.routes';
@@ -22,6 +23,7 @@ export async function buildApp() {
   await app.register(inventoryRoutes, { prefix: '/api/v1' });
   await app.register(cashRoutes, { prefix: '/api/v1' });
   await app.register(customersRoutes, { prefix: '/api/v1' });
+  await app.register(discountsRoutes, { prefix: '/api/v1' });
   await app.register(employeesRoutes, { prefix: '/api/v1' });
   await app.register(separadosRoutes, { prefix: '/api/v1' });
   await app.register(reportsRoutes, { prefix: '/api/v1' });

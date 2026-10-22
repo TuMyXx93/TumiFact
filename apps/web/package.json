@@ -14,7 +14,8 @@
   "dependencies": {
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "@tumifact/discounts": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

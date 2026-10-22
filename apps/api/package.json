@@ -22,7 +22,8 @@
     "argon2": "^0.45.1",
     "@prisma/adapter-pg": "^7.4.2",
     "pg": "^8.23.0",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "@tumifact/discounts": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
