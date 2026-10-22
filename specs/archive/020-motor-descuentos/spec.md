@@ -1,7 +1,7 @@
 ---
 id: 020-motor-descuentos
 version: 0.1.0
-status: approved
+status: done
 type: greenfield
 risk: high
 financial-impact: true
