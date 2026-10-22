@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tumifact-postgres": {
+      "command": "sh",
+      "args": ["scripts/mcp/tumifact-postgres.sh"]
+    }
+  }
+}

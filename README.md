@@ -5,10 +5,24 @@
 [![Astro Framework](https://img.shields.io/badge/astro-v7.1%2B-ff5d01)](https://astro.build)
 [![React](https://img.shields.io/badge/react-v19-61dafb)](https://react.dev)
 [![Tailwind CSS](https://img.shields.io/badge/tailwindcss-v4-06b6d4)](https://tailwindcss.com)
+[![Fastify](https://img.shields.io/badge/fastify-5-ff5d01)](https://fastify.dev)
+[![Prisma](https://img.shields.io/badge/prisma-7-2d3748)](https://www.prisma.io)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-18.4-336791)](https://www.postgresql.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**TumiFact** es una plataforma moderna y modular de Punto de Venta (POS), Facturación e Inventario en tiempo real. Diseñada para alto rendimiento, alta disponibilidad y arquitectura desacoplada híbrida con **Astro 7+**, **React 19 Islands**, **Express.js API**, **Socket.io** y **PostgreSQL 18.4** (normalizado en 3NF con Drizzle ORM).
+**TumiFact** es una plataforma moderna de Punto de Venta (POS), Facturación e Inventario en tiempo real.
+
+El proyecto está en **migración activa** a un monorepo (patrón strangler, sin big-bang):
+
+| Capa | Producción actual (legacy) | Stack destino (en construcción) |
+| ---- | --------------------------- | ------------------------------ |
+| Frontend | Astro 7 SSR + React 19 Islands + Tailwind v4 | `apps/web` — React 19 + Vite + TanStack Router/Query + Zustand |
+| Backend | Express 4 + Socket.io + Drizzle ORM | `apps/api` — Fastify 5 + Prisma 7 + Socket.io |
+| Datos | PostgreSQL 18.4, 22 tablas 3NF, binarios `BYTEA` | PostgreSQL 18.4 (mismo modelo, migraciones Prisma) |
+| Compartido | — | `packages/schemas` (Zod), `packages/types`, `packages/discounts` (motor puro) |
+
+Detalle del avance por módulo: [`docs/architecture/migration-status.md`](docs/architecture/migration-status.md).
+Gobernanza de requisitos y decisiones: [`specs/`](specs/).
 
 ---
 
@@ -39,7 +53,7 @@ flowchart TD
 
     subgraph Database ["Persistencia Relacional 3NF (Puerto 5432)"]
         Postgres[(PostgreSQL 18.4 Docker)]
-        Tables["19 Tablas Normalizadas: usuarios, roles, empleados, sesiones_caja, facturas, separados, movimientos_inventario, audit_log, BYTEA Media"]
+        Tables["22 Tablas Normalizadas: usuarios, roles, empleados, sesiones_caja, facturas, separados, movimientos_inventario, audit_log, BYTEA Media"]
     end
 
     Client -->|HTTP REST / Cookie JWT / Astro SSR| Express
@@ -161,7 +175,12 @@ TumiFact/
 │   ├── server.ts               # Servidor HTTP Express + Socket.io Server
 │   ├── styles/                 # Tailwind CSS v4 y tokens globales (global.css)
 │   └── types/                  # Interfaces TypeScript centralizadas (index.ts)
-├── tests/                      # Suite de pruebas automatizadas (Jest + Supertest + PG Test DB)
+├── tests/                      # Suite de pruebas legacy (Vitest + Supertest + BD tumifact_test)
+├── apps/                       # Stack nuevo (monorepo)
+│   ├── api/                    # Fastify 5 + Prisma 7 (BD tumifact_test_api)
+│   └── web/                    # React 19 + Vite (POS nuevo)
+├── packages/                   # Compartidos: schemas (Zod), types, discounts (motor)
+├── specs/                      # SDD: constitution, steering, adr, features, archive
 ├── AGENTS.md                   # Protocolo de orquestación de agentes y estándares
 ├── astro.config.mjs            # Configuración de Astro 7+ con adaptador @astrojs/node
 ├── database_pg.sql             # Esquema DDL SQL PostgreSQL 18.4 (3NF)

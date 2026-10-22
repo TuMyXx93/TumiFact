@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validarAtributos as validarAttrs } from './attributes';
-import {
-  convertirABase,
-  convertirAPresentacion,
-  crearHistorialPrecio,
-  UNIDADES_BASE,
-} from './units';
+import { convertirABase, convertirAPresentacion, crearHistorialPrecio } from './units';
 
 describe('units', () => {
   it('converts presentation to base', () => {

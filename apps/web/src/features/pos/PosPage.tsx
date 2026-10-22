@@ -1,6 +1,16 @@
 import { calcularDescuentos, type DescuentoCatalogo } from '@tumifact/discounts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { apiFetch, getToken, setToken } from '../../lib/api';
+import {
+  enqueueSale,
+  flushQueuedSales,
+  pendingCount,
+  type QueuedSale,
+} from '../../lib/offlineQueue';
 
 interface Product {
   id: number;
@@ -22,14 +32,23 @@ interface DescuentoSeleccion {
 
 let lineCounter = 0;
 
+function uuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `pos-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export function PosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discounts, setDiscounts] = useState<DescuentoCatalogo[]>([]);
   const [selectedDiscount, setSelectedDiscount] = useState<DescuentoSeleccion | null>(null);
   const [status, setStatus] = useState('');
+  const [pending, setPending] = useState(0);
   const [credential, setCredential] = useState('admin@tumifact.com');
   const [password, setPassword] = useState('Password*2026');
+  const [filter, setFilter] = useState('');
 
   const loadCatalog = useCallback(async () => {
     const [prodRes, discRes] = await Promise.all([
@@ -48,9 +67,31 @@ export function PosPage() {
     }
   }, []);
 
+  /**
+   * Reintenta las ventas encoladas: conservan su Idempotency-Key, así el
+   * backend no duplica la factura aunque se haya registrado antes.
+   */
+  const syncOfflineSales = useCallback(async () => {
+    const resultado = await flushQueuedSales(async (sale: QueuedSale) => {
+      const res = await apiFetch(sale.path, {
+        method: 'POST',
+        headers: { 'Idempotency-Key': sale.idempotencyKey },
+        body: JSON.stringify(sale.payload),
+      });
+      return res.ok;
+    });
+    setPending(resultado.pendientes);
+    if (resultado.enviadas > 0) {
+      setStatus(`${resultado.enviadas} venta(s) offline sincronizadas`);
+    }
+  }, []);
+
   useEffect(() => {
-    if (getToken()) void loadCatalog();
-  }, [loadCatalog]);
+    setPending(pendingCount());
+    if (!getToken()) return;
+    void loadCatalog();
+    void syncOfflineSales();
+  }, [loadCatalog, syncOfflineSales]);
 
   const handleLogin = async () => {
     const res = await fetch('/api/v1/auth/login', {
@@ -63,6 +104,7 @@ export function PosPage() {
       setToken(data.token);
       setStatus(`Sesión iniciada como ${data.user.nombre}`);
       void loadCatalog();
+      void syncOfflineSales();
     } else {
       setStatus('Credenciales incorrectas');
     }
@@ -79,6 +121,14 @@ export function PosPage() {
       lineCounter += 1;
       return [...prev, { lineId: `line-${lineCounter}`, product, cantidad: 1 }];
     });
+
+  const filteredProducts = useMemo(() => {
+    const term = filter.trim().toLowerCase();
+    if (!term) return products;
+    return products.filter(
+      (p) => p.nombre.toLowerCase().includes(term) || String(p.id).includes(term)
+    );
+  }, [products, filter]);
 
   /**
    * Previsualiza el total con el MISMO motor que usa el backend
@@ -108,6 +158,7 @@ export function PosPage() {
 
   const checkout = async () => {
     if (cart.length === 0) return;
+    const idempotencyKey = uuid();
     const payload = {
       total: preview.total,
       productos: cart.map((line) => ({
@@ -121,6 +172,7 @@ export function PosPage() {
     try {
       const res = await apiFetch('/api/v1/sales', {
         method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -132,14 +184,24 @@ export function PosPage() {
         setStatus(data.error || 'Error al vender');
       }
     } catch {
-      setStatus('Sin conexión: la venta no pudo registrarse');
+      // Sin red: la venta se encola con su Idempotency-Key para reintentar.
+      enqueueSale('/api/v1/sales', payload, idempotencyKey);
+      setPending(pendingCount());
+      setStatus('Sin conexión: venta encolada para sincronizar');
+      setCart([]);
+      setSelectedDiscount(null);
     }
   };
 
   return (
     <div className="grid min-h-screen grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_380px]">
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+      <Card className="min-h-[70vh]">
         <h1 className="text-2xl font-bold">POS Nuevo Stack</h1>
+        {pending > 0 && (
+          <div className="mt-2">
+            <Badge tone="warning">{pending} venta(s) pendiente(s) de sincronizar</Badge>
+          </div>
+        )}
 
         {!getToken() && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -156,18 +218,19 @@ export function PosPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Contraseña"
             />
-            <button
-              type="button"
-              onClick={handleLogin}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white"
-            >
-              Iniciar sesión
-            </button>
+            <Button onClick={handleLogin}>Iniciar sesión</Button>
           </div>
         )}
 
+        <SearchInput
+          className="mt-4"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Buscar producto..."
+        />
+
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <button
               key={product.id}
               type="button"
@@ -179,9 +242,9 @@ export function PosPage() {
             </button>
           ))}
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+      <Card>
         <h2 className="text-lg font-bold">Carrito</h2>
         <div className="mt-3 space-y-2">
           {cart.map((line) => (
@@ -239,16 +302,11 @@ export function PosPage() {
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={checkout}
-          disabled={cart.length === 0}
-          className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-500 disabled:opacity-50"
-        >
+        <Button className="mt-4 w-full" onClick={checkout} disabled={cart.length === 0}>
           Cobrar ({cart.reduce((n, l) => n + l.cantidad, 0)})
-        </button>
+        </Button>
         {status && <p className="mt-3 text-sm text-slate-300">{status}</p>}
-      </section>
+      </Card>
     </div>
   );
 }

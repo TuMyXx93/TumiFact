@@ -1,103 +1,130 @@
-# AGENTS.md — TumiFact · Sistema de Facturación & POS
+# AGENTS.md — TumiFact · POS, Facturación e Inventario
 
-> Mantener este archivo compacto. Los detalles de implementación viven en
-> `.opencode/agents/`, `.opencode/commands/` y `.opencode/skills/`.
+> Archivo raíz compacto. Detalles en `.opencode/{agents,commands}/`, `specs/` y `docs/`.
 
 ## Project Overview
 
-Sistema de Facturación y Punto de Venta (POS) **TumiFact**:
+TumiFact es un POS y sistema de facturación en **migración activa hacia monorepo** (patrón strangler).
 
-- **Backend:** Node.js 22+ LTS, Express.js REST API v2, Socket.io (WebSockets), Drizzle ORM, PostgreSQL 18.4 (Docker)
-- **Frontend:** Astro Framework (v7.2+) + React 19 Islands + Tailwind CSS v4
-- **Seguridad:** Criptografía Argon2id, JWT, RBAC, Control de Idempotencia UUID
-- **Base de Datos:** PostgreSQL 18.4 (`tumifact_db`), Modelo normalizado 3NF (19 tablas), datos binarios `BYTEA` (Logo/QR)
+### Stack en producción (legacy, aún activo)
 
-Runtime: Node.js 22+ LTS, ESM/TypeScript, pnpm 10+/11+.
+- **Frontend:** Astro 7 SSR + React 19 Islands + Tailwind CSS v4 (`src/`, `src/pages/*.astro`)
+- **Backend:** Express 4 REST API + Socket.io + Drizzle ORM + PostgreSQL 18 (`src/modules/`)
+- **Datos:** PostgreSQL 18 `tumifact_db`, 22 tablas normalizadas 3NF, binarios `BYTEA`
+
+### Stack destino (nuevo, en construcción)
+
+- **Frontend:** `apps/web` — React 19 + Vite + TanStack Router/Query + Zustand + Tailwind v4
+- **Backend:** `apps/api` — Fastify 5 + Prisma 7 + PostgreSQL 18, Clean Architecture
+- **Compartido:** `packages/schemas` (Zod), `packages/types`, `packages/discounts` (motor de descuentos puro)
+- **Identidad:** `apps/api/src/lib/auth.ts` — actor real derivado del JWT + sesión en BD
+
+Runtime: Node.js 22+ LTS, ESM/TypeScript, pnpm 12.
 
 ## Global Commands
 
-| Command            | Purpose                                                    |
-| ------------------ | ---------------------------------------------------------- |
-| `pnpm install`     | Instala dependencias con lockfile estricto                |
-| `pnpm dev`         | Inicia servidor frontend Astro (`http://localhost:4321`)   |
-| `pnpm dev:api`     | Inicia servidor backend API Express con Socket.io (`:3000`)|
-| `pnpm build`       | Genera compilado de producción de Astro (`/dist`)          |
-| `pnpm start`       | Inicia servidor backend en modo producción                |
-| `pnpm test`        | Ejecuta la suite de pruebas unitarias/integración con Jest |
-| `pnpm test:coverage` | Genera reporte de cobertura (mínimo 40% requerido)        |
+### Legacy (producción actual)
+
+| Command              | Purpose                                              |
+| -------------------- | ---------------------------------------------------- |
+| `pnpm dev`           | Frontend Astro (`http://localhost:4321`)             |
+| `pnpm dev:api`       | API Express + Socket.io (`http://localhost:3000`)    |
+| `pnpm build`         | Build de producción de Astro (`/dist`)               |
+| `pnpm build:api`     | Build de la API Express (`/dist-api`)                |
+| `pnpm start`         | API Express en modo producción                       |
+| `pnpm test`          | Suite legacy (Vitest + Supertest, BD `tumifact_test`)|
+| `pnpm test:coverage` | Cobertura legacy (gate 55%)                          |
+
+### Nuevo stack
+
+| Command                                    | Purpose                                    |
+| ------------------------------------------ | ------------------------------------------ |
+| `pnpm --filter @tumifact/api dev`         | API Fastify (`http://localhost:3001`)      |
+| `pnpm --filter @tumifact/api test`        | Tests de integración (BD `tumifact_test_api`)|
+| `pnpm --filter @tumifact/api build`       | Compilación de la API                      |
+| `pnpm --filter @tumifact/web dev`         | Frontend Vite (`http://localhost:5173`)    |
+| `pnpm --filter @tumifact/web build`       | Build de producción del frontend           |
+| `pnpm --filter @tumifact/discounts test`  | Tests unitarios del motor de descuentos    |
+| `pnpm --filter @tumifact/api exec prisma migrate deploy` | Aplica migraciones Prisma |
 
 ## Branching & Release Policy
 
-1. **Rama Predeterminada de Desarrollo:** `dev`
-2. **Flujo de Trabajo:**
-   - Todos los cambios, integraciones y funciones se desarrollan y prueban en la rama `dev`.
-   - Se realiza `git push origin dev` y se valida que la CI/CD esté **100% en verde**.
-   - Tras revisión y aprobación, se realiza la integración limpia (PR / merge) hacia `main`.
-3. **Producción:** La rama `main` refleja únicamente código probado, estable y desplegable.
+1. Rama de desarrollo: `dev`.
+2. Push a `origin dev` solo con CI/CD **100% verde**.
+3. `main` solo recibe merges revisados de `dev`.
 
 ## Quality Baseline
 
-- **Testing:** Vitest + Supertest (`/tests`) con base de datos de pruebas dedicada (`tumifact_test`)
-- **Coverage Minimum:** 40% inicial (meta 55%+/70%+ en refactorización continua)
-- **Hooks & CI:** Validation Gate, Audit, Tests automatizados Vitest, Biome, SAST Semgrep, SBOM y Astro Build en GitHub Actions
-- **Seguridad:** Encriptación de secrets en `.env`, sanitización con Zod DTOs y hash Argon2id
-- **Specs:** SDD spec-anchored (`specs/`). Toda feature nueva requiere spec antes de código. Commits `feat`/`fix` con `Refs: specs/features/NNN-slug`.
+- **Testing:** Vitest + Supertest. Legacy en `tumifact_test`; nuevo stack en `tumifact_test_api` (bases aisladas).
+- **Cobertura:** gate 55% en legacy; el nuevo stack exige sus propios tests, sin cobertura global todavía.
+- **Hooks & CI:** Biome, Husky (lint-staged + commitlint), Vitest, Semgrep SAST, TruffleHog, SBOM, build de ambos stacks.
+- **Seguridad:** Argon2id, JWT + sesión revocable en BD, RBAC por permisos, idempotencia UUID, `.env` fuera de git, MCP sin credenciales en claro.
+- **Specs:** SDD spec-anchored en `specs/`. Toda feature requiere spec antes de código. `feat`/`fix` con `Refs: specs/features/NNN-slug`.
+- **Gate de identidad:** CI falla si reintroduce `usuario_id: 1` hardcodeado en `apps/api`.
 
 ## Agent Orchestration
 
-### Agentes Especializados (`.opencode/agents/`)
+### Agentes (`.opencode/agents/`)
 
-| Agent       | Purpose                                                            |
-| ----------- | ------------------------------------------------------------------ |
-| `architect` | Mantiene agentes, skills, comandos, estándares y arquitectura Astro|
-| `frontend`  | Componentes Astro (`.astro`), React 19 Islands y Tailwind CSS v4   |
-| `backend`   | Express API, PostgreSQL Pool, Transacciones Drizzle, WebSockets    |
-| `reviewer`  | Read-only: calidad de código, arquitectura, seguridad y performance|
-| `tester`    | Jest / Supertest: pruebas unitarias, integración y cobertura       |
-| `devops`    | CI/CD GitHub Actions, Docker Compose, versión, scripts de despliegue|
+| Agent       | Purpose                                                        |
+| ----------- | -------------------------------------------------------------- |
+| `architect` | Arquitectura, SDD, agentes, comandos y roadmap de migración     |
+| `frontend`  | React 19 / Astro / Tailwind v4, islands y design system        |
+| `backend`   | Fastify / Express, Prisma / Drizzle, transacciones y tiempo real|
+| `reviewer`  | Read-only: calidad, seguridad, arquitectura y performance        |
+| `tester`    | Vitest, integración, Playwright y cobertura                     |
+| `devops`    | CI/CD, Docker, migraciones, releases                            |
 
 ### Commands (`.opencode/commands/`)
 
-| Command          | Purpose                                                     |
-| ---------------- | ----------------------------------------------------------- |
-| `/version-gate`  | Gate de seguridad y compatibilidad pre-tarea                |
-| `/review`        | Code review del scope indicado                              |
-| `/gen-test`      | Genera pruebas unitarias/integración para el módulo          |
-| `/gen-api`       | Genera nuevo endpoint Express + PostgreSQL                  |
-| `/gen-component` | Genera componente de UI (Astro / React Island)              |
-| `/check-arch`    | Valida reglas de arquitectura y patrones del backend/frontend|
-| `/db-migrate`    | Valida o genera scripts SQL para migración de BD            |
+**Ciclo SDD**
+
+| Command        | Purpose                                              |
+| -------------- | ---------------------------------------------------- |
+| `/specify`     | Genera `spec.md` (EARS + Gherkin)                     |
+| `/clarify`     | Resuelve ambigüedades antes del plan                  |
+| `/plan`        | Genera `plan.md` + ADRs desde una spec aprobada       |
+| `/analyze`     | Detecta inconsistencias spec/plan/tasks                |
+| `/tasks`       | Descompone el plan en tareas atómicas                  |
+| `/checklist`   | Checklist de calidad de requisitos                    |
+
+**Gates y operación**
+
+| Command        | Purpose                                              |
+| -------------- | ---------------------------------------------------- |
+| `/version-gate`| Gate previo a modificar código                        |
+| `/docs-gate`   | Verifica que el cambio viene con su spec              |
+| `/merge-gate`  | Gate previo a integrar a `dev`                        |
+| `/review`      | Code review del scope indicado                        |
+| `/gen-api`     | Genera endpoint + contrato                            |
+| `/gen-test`    | Genera pruebas del módulo                             |
+
+> Los comandos de SDD solo avanzan si la spec está `approved` (Constitución P4.1).
 
 ### Delegation Rules
 
-0. **Antes de modificar código:** `/version-gate`
-1. Frontend & Vistas → `frontend` o `/gen-component`
-2. Backend & BD → `backend` o `/gen-api`
-3. Revisión de calidad → `reviewer` o `/review`
-4. Pruebas y cobertura → `tester` o `/gen-test`
-5. CI/CD & Infra → `devops`
-6. Orquestación y Astro Roadmap → `architect`
+0. Antes de modificar código: `/version-gate`.
+1. Especificación nueva → `/specify` → `/clarify` → revisión humana.
+2. Diseño → `/plan` → `/analyze` → `/tasks`.
+3. Frontend → `frontend`. Backend/BD → `backend`. Calidad → `reviewer`. Pruebas → `tester`. CI/infra → `devops`. Orquestación → `architect`.
+4. Implementación por tarea, con contexto mínimo (spec + tarea).
 
 ## Engram Memory Protocol
 
-### Guardado Proactivo
-Guardar descubrimientos técnicos, patrones de facturación o decisiones de arquitectura utilizando la estructura estandarizada de memoria en `.opencode/memory/`.
+La memoria del proyecto vive en **Engram** (proyecto `tumifact`), no en archivos locales.
 
-### Formato de Guardado
-```json
-{
-  "title": "VERB + WHAT — corto y buscable",
-  "type": "decision|architecture|bugfix|pattern|config|discovery|learning",
-  "topic_key": "tumifact/billing-engine",
-  "content": "**What**: ...\n**Why**: ...\n**Where**: ...\n**Learned**: ..."
-}
-```
+| Acción                | Cuándo                                                       |
+| --------------------- | ------------------------------------------------------------ |
+| `mem_context`         | Inicio de sesión o tras compaction                            |
+| `mem_search`          | Falta contexto; búsqueda proactiva                            |
+| `mem_save`            | Inmediatamente tras decisión, bugfix o descubrimiento         |
+| `mem_session_summary` | **Obligatorio antes de cerrar la sesión**                     |
+| `mem_judge`           | Resolver conflictos detectados tras `mem_save`                |
 
-## Astro Frontend & Modular Monolith Roadmap — ✅ 100% COMPLETADO
+Formato: `What / Why / Where / Learned` con `topic_key` estable.
 
-- [x] **Fase 1:** Inicialización de Astro v7.1+ & Configuración del Entorno Node.js (COMPLETADA).
-- [x] **Fase 2:** Layouts & Páginas Base `.astro` (COMPLETADA).
-- [x] **Fase 3:** Construcción de React 19 Islands (`POSIsland`, `ControlCaja`, `SeparadosManager`, `InventarioManager`, `ReportesManager`, `ClientManager`) (COMPLETADA).
-- [x] **Fase 4:** SSR Data Loading & Vista de Impresión Térmica con Decodificación de Binarios `BYTEA` (COMPLETADA).
-- [x] **Fase 5:** Módulos de Dominio DDD, Autenticación Argon2id + JWT + RBAC, WebSockets Socket.io y Normalización 3NF (19 tablas) (COMPLETADA).
-- [x] **Fase 6:** Pruebas Automatizadas (7 Suites / 17 Tests), Cobertura, CI/CD Pipeline & Security Workflows (COMPLETADA).
+## Estado de la migración (Fastify + Prisma)
+
+- Completado: estructura monorepo, tooling, schema Prisma (22 modelos) + migraciones, seed, auth con identidad real, catálogo, ventas con stock e idempotencia, inventario, caja, clientes, separados, reportes, devoluciones y cambios, motor de descuentos, auditoría y tiempo real.
+- Pendiente: configuración, categorías, proveedores, descuentos (CRUD), empleados (UI), impresión de tiquete y DIAN.
+- Detalle: `docs/architecture/migration-status.md` y `specs/`.

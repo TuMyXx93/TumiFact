@@ -11,6 +11,12 @@ coverage/
 .astro/
 dist/
 
+# Builds del nuevo stack
+dist-api/
+apps/*/dist/
+packages/*/dist/
+packages/*/tsconfig.tsbuildinfo
+
 # Entorno y Secretos
 .env
 .env.local

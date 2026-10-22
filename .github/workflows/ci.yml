@@ -138,10 +138,8 @@ jobs:
       - name: Initialize dedicated test database (tumifact_test_api)
         run: |
           PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d postgres -c "CREATE DATABASE tumifact_test_api OWNER tumifact_user;" || true
-          for f in drizzle/0000_baseline.sql drizzle/0001_add_direccion_backcompat.sql drizzle/0002_fix_facturas_estado_len.sql; do
-            PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d tumifact_test_api -v ON_ERROR_STOP=1 -f "$f"
-          done
-          PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d tumifact_test_api -v ON_ERROR_STOP=1 -f apps/api/prisma/migrations/0002_expandir_formas_pago_y_tipos/migration.sql
+          DATABASE_URL=postgresql://tumifact_user:tumifact_password@localhost:5432/tumifact_test_api pnpm --filter @tumifact/api exec prisma migrate deploy
+          PGPASSWORD=tumifact_password psql -h localhost -U tumifact_user -d tumifact_test_api -c "\dt"
 
       - name: Prisma generate + build API
         run: |

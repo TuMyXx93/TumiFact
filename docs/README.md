@@ -7,8 +7,9 @@ Bienvenido al centro de documentación oficial del **Sistema de Facturación & P
 ## 🗺️ Mapa de Navegación
 
 ### 1. 🏗️ Arquitectura y Diseño (`docs/architecture/`)
+* **[Estado de la Migración](architecture/migration-status.md):** avance por módulo del stack nuevo (Fastify + Prisma) y bases de datos aisladas.
 * **[Stack Tecnológico Justificado](architecture/tech-stack.md):** Astro 7+, React 19, Tailwind CSS v4, Express API, Socket.io, Drizzle ORM y PostgreSQL 18.4 (3NF).
-* **[Esquema de Base de Datos PostgreSQL](architecture/database-schema.md):** Diagrama relacional completo 3NF con las 19 tablas (`usuarios`, `roles`, `empleados`, `sesiones_caja`, `facturas`, `separados`, `inventario`, etc.).
+* **[Esquema de Base de Datos PostgreSQL](architecture/database-schema.md):** Diagrama relacional completo 3NF con las 22 tablas (`usuarios`, `roles`, `empleados`, `sesiones_caja`, `facturas`, `separados`, `inventario`, etc.).
 * **[Visión General de Arquitectura](architecture/README.md):** Principios de arquitectura híbrida desacoplada.
 
 ### 2. ⚡ Guías de Desarrollo (`docs/guides/`)
@@ -18,6 +19,7 @@ Bienvenido al centro de documentación oficial del **Sistema de Facturación & P
 
 ### 3. 🔌 Especificación de API REST (`docs/api/`)
 * **[Endpoints & Payloads API v2](api/endpoints.md):** Documentación detallada de solicitudes, parámetros, códigos HTTP y ejemplos JSON para todos los endpoints (Auth, Facturas, Caja, Separados, Inventario, Reportes).
+* **[API del Stack Nuevo (Fastify + Prisma)](api/endpoints-nuevo-stack.md):** Contratos de `apps/api` (auth, ventas, inventario, caja, clientes, separados, descuentos, devoluciones, reportes) y eventos Socket.io.
 * **[Convenciones y Seguridad API](api/README.md):** Autenticación JWT, headers de idempotencia y respuestas estándar.
 
 ### 4. 🧠 Registros de Decisiones de Arquitectura (`docs/adr/`)

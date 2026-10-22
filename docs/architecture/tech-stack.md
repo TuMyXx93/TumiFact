@@ -1,5 +1,9 @@
 # Stack Tecnológico — TumiFact ⚡
 
+> Este documento describe el stack **legacy en producción** (Astro + Express + Drizzle).
+> El stack destino (Fastify + Prisma + React/Vite) y su avance están en
+> [`migration-status.md`](./migration-status.md).
+
 > **Arquitectura:** Arquitectura Híbrida Desacoplada (Astro SSR + React 19 Islands + Express Headless API + Drizzle ORM + PostgreSQL 18.4)
 
 ---
@@ -41,7 +45,7 @@
 
 ## 3. Capa de Persistencia (Base de Datos & ORM)
 - **Motor:** **PostgreSQL 18.4** en **Docker Alpine** (`tumifact_db`).
-- **Modelo Relacional:** Normalizado en **3NF** (19 tablas con llaves foráneas, restricciones de unicidad e índices optimizados).
+- **Modelo Relacional:** Normalizado en **3NF** (22 tablas con llaves foráneas, restricciones de unicidad e índices optimizados).
 - **ORM Type-Safe:** **Drizzle ORM** (v0.45+) + **Drizzle Kit**.
 - **Driver / Client:** Pool de conexiones nativo `pg` (v8.11+) + Drizzle Client ([`src/db/index.ts`](file:///home/tumidev/developments/TumiFact/src/db/index.ts)).
 - **Almacenamiento de Multimedia:** Datos binarios `BYTEA` en tabla `configuracion_impresion` (Logo y QR de pagos) con decodificación Base64 en tiempo real para tiquetes térmicos.
@@ -50,5 +54,5 @@
 
 ## 4. Infraestructura & Calidad
 - **Gestor de Paquetes:** `pnpm` (v10+ / v11+)
-- **Pruebas Automatizadas:** `Jest` + `Supertest` (8 suites de pruebas unitarias y de integración, 18 tests con BD de pruebas dedicada).
+- **Pruebas Automatizadas:** `Vitest` + `Supertest` (13 suites legacy con BD `tumifact_test`; el stack nuevo usa `apps/api` con BD `tumifact_test_api`).
 - **Integración Continua (CI/CD):** GitHub Actions (`ci.yml`, `security.yml`, `sbom.yml`).

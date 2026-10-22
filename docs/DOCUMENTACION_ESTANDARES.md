@@ -86,4 +86,4 @@ Toda la documentación técnica de **TumiFact** se organiza en 4 cuadrantes seg�
 ## Integración con Agentes y Engram Memory Protocol
 
 Toda documentación creada debe mantenerse alineada con el protocolo de agentes definido en **[AGENTS.md](file:///home/tumidev/developments/TumiFact/AGENTS.md)**.
-Las decisiones críticas y descubrimientos técnicos se guardan proactivamente en `.opencode/memory/` en formato JSON estandarizado.
+Las decisiones críticas y descubrimientos técnicos se guardan proactivamente en **Engram** (proyecto `tumifact`) con el formato `What / Why / Where / Learned` y un `topic_key` estable. No se mantienen archivos de memoria locales: `.opencode/memory/` fue retirado por duplicar y desactualizar la memoria de Engram.
